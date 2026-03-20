@@ -1,0 +1,69 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.2.4
+2 info using node@v20.11.0
+3 timing npm:load:whichnode Completed in 2ms
+4 timing config:load:defaults Completed in 1ms
+5 timing config:load:file:C:\Program Files\nodejs\node_modules\npm\npmrc Completed in 3ms
+6 timing config:load:builtin Completed in 3ms
+7 timing config:load:cli Completed in 2ms
+8 timing config:load:env Completed in 1ms
+9 timing config:load:file:C:\Users\crist\OneDrive\Documentos\Company Care\.npmrc Completed in 0ms
+10 timing config:load:project Completed in 1ms
+11 timing config:load:file:C:\Users\crist\.npmrc Completed in 0ms
+12 timing config:load:user Completed in 0ms
+13 timing config:load:file:C:\Users\crist\AppData\Roaming\npm\etc\npmrc Completed in 0ms
+14 timing config:load:global Completed in 0ms
+15 timing config:load:setEnvs Completed in 0ms
+16 timing config:load Completed in 9ms
+17 timing npm:load:configload Completed in 9ms
+18 timing config:load:flatten Completed in 1ms
+19 timing npm:load:mkdirpcache Completed in 0ms
+20 timing npm:load:mkdirplogs Completed in 0ms
+21 verbose title npm exec @ionic/cli --version
+22 verbose argv "exec" "--yes" "--" "@ionic/cli" "--version"
+23 timing npm:load:setTitle Completed in 1ms
+24 timing npm:load:display Completed in 1ms
+25 verbose logfile logs-max:10 dir:C:\Users\crist\OneDrive\Documentos\Company Care\.npm-cache\_logs\2026-03-13T23_04_31_726Z-
+26 verbose logfile C:\Users\crist\OneDrive\Documentos\Company Care\.npm-cache\_logs\2026-03-13T23_04_31_726Z-debug-0.log
+27 timing npm:load:logFile Completed in 7ms
+28 timing npm:load:timers Completed in 0ms
+29 timing npm:load:configScope Completed in 1ms
+30 timing npm:load Completed in 50ms
+31 silly logfile done cleaning log files
+32 timing arborist:ctor Completed in 0ms
+33 timing command:exec Completed in 70100ms
+34 verbose type system
+35 verbose stack FetchError: request to https://registry.npmjs.org/@ionic%2fcli failed, reason: 
+35 verbose stack     at ClientRequest.<anonymous> (C:\Program Files\nodejs\node_modules\npm\node_modules\minipass-fetch\lib\index.js:130:14)
+35 verbose stack     at ClientRequest.emit (node:events:518:28)
+35 verbose stack     at _destroy (node:_http_client:875:13)
+35 verbose stack     at onSocketNT (node:_http_client:895:5)
+35 verbose stack     at process.processTicksAndRejections (node:internal/process/task_queues:83:21)
+36 verbose cwd C:\Users\crist\OneDrive\Documentos\Company Care
+37 verbose Windows_NT 10.0.19045
+38 verbose node v20.11.0
+39 verbose npm  v10.2.4
+40 error code EACCES
+41 error errno EACCES
+42 error FetchError: request to https://registry.npmjs.org/@ionic%2fcli failed, reason: 
+42 error     at ClientRequest.<anonymous> (C:\Program Files\nodejs\node_modules\npm\node_modules\minipass-fetch\lib\index.js:130:14)
+42 error     at ClientRequest.emit (node:events:518:28)
+42 error     at _destroy (node:_http_client:875:13)
+42 error     at onSocketNT (node:_http_client:895:5)
+42 error     at process.processTicksAndRejections (node:internal/process/task_queues:83:21) {
+42 error   code: 'EACCES',
+42 error   errno: 'EACCES',
+42 error   type: 'system'
+42 error }
+43 error
+43 error The operation was rejected by your operating system.
+43 error It's possible that the file was already in use (by a text editor or antivirus),
+43 error or that you lack permissions to access it.
+43 error
+43 error If you believe this might be a permissions issue, please double-check the
+43 error permissions of the file and its containing directories, or try running
+43 error the command again as root/Administrator.
+44 verbose exit 1
+45 timing npm Completed in 70454ms
+46 verbose code 1
+47 error A complete log of this run can be found in: C:\Users\crist\OneDrive\Documentos\Company Care\.npm-cache\_logs\2026-03-13T23_04_31_726Z-debug-0.log
