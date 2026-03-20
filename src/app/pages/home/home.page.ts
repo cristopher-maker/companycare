@@ -69,7 +69,7 @@ export class HomePage implements OnInit, OnDestroy {
   private badgeLastPersistEpochMs = 0;
 
   constructor(private readonly supabase: SupabaseService) {
-    this.heroBgUrl = this.assetUrl('hero/company-care-hero.jpg');
+    this.heroBgUrl = this.assetUrl('img/carousel-1.jpeg');
     this.aboutBgUrl = this.assetUrl('img/about-us.jpg');
     this.heroSlides = this.heroSlides.map((slide) => ({
       ...slide,

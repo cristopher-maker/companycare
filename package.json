@@ -5,7 +5,7 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build",
-    "build:gh": "ng build --configuration production --base-href /companycare/",
+    "build:gh": "ng build --configuration production --base-href /companycare/ --deploy-url /companycare/",
     "deploy": "npm run build:gh && gh-pages -d dist/app --no-history",
     "test": "ng test",
     "lint": "ng lint"
