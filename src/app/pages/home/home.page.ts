@@ -21,33 +21,33 @@ export class HomePage implements OnInit, OnDestroy {
     {
       title: 'Acompañamiento experto',
       description: 'Conecta con Care Experts y resuelve decisiones de cuidado con apoyo humano.',
-      image: '/assets/img/carousel-1.jpeg',
+      image: 'assets/img/carousel-1.jpeg',
       cta: 'Solicitar asesoría',
     },
     {
       title: 'Red de proveedores',
       description: 'Compara residencias, cuidadores y servicios médicos con datos verificados.',
-      image: '/assets/img/carousel-2.jpeg',
+      image: 'assets/img/carousel-2.jpeg',
       cta: 'Ver proveedores',
     },
     {
       title: 'Recursos y formación',
       description: 'Guías, checklists y módulos para reducir el estrés del cuidado.',
-      image: '/assets/img/carousel-3.jpeg',
+      image: 'assets/img/carousel-3.jpeg',
       cta: 'Explorar recursos',
     },
     {
       title: 'Beneficio corporativo',
       description: 'Métricas, co‑branding y herramientas para RR.HH.',
-      image: '/assets/img/carousel-4.jpeg',
+      image: 'assets/img/carousel-4.jpeg',
       cta: 'Ver panel',
     },
   ];
 
   public heroBadgeImages: string[] = [
-    '/assets/img/hero-badge-1.jpg',
-    '/assets/img/hero-badge-2.jpg',
-    '/assets/img/hero-badge-3.jpg',
+    'assets/img/hero-badge-1.jpg',
+    'assets/img/hero-badge-2.jpg',
+    'assets/img/hero-badge-3.jpg',
   ];
   public activeSlideIndex = 0;
   public heroBadgeIndex = 0;

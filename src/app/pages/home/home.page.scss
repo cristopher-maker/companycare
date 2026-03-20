@@ -1,7 +1,7 @@
 .home {
   --padding-top: 0px;
   --padding-bottom: 0px;
-  --hero-illustration-image: url('/assets/hero/company-care-hero.jpg');
+  --hero-illustration-image: none;
 }
 ion-content{
   --background: #F7F8FC
@@ -1340,7 +1340,7 @@ ion-content{
 /* ---------- About band (layout imagen 3) ---------- */
 .about-band {
   position: relative;
-  --about-bg: url('/assets/img/about-us.jpg');
+  --about-bg: none;
   padding: 78px 16px 84px;
   overflow: hidden;
   background: #eef2ff;
