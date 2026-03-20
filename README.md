@@ -15,6 +15,15 @@ o habilitar scripts con una ExecutionPolicy adecuada.
 2) Levantar en desarrollo:
    - `npm start`
 
+## Publicar en GitHub Pages
+1) Generar build para Pages:
+   - `npm run build:gh`
+2) Publicar:
+   - `npm run deploy`
+
+La URL quedará en:
+`https://cristopher-maker.github.io/companycare/`
+
 ## Si falla por versión de Node/Angular
 Si ves un error tipo “Angular CLI requires a minimum Node.js version…”, y no puedes actualizar Node, baja la versión
 de Angular y reinstala:
