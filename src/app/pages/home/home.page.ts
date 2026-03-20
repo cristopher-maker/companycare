@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { SupabaseService } from '../../core/services/supabase.service';
 
@@ -17,7 +17,7 @@ export class HomePage implements OnInit, OnDestroy {
 
   public heroTitle = 'Bienvenido a Company Care';
   public heroSubtitle = 'Tu panel central de beneficios y cuidado senior.';
-  public heroSlides: Array<{ title: string; description: string; image: string; cta: string }> = [
+    public heroSlides: Array<{ title: string; description: string; image: string; cta: string }> = [
     {
       title: 'Acompañamiento experto',
       description: 'Conecta con Care Experts y resuelve decisiones de cuidado con apoyo humano.',
@@ -45,14 +45,16 @@ export class HomePage implements OnInit, OnDestroy {
   ];
 
   public heroBadgeImages: string[] = [
-    'assets/img/hero-badge-1.jpg',
-    'assets/img/hero-badge-2.jpg',
-    'assets/img/hero-badge-3.jpg',
+    'assets/img/carousel-1.jpeg',
+    'assets/img/carousel-2.jpeg',
+    'assets/img/carousel-3.jpeg',
   ];
   public activeSlideIndex = 0;
   public heroBadgeIndex = 0;
   public badgeStartDeg = 0;
   public badgeEndDeg = 0;
+  public heroBgUrl = '';
+  public aboutBgUrl = '';
 
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
   private badgePaused = false;
@@ -66,7 +68,17 @@ export class HomePage implements OnInit, OnDestroy {
   private badgePausedMs = 0;
   private badgeLastPersistEpochMs = 0;
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(private readonly supabase: SupabaseService) {
+    this.heroBgUrl = this.assetUrl('hero/company-care-hero.jpg');
+    this.aboutBgUrl = this.assetUrl('img/about-us.jpg');
+    this.heroSlides = this.heroSlides.map((slide) => ({
+      ...slide,
+      image: this.assetUrl(slide.image.replace(/^assets\//, '')),
+    }));
+    this.heroBadgeImages = this.heroBadgeImages.map((image) =>
+      this.assetUrl(image.replace(/^assets\//, ''))
+    );
+  }
 
   public ngOnInit(): void {
     void this.refresh();
@@ -290,4 +302,15 @@ export class HomePage implements OnInit, OnDestroy {
 
     this.loading = false;
   }
+  private assetUrl(path: string): string {
+    try {
+      if (typeof document === 'undefined') {
+        return "assets/" + path;
+      }
+      return new URL("assets/" + path, document.baseURI).toString();
+    } catch {
+      return "assets/" + path;
+    }
+  }
 }
+
