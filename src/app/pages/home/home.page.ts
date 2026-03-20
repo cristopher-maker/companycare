@@ -305,11 +305,12 @@ export class HomePage implements OnInit, OnDestroy {
   private assetUrl(path: string): string {
     try {
       if (typeof document === 'undefined') {
-        return "assets/" + path;
+        return `assets/${path}`;
       }
-      return new URL("assets/" + path, document.baseURI).toString();
+      const base = document.querySelector('base')?.href || document.baseURI;
+      return new URL(`assets/${path}`, base).toString();
     } catch {
-      return "assets/" + path;
+      return `assets/${path}`;
     }
   }
 }
