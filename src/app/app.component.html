@@ -1,0 +1,59 @@
+<ion-app>
+  <ion-menu contentId="main-content" type="overlay" [swipeGesture]="false" class="app-menu">
+    <ion-content class="menu-content">
+      <div class="menu-top">
+        <div class="menu-brand">
+          <div class="brand-avatar">CC</div>
+          <div class="brand-meta">
+            <div class="brand-name">Company Care</div>
+            <div class="brand-sub">
+              {{ auth.user?.email ?? 'Portal de beneficios' }}
+            </div>
+          </div>
+        </div>
+
+        <ion-button class="collapse-btn" fill="clear" aria-label="Cerrar menú" (click)="closeMenu()">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="menu-search">
+        <ion-searchbar placeholder="Buscar..." animated="true"></ion-searchbar>
+      </div>
+
+      <ion-list class="menu-list" lines="none">
+        <ion-menu-toggle autoHide="false" *ngFor="let p of appPages">
+          <ion-item
+            [routerLink]="p.url"
+            routerDirection="root"
+            detail="false"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: p.url === '/home' || p.url === '/dashboard' }"
+          >
+            <ion-icon [name]="p.icon" slot="start"></ion-icon>
+            <ion-label class="item-label">{{ p.title }}</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+
+      <div class="menu-bottom">
+        <ion-button fill="clear" class="bottom-item" routerLink="/contact">
+          <ion-icon name="help-circle-outline" slot="start"></ion-icon>
+          <span class="item-label">Soporte</span>
+        </ion-button>
+
+        <ion-button fill="clear" class="bottom-item" (click)="authAction()">
+          <ion-icon [name]="auth.user ? 'log-out-outline' : 'log-in-outline'" slot="start"></ion-icon>
+          <span class="item-label">
+            {{ auth.user ? 'Cerrar sesión' : 'Ingresar' }}
+          </span>
+        </ion-button>
+      </div>
+    </ion-content>
+  </ion-menu>
+
+  <div class="app-shell" id="main-content">
+    <ion-router-outlet></ion-router-outlet>
+  </div>
+</ion-app>
+

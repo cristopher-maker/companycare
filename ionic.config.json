@@ -1,0 +1,8 @@
+{
+  "name": "Company Care by Senior Advisor",
+  "type": "angular",
+  "integrations": {
+    "capacitor": {}
+  }
+}
+

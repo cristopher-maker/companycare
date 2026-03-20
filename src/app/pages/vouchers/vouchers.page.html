@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Vouchers</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refresh()" [disabled]="loading">Actualizar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card *ngIf="error">
+    <ion-card-header>
+      <ion-card-title>Error</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>{{ error }}</ion-card-content>
+  </ion-card>
+
+  <ion-skeleton-text *ngIf="loading" animated="true" style="width: 100%; height: 120px"></ion-skeleton-text>
+
+  <ion-list *ngIf="!loading && !error">
+    <ion-item *ngFor="let v of items">
+      <ion-label>
+        <h2>{{ v.title }}</h2>
+        <p>Código: {{ v.code }}</p>
+        <p *ngIf="v.description">{{ v.description }}</p>
+      </ion-label>
+      <ion-button slot="end" fill="outline">Canjear</ion-button>
+    </ion-item>
+  </ion-list>
+
+  <ion-card *ngIf="!loading && !error && items.length === 0">
+    <ion-card-content>No hay vouchers disponibles por ahora.</ion-card-content>
+  </ion-card>
+</ion-content>
+

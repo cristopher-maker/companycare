@@ -1,0 +1,389 @@
+<ion-header class="home-header">
+  <ion-toolbar class="nav-bar" color="light">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+
+    <div class="nav">
+      <div class="brand" routerLink="/home" role="link" tabindex="0" aria-label="Company Care">
+        <span class="mark">CC</span>
+        <div class="brand-text">
+          <div class="name">Company Care</div>
+          <div class="sub">by Senior Advisor</div>
+        </div>
+      </div>
+
+      <ul class="navigation-menu desktop-only" aria-label="Navegación principal">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/home">Inicio</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/care-experts">Care Experts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/providers">Proveedores</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/resources">Recursos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/training">Formación</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/about">Nosotros</a>
+        </li>
+      </ul>
+
+
+        <ion-button size="small" fill="outline" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">
+          {{ mode === 'public' ? 'Ingresar' : 'Portal' }}
+        </ion-button>
+
+        <ion-button size="small" class="contact-btn" routerLink="/contact">Contáctanos</ion-button>
+      
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="home">
+  <section class="hero hero--carousel">
+    <div class="hero-bg" aria-hidden="true">
+      <div
+        class="hero-bg__slide"
+        *ngFor="let slide of heroSlides; let i = index"
+        [class.is-active]="i === activeSlideIndex"
+        [style.backgroundImage]="'url(' + slide.image + ')'"
+      ></div>
+    </div>
+    <div class="hero-overlay" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <div class="hero-left">
+        <h1 class="title">{{ heroTitle }}</h1>
+        <p class="subtitle">{{ heroSubtitle }}</p>
+        <p class="desc">
+          Conecta con Care Experts, compara proveedores verificados y accede a recursos para tomar mejores decisiones.
+        </p>
+
+        <div class="hero-search" role="search" aria-label="Búsqueda rápida">
+          <div class="hero-tabs" role="tablist" aria-label="Tipo">
+            <button class="tab is-active" type="button" role="tab" aria-selected="true">Empleado</button>
+            <button class="tab" type="button" role="tab" aria-selected="false">Empresa</button>
+          </div>
+
+          <div class="hero-fields">
+            <div class="field">
+              <div class="label">Necesidad</div>
+              <div class="value">Asesoría / Proveedor / Recursos</div>
+            </div>
+            <div class="field">
+              <div class="label">Ubicación</div>
+              <div class="value">Santiago, CL</div>
+            </div>
+            <div class="field">
+              <div class="label">Horario</div>
+              <div class="value">Lun–Vie · 08:00–19:00</div>
+            </div>
+            <button class="go" type="button" aria-label="Buscar" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">
+              <ion-icon name="search-outline" aria-hidden="true"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="hero-metrics" aria-label="Indicadores">
+          <div class="metric">
+            <div class="n">200+</div>
+            <div class="t">Empresas</div>
+          </div>
+          <div class="metric">
+            <div class="n">500+</div>
+            <div class="t">Recursos</div>
+          </div>
+          <div class="metric">
+            <div class="n">100+</div>
+            <div class="t">Proveedores</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-dots" role="tablist" aria-label="Carrusel principal">
+        <button
+          class="hero-dot"
+          *ngFor="let slide of heroSlides; let i = index"
+          type="button"
+          [class.is-active]="i === activeSlideIndex"
+          (click)="setActiveSlide(i)"
+          [attr.aria-label]="'Ir a imagen ' + (i + 1)"
+          [attr.aria-selected]="i === activeSlideIndex"
+        ></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" aria-label="Beneficios principales">
+    <div class="section-head section-head--center">
+      <div class="kicker">BENEFICIOS</div>
+      <h2>Todo lo que necesitas para cuidar mejor</h2>
+      <p>Asesoría experta, proveedores verificados, recursos claros y formación para empleados y empresas.</p>
+    </div>
+
+    <div class="features-inner">
+      <div class="features-grid" role="list" aria-label="Beneficios">
+        <a class="feature-card feature-card--blue" routerLink="/care-experts" role="listitem" aria-label="Asesoría personalizada">
+          <div class="feature-card__icon" aria-hidden="true">
+            <ion-icon name="chatbubbles-outline"></ion-icon>
+          </div>
+          <div class="feature-card__title">Asesoría personalizada</div>
+          <div class="feature-card__text">Chat, videollamada y seguimiento con Care Experts.</div>
+          <div class="feature-card__cta">Ver más</div>
+        </a>
+
+        <a class="feature-card feature-card--green" routerLink="/providers" role="listitem" aria-label="Proveedores verificados">
+          <div class="feature-card__icon" aria-hidden="true">
+            <ion-icon name="home-outline"></ion-icon>
+          </div>
+          <div class="feature-card__title">Proveedores verificados</div>
+          <div class="feature-card__text">Residencias, cuidadores y servicios médicos de confianza.</div>
+          <div class="feature-card__cta">Ver más</div>
+        </a>
+
+        <a class="feature-card feature-card--amber" routerLink="/resources" role="listitem" aria-label="Biblioteca de recursos">
+          <div class="feature-card__icon" aria-hidden="true">
+            <ion-icon name="book-outline"></ion-icon>
+          </div>
+          <div class="feature-card__title">Biblioteca de recursos</div>
+          <div class="feature-card__text">Guías, checklists y opciones de financiación paso a paso.</div>
+          <div class="feature-card__cta">Ver más</div>
+        </a>
+
+        <a class="feature-card feature-card--violet" routerLink="/training" role="listitem" aria-label="Formación">
+          <div class="feature-card__icon" aria-hidden="true">
+            <ion-icon name="school-outline"></ion-icon>
+          </div>
+          <div class="feature-card__title">Formación</div>
+          <div class="feature-card__text">Cursos y eventos para gestionar el estrés del cuidado.</div>
+          <div class="feature-card__cta">Ver más</div>
+        </a>
+
+        <a class="feature-card feature-card--slate" routerLink="/requests" role="listitem" aria-label="Seguimiento de casos">
+          <div class="feature-card__icon" aria-hidden="true">
+            <ion-icon name="clipboard-outline"></ion-icon>
+          </div>
+          <div class="feature-card__title">Seguimiento de casos</div>
+          <div class="feature-card__text">Estado, historial y acompañamiento de tus solicitudes.</div>
+          <div class="feature-card__cta">Ver más</div>
+        </a>
+
+        <a class="feature-card feature-card--indigo" routerLink="/dashboard" role="listitem" aria-label="Panel Empresa">
+          <div class="feature-card__icon" aria-hidden="true">
+            <ion-icon name="business-outline"></ion-icon>
+          </div>
+          <div class="feature-card__title">Panel Empresa</div>
+          <div class="feature-card__text">Métricas, co‑branding, onboarding y herramientas RR.HH.</div>
+          <div class="feature-card__cta">Ver más</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="popular popular--categories" aria-label="Servicios populares">
+    <div class="popular-bg" aria-hidden="true"></div>
+    <div class="popular-shell">
+      <div class="section-head section-head--center">
+        <h2>Servicios populares</h2>
+        <p>Accesos rápidos para empleados y empresas.</p>
+      </div>
+
+      <div class="categories-grid" role="list" aria-label="Accesos populares">
+        <a class="category-card category-card--blue" routerLink="/requests" role="listitem" aria-label="Seguimiento de casos">
+          <div class="category-card__body">
+            <div class="category-card__title">Seguimiento de casos</div>
+            <div class="category-card__text">Estado, historial y acompañamiento en tus solicitudes.</div>
+          </div>
+          <div class="category-card__badge" aria-hidden="true">
+            <ion-icon name="clipboard-outline"></ion-icon>
+          </div>
+        </a>
+
+        <a class="category-card category-card--violet" routerLink="/resources" role="listitem" aria-label="Biblioteca de recursos">
+          <div class="category-card__body">
+            <div class="category-card__title">Biblioteca de recursos</div>
+            <div class="category-card__text">Guías prácticas, checklists y alternativas de financiación.</div>
+          </div>
+          <div class="category-card__badge" aria-hidden="true">
+            <ion-icon name="book-outline"></ion-icon>
+          </div>
+        </a>
+
+        <a class="category-card category-card--green" routerLink="/dashboard" role="listitem" aria-label="Panel Empresa">
+          <div class="category-card__body">
+            <div class="category-card__title">Panel Empresa</div>
+            <div class="category-card__text">Métricas, co‑branding y herramientas para<br>RR.HH.</div>
+          </div>
+          <div class="category-card__badge" aria-hidden="true">
+            <ion-icon name="business-outline"></ion-icon>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-band" aria-label="Sobre nosotros">
+    <div class="about-band__bg" aria-hidden="true"></div>
+    <div class="about-band__overlay" aria-hidden="true"></div>
+
+    <div class="about-band__inner">
+      <h2 class="about-band__title">SOBRE NOSOTROS</h2>
+      <p class="about-band__lead">
+        Company Care ayuda a empleados cuidadores a tomar decisiones informadas con menos estrés: orientación experta,
+        recursos claros, proveedores verificados y apoyo continuo.
+      </p>
+      <p class="about-band__text">
+        Este es un espacio para contar tu historia, el impacto del beneficio y cómo acompañas a las empresas y sus
+        equipos.
+      </p>
+
+      <ion-button fill="outline" class="about-band__cta" routerLink="/about">Más información</ion-button>
+    </div>
+
+
+
+  </section>
+
+  <section class="faq" aria-label="Preguntas frecuentes">
+    <div class="faq__inner">
+      <div class="faq__head">
+        <h2 class="faq__title">Preguntas frecuentes</h2>
+        <p class="faq__subtitle">Todo lo que necesitas saber sobre el portal.</p>
+      </div>
+
+      <ion-accordion-group class="faq__group" [multiple]="false">
+        <ion-accordion value="q1" class="faq__item">
+          <ion-item slot="header" lines="none" class="faq__header" button detail="false">
+            <ion-label>¿Qué es Company Care y para quién es?</ion-label>
+            <ion-icon class="faq__toggle faq__toggle--plus" name="add-outline" slot="end" aria-hidden="true"></ion-icon>
+            <ion-icon class="faq__toggle faq__toggle--minus" name="remove-outline" slot="end" aria-hidden="true"></ion-icon>
+          </ion-item>
+          <div slot="content" class="faq__content">
+            Company Care es un portal de beneficios para empleados que cuidan a un familiar. Ofrece orientación experta,
+            proveedores verificados y recursos para tomar mejores decisiones.
+          </div>
+        </ion-accordion>
+
+        <ion-accordion value="q2" class="faq__item">
+          <ion-item slot="header" lines="none" class="faq__header" button detail="false">
+            <ion-label>¿Cómo accedo al portal si soy empleado?</ion-label>
+            <ion-icon class="faq__toggle faq__toggle--plus" name="add-outline" slot="end" aria-hidden="true"></ion-icon>
+            <ion-icon class="faq__toggle faq__toggle--minus" name="remove-outline" slot="end" aria-hidden="true"></ion-icon>
+          </ion-item>
+          <div slot="content" class="faq__content">
+            Ingresa con tu correo y contraseña. Si tu empresa habilita el beneficio, podrás ver recursos, proveedores y
+            solicitar asesoría desde tu panel.
+          </div>
+        </ion-accordion>
+
+        <ion-accordion value="q3" class="faq__item">
+          <ion-item slot="header" lines="none" class="faq__header" button detail="false">
+            <ion-label>¿Los Care Experts son profesionales certificados?</ion-label>
+            <ion-icon class="faq__toggle faq__toggle--plus" name="add-outline" slot="end" aria-hidden="true"></ion-icon>
+            <ion-icon class="faq__toggle faq__toggle--minus" name="remove-outline" slot="end" aria-hidden="true"></ion-icon>
+          </ion-item>
+          <div slot="content" class="faq__content">
+            Sí. Trabajamos con perfiles especializados (gerontología, trabajo social y gestión de casos) para orientar y
+            acompañar decisiones de cuidado.
+          </div>
+        </ion-accordion>
+
+        <ion-accordion value="q4" class="faq__item">
+          <ion-item slot="header" lines="none" class="faq__header" button detail="false">
+            <ion-label>¿Mis datos están protegidos?</ion-label>
+            <ion-icon class="faq__toggle faq__toggle--plus" name="add-outline" slot="end" aria-hidden="true"></ion-icon>
+            <ion-icon class="faq__toggle faq__toggle--minus" name="remove-outline" slot="end" aria-hidden="true"></ion-icon>
+          </ion-item>
+          <div slot="content" class="faq__content">
+            Sí. Acceso seguro por usuario y control por roles. La información sensible se gestiona con buenas prácticas
+            y políticas de privacidad.
+          </div>
+        </ion-accordion>
+      </ion-accordion-group>
+
+      <div class="faq-contact" aria-label="Contacto y horarios">
+        <div class="faq-contact__left">
+          <div class="faq-contact__kicker">¿NO ENCONTRASTE TU RESPUESTA?</div>
+          <div class="faq-contact__title">Estamos para orientarte</div>
+          <div class="faq-contact__text">Nuestro equipo responde tus dudas sobre cuidado y beneficios.</div>
+
+          <div class="faq-contact__actions">
+            <ion-button class="faq-contact__primary" routerLink="/contact">
+              Contactar
+              <ion-icon slot="end" name="arrow-forward-outline" aria-hidden="true"></ion-icon>
+            </ion-button>
+            <ion-button class="faq-contact__secondary" fill="outline" routerLink="/about">Conocer más</ion-button>
+          </div>
+        </div>
+
+        <div class="faq-contact__right">
+          <div class="faq-contact__item">
+            <div class="faq-contact__icon" aria-hidden="true">
+              <ion-icon name="call-outline"></ion-icon>
+            </div>
+            <div class="faq-contact__meta">
+              <div class="faq-contact__label">Teléfono</div>
+              <a class="faq-contact__value" href="tel:+56900000000">+56 9 0000 0000</a>
+            </div>
+          </div>
+
+          <div class="faq-contact__item">
+            <div class="faq-contact__icon" aria-hidden="true">
+              <ion-icon name="mail-outline"></ion-icon>
+            </div>
+            <div class="faq-contact__meta">
+              <div class="faq-contact__label">Email</div>
+              <a class="faq-contact__value" href="mailto:contacto&#64;companycare.cl">contacto&#64;companycare.cl</a>
+            </div>
+          </div>
+
+          <div class="faq-contact__item">
+            <div class="faq-contact__icon" aria-hidden="true">
+              <ion-icon name="time-outline"></ion-icon>
+            </div>
+            <div class="faq-contact__meta">
+              <div class="faq-contact__label">Horario</div>
+              <div class="faq-contact__value">Lun–Vie 08:00–19:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <div class="footer-title">Portal</div>
+        <a routerLink="/care-experts">Care Experts</a>
+        <a routerLink="/providers">Proveedores</a>
+        <a routerLink="/resources">Recursos</a>
+        <a routerLink="/training">Formación</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-title">Empresa</div>
+        <a routerLink="/dashboard">Dashboard B2B</a>
+        <a routerLink="/dashboard">Co-branding</a>
+        <a routerLink="/dashboard">RR.HH.</a>
+        <a routerLink="/dashboard">Onboarding</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-title">Compañía</div>
+        <a routerLink="/contact">Contacto</a>
+        <a routerLink="/resources">Privacidad</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-title">Contacto</div>
+        <a href="mailto:contacto&#64;companycare.cl">contacto&#64;companycare.cl</a>
+        <a href="tel:+56900000000">+56 9 0000 0000</a>
+        <span class="footer-muted">Lun–Vie 08:00–19:00</span>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 Company Care</div>
+  </footer>
+</ion-content>

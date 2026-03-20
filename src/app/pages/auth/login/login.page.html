@@ -1,0 +1,68 @@
+<ion-content fullscreen class="login">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="overlay" aria-hidden="true"></div>
+
+  <div class="topbar">
+    <ion-button fill="clear" class="back" routerLink="/home" aria-label="Volver al inicio">
+      <ion-icon name="arrow-back-outline" slot="icon-only"></ion-icon>
+    </ion-button>
+  </div>
+  <div class="shell">
+    <div class="card" role="region" aria-label="Acceso">
+      <h1 class="title">{{ mode === 'Ingresar' ? 'Ingresar' : 'Link mágico' }}</h1>
+
+      <form class="form" (ngSubmit)="submit()">
+        <label class="pill" aria-label="Email">
+          <input
+            [(ngModel)]="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder="Email"
+            required
+          />
+          <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
+        </label>
+
+        <label class="pill" *ngIf="mode !== 'Magic link'" aria-label="Contraseña">
+          <input
+            [(ngModel)]="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Contraseña"
+            required
+          />
+          <ion-icon name="lock-closed-outline" aria-hidden="true"></ion-icon>
+        </label>
+
+        <div class="row" *ngIf="mode !== 'Magic link'">
+          <label class="remember">
+            <input [(ngModel)]="rememberMe" name="rememberMe" type="checkbox" />
+            <span>Recordarme</span>
+          </label>
+          <button class="link" type="button" (click)="forgotPassword()">Olvidé mi contraseña</button>
+        </div>
+
+        <div class="msg error" *ngIf="error">{{ error }}</div>
+        <div class="msg success" *ngIf="success">{{ success }}</div>
+
+        <button class="primary" type="submit" [disabled]="loading">
+          <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+          <span *ngIf="!loading">{{ mode === 'Ingresar' ? 'Ingresar' : 'Enviar link' }}</span>
+        </button>
+
+        
+          <button class="link" type="button" *ngIf="mode === 'Magic link'" (click)="mode = 'Ingresar'">
+            Volver a contraseña
+          </button>
+
+          <div class="register-line">
+            <span>¿No tienes cuenta?</span>
+            <button class="link" type="button" (click)="goRegister()">Regístrate</button>
+          </div>
+       
+      </form>
+    </div>
+  </div>
+</ion-content>

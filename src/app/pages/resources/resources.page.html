@@ -1,0 +1,77 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Recursos Digitales</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="resources-container">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Recursos</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="res-page">
+    <section class="lib-intro">
+      <div class="lib-header__icon" aria-hidden="true">
+        <ion-icon name="book"></ion-icon>
+      </div>
+      <div class="lib-intro__text">
+        <h1>Biblioteca</h1>
+        <p>Guías y herramientas para mejores decisiones.</p>
+      </div>
+    </section>
+
+    <div class="filter-scroll-container">
+      <div class="lib-filters" role="tablist">
+        <button
+          type="button"
+          class="lib-filter-chip"
+          [class.is-active]="selectedCategory === 'Todos'"
+          (click)="setCategory('Todos')"
+        >
+          Todos
+        </button>
+        <button
+          *ngFor="let c of categories; trackBy: trackByCat"
+          type="button"
+          class="lib-filter-chip"
+          [class.is-active]="selectedCategory === c"
+          (click)="setCategory(c)"
+        >
+          {{ c }}
+        </button>
+      </div>
+    </div>
+
+    <div class="lib-grid">
+      <article
+        *ngFor="let r of filteredResources; trackBy: trackById"
+        class="resource-card"
+        [ngClass]="categoryClass(r.category)"
+      >
+        <div class="card-header">
+          <div class="card-icon">
+            <ion-icon [name]="categoryIcon(r.category)"></ion-icon>
+          </div>
+          <span *ngIf="r.isPriority" class="priority-badge">Prioritario</span>
+        </div>
+
+        <div class="card-body">
+          <h3 class="card-title">{{ r.title }}</h3>
+          <p class="card-summary">{{ r.summary }}</p>
+        </div>
+
+        <div class="card-footer">
+          <span class="category-tag">{{ r.category }}</span>
+          <button class="btn-open" (click)="open(r)">
+            Leer más <ion-icon name="arrow-forward"></ion-icon>
+          </button>
+        </div>
+      </article>
+    </div>
+  </div>
+</ion-content>

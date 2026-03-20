@@ -1,0 +1,143 @@
+.app-shell {
+  height: 100%;
+}
+
+/* Sidebar menu (estilo "Codinglab") */
+.app-menu {
+  --width: 292px;
+}
+
+.menu-content {
+  --background: #ffffff;
+}
+
+.menu-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 14px 10px;
+}
+
+.menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: rgba(27, 77, 255, 0.12);
+  color: rgb(27, 77, 255);
+  flex: 0 0 auto;
+}
+
+.brand-meta {
+  display: grid;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.brand-name {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-sub {
+  font-size: 12px;
+  opacity: 0.65;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collapse-btn {
+  width: 36px;
+  height: 36px;
+  --padding-start: 0;
+  --padding-end: 0;
+  border-radius: 14px;
+}
+
+.menu-search {
+  padding: 0 10px 8px;
+}
+
+.menu-search ion-searchbar {
+  --border-radius: 14px;
+  --box-shadow: none;
+  --background: rgba(15, 23, 42, 0.04);
+  --color: rgba(15, 23, 42, 0.9);
+}
+
+.menu-list {
+  padding: 6px 8px;
+}
+
+.menu-list ion-item {
+  --border-radius: 14px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  margin: 4px 0;
+}
+
+.menu-list ion-item ion-icon {
+  color: rgba(15, 23, 42, 0.65);
+}
+
+.menu-list ion-item.is-active {
+  --background: rgba(27, 77, 255, 0.12);
+}
+
+.menu-list ion-item.is-active ion-icon {
+  color: rgb(27, 77, 255);
+}
+
+.menu-list ion-item.is-active .item-label {
+  color: rgba(15, 23, 42, 0.96);
+  font-weight: 900;
+}
+
+.item-label {
+  white-space: nowrap;
+}
+
+.menu-bottom {
+  padding: 10px 10px 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.bottom-item {
+  width: 100%;
+  justify-content: flex-start;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --border-radius: 14px;
+  margin-top: 6px;
+}
+
+.bottom-item ion-icon {
+  color: rgba(15, 23, 42, 0.65);
+}
+
+
+/* Responsive helpers (shared) */
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .desktop-only {
+    display: inline-flex;
+  }
+}

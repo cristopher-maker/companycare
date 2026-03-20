@@ -1,0 +1,385 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Administrar empresa</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="company-admin">
+  <div class="ca-page">
+    <ion-card *ngIf="loading" class="ca-card">
+      <ion-card-content>Cargando…</ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="!loading && !isCompanyAdmin" class="ca-card ca-denied">
+      <ion-card-content>
+        Esta sección es solo para RR.HH./empresa. Tu rol actual no tiene acceso.
+      </ion-card-content>
+    </ion-card>
+
+    <ng-container *ngIf="!loading && isCompanyAdmin">
+      <ion-card *ngIf="!companyId" class="ca-card">
+        <ion-card-header>
+          <ion-card-title>Vincular empresa</ion-card-title>
+          <ion-card-subtitle>
+            Tu usuario tiene rol empresa, pero aún no está asociado a una empresa. Crea o vincula la empresa para
+            habilitar miembros, vouchers, branding y métricas.
+          </ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="ca-form">
+            <ion-item class="ca-item" lines="none">
+              <ion-input
+                label="Nombre de la empresa"
+                labelPlacement="stacked"
+                [(ngModel)]="linkDraft.name"
+                name="linkName"
+                placeholder="Ej.: Empresa S.A."
+                aria-label="Nombre de la empresa"
+              ></ion-input>
+            </ion-item>
+
+            <ion-item class="ca-item" lines="none">
+              <ion-input
+                label="RUT de la empresa"
+                labelPlacement="stacked"
+                [(ngModel)]="linkDraft.taxId"
+                name="linkTaxId"
+                placeholder="Ej.: 76.123.456-7"
+                aria-label="RUT de la empresa"
+              ></ion-input>
+            </ion-item>
+
+            <ion-item class="ca-item" lines="none">
+              <ion-input
+                label="Dominio (opcional)"
+                labelPlacement="stacked"
+                [(ngModel)]="linkDraft.domain"
+                name="linkDomain"
+                placeholder="empresa.com"
+                aria-label="Dominio"
+              ></ion-input>
+            </ion-item>
+
+            <ion-button expand="block" class="ca-primary" (click)="createAndLinkCompany()" [disabled]="saving">
+              Crear y administrar
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ng-container *ngIf="companyId">
+        <section class="ca-hero" aria-label="Empresa">
+          <div class="ca-hero__left">
+            <div class="ca-hero__icon" aria-hidden="true">
+              <ion-icon name="business-outline"></ion-icon>
+            </div>
+            <div class="ca-hero__meta">
+              <div class="ca-hero__title">{{ company?.name || 'Empresa' }}</div>
+              <div class="ca-hero__sub">
+                <span *ngIf="company?.tax_id">RUT: {{ company?.tax_id }}</span>
+                <span *ngIf="company?.domain">• {{ company?.domain }}</span>
+              </div>
+            </div>
+          </div>
+          <ion-button fill="clear" (click)="refresh()" [disabled]="saving" aria-label="Actualizar">
+            <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+          </ion-button>
+        </section>
+
+        <div class="ca-tabs">
+          <ion-segment [(ngModel)]="tab" name="tab" aria-label="Secciones de administración">
+            <ion-segment-button value="Miembros">
+              <ion-label>Miembros</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="Branding">
+              <ion-label>Branding</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="Vouchers">
+              <ion-label>Vouchers</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="Onboarding">
+              <ion-label>Onboarding</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="Métricas">
+              <ion-label>Métricas</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </div>
+
+        <div class="ca-body" [ngSwitch]="tab">
+          <!-- MIEMBROS -->
+          <div *ngSwitchCase="'Miembros'" class="ca-panel">
+            <div class="ca-panel__head">
+              <div>
+                <div class="ca-title">Miembros de la empresa</div>
+                <div class="ca-sub">Agrega empleados por email y define su rol RR.HH.</div>
+              </div>
+            </div>
+
+            <div class="ca-grid">
+              <div class="ca-box">
+                <div class="ca-box__title">Agregar miembro</div>
+                <div class="ca-form">
+                  <ion-item class="ca-item" lines="none">
+                    <ion-input
+                      label="Email"
+                      labelPlacement="stacked"
+                      [(ngModel)]="memberEmail"
+                      name="memberEmail"
+                      placeholder="persona@empresa.com"
+                      aria-label="Email"
+                    ></ion-input>
+                  </ion-item>
+
+                  <ion-item class="ca-item" lines="none">
+                    <ion-select
+                      label="Rol"
+                      labelPlacement="stacked"
+                      [(ngModel)]="memberRole"
+                      name="memberRole"
+                      interface="popover"
+                      aria-label="Rol"
+                    >
+                      <ion-select-option value="employee">Empleado</ion-select-option>
+                      <ion-select-option value="manager">Manager</ion-select-option>
+                      <ion-select-option value="hr_admin">RR.HH.</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+
+                  <ion-button expand="block" class="ca-primary" (click)="addMember()" [disabled]="saving">
+                    Agregar
+                  </ion-button>
+                </div>
+              </div>
+
+              <div class="ca-box">
+                <div class="ca-box__title">Lista</div>
+                <div class="ca-empty" *ngIf="!members.length">Aún no hay miembros.</div>
+
+                <div class="ca-list" *ngIf="members.length">
+                  <div class="ca-member" *ngFor="let m of members; trackBy: trackById">
+                    <div class="ca-member__main">
+                      <div class="ca-member__name">{{ m.full_name || 'Sin nombre' }}</div>
+                      <div class="ca-member__email">{{ m.email || m.user_id }}</div>
+                    </div>
+                    <div class="ca-member__actions">
+                      <ion-select
+                        class="ca-mini-select"
+                        aria-label="Rol del miembro"
+                        interface="popover"
+                        [(ngModel)]="m.member_role"
+                        (ionChange)="updateMemberRole(m)"
+                      >
+                        <ion-select-option value="employee">Empleado</ion-select-option>
+                        <ion-select-option value="manager">Manager</ion-select-option>
+                        <ion-select-option value="hr_admin">RR.HH.</ion-select-option>
+                      </ion-select>
+                      <ion-button
+                        fill="clear"
+                        color="danger"
+                        size="small"
+                        aria-label="Eliminar miembro"
+                        (click)="removeMember(m)"
+                      >
+                        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                      </ion-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BRANDING -->
+          <div *ngSwitchCase="'Branding'" class="ca-panel">
+            <div class="ca-panel__head">
+              <div>
+                <div class="ca-title">Co‑branding</div>
+                <div class="ca-sub">Logo y colores para que el portal se sienta interno.</div>
+              </div>
+            </div>
+
+            <div class="ca-box">
+              <div class="ca-form">
+                <ion-item class="ca-item" lines="none">
+                  <ion-input
+                    label="Logo URL (opcional)"
+                    labelPlacement="stacked"
+                    [(ngModel)]="branding.logo_url"
+                    name="logoUrl"
+                    placeholder="https://…"
+                    aria-label="Logo URL"
+                  ></ion-input>
+                </ion-item>
+
+                <div class="ca-row">
+                  <label class="ca-color">
+                    <span>Color primario</span>
+                    <input type="color" [(ngModel)]="branding.primary_color" name="primaryColor" />
+                  </label>
+
+                  <label class="ca-color">
+                    <span>Color secundario</span>
+                    <input type="color" [(ngModel)]="branding.secondary_color" name="secondaryColor" />
+                  </label>
+                </div>
+
+                <ion-button expand="block" class="ca-primary" (click)="saveBranding()" [disabled]="saving">
+                  Guardar branding
+                </ion-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- VOUCHERS -->
+          <div *ngSwitchCase="'Vouchers'" class="ca-panel">
+            <div class="ca-panel__head">
+              <div>
+                <div class="ca-title">Vouchers</div>
+                <div class="ca-sub">Crea descuentos o beneficios para empleados.</div>
+              </div>
+            </div>
+
+            <div class="ca-grid">
+              <div class="ca-box">
+                <div class="ca-box__title">Crear voucher</div>
+                <div class="ca-form">
+                  <ion-item class="ca-item" lines="none">
+                    <ion-input
+                      label="Código"
+                      labelPlacement="stacked"
+                      [(ngModel)]="voucherDraft.code"
+                      name="voucherCode"
+                      placeholder="EJ: CARE10"
+                      aria-label="Código"
+                    ></ion-input>
+                  </ion-item>
+
+                  <ion-item class="ca-item" lines="none">
+                    <ion-input
+                      label="Título"
+                      labelPlacement="stacked"
+                      [(ngModel)]="voucherDraft.title"
+                      name="voucherTitle"
+                      placeholder="Ej.: 10% en cuidador a domicilio"
+                      aria-label="Título"
+                    ></ion-input>
+                  </ion-item>
+
+                  <ion-item class="ca-item" lines="none">
+                    <ion-textarea
+                      label="Descripción (opcional)"
+                      labelPlacement="stacked"
+                      [(ngModel)]="voucherDraft.description"
+                      name="voucherDescription"
+                      placeholder="Detalles del beneficio"
+                      autoGrow="true"
+                      aria-label="Descripción"
+                    ></ion-textarea>
+                  </ion-item>
+
+                  <ion-item class="ca-item ca-item--toggle" lines="none">
+                    <ion-toggle [(ngModel)]="voucherDraft.active" name="voucherActive">Activo</ion-toggle>
+                  </ion-item>
+
+                  <ion-button expand="block" class="ca-primary" (click)="createVoucher()" [disabled]="saving">
+                    Crear
+                  </ion-button>
+                </div>
+              </div>
+
+              <div class="ca-box">
+                <div class="ca-box__title">Lista</div>
+                <div class="ca-empty" *ngIf="!vouchers.length">Aún no hay vouchers.</div>
+
+                <div class="ca-list" *ngIf="vouchers.length">
+                  <div class="ca-voucher" *ngFor="let v of vouchers; trackBy: trackById">
+                    <div class="ca-voucher__main">
+                      <div class="ca-voucher__title">{{ v.title }}</div>
+                      <div class="ca-voucher__meta">{{ v.code }} • {{ v.active ? 'Activo' : 'Inactivo' }}</div>
+                    </div>
+                    <div class="ca-voucher__actions">
+                      <ion-button fill="outline" size="small" (click)="toggleVoucher(v)">
+                        {{ v.active ? 'Desactivar' : 'Activar' }}
+                      </ion-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ONBOARDING -->
+          <div *ngSwitchCase="'Onboarding'" class="ca-panel">
+            <div class="ca-panel__head">
+              <div>
+                <div class="ca-title">Onboarding</div>
+                <div class="ca-sub">Checklist para dejar el beneficio listo.</div>
+              </div>
+            </div>
+
+            <div class="ca-box">
+              <div class="ca-empty" *ngIf="!onboarding.length">Aún no hay pasos.</div>
+              <div class="ca-list" *ngIf="onboarding.length">
+                <div class="ca-step" *ngFor="let s of onboarding; trackBy: trackById">
+                  <div class="ca-step__main">
+                    <div class="ca-step__title">{{ stepLabel(s.step_key) }}</div>
+                    <div class="ca-step__meta">{{ s.status }}</div>
+                  </div>
+                  <div class="ca-step__actions">
+                    <ion-select
+                      class="ca-mini-select"
+                      aria-label="Estado del paso"
+                      interface="popover"
+                      [(ngModel)]="s.status"
+                      (ionChange)="saveOnboardingStep(s)"
+                    >
+                      <ion-select-option value="pending">Pendiente</ion-select-option>
+                      <ion-select-option value="done">Listo</ion-select-option>
+                      <ion-select-option value="skipped">Omitido</ion-select-option>
+                    </ion-select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MÉTRICAS -->
+          <div *ngSwitchCase="'Métricas'" class="ca-panel">
+            <div class="ca-panel__head">
+              <div>
+                <div class="ca-title">Métricas</div>
+                <div class="ca-sub">Uso del beneficio y actividad reciente.</div>
+              </div>
+            </div>
+
+            <div class="ca-metrics">
+              <div class="ca-metric">
+                <div class="ca-metric__value">{{ metrics.employees }}</div>
+                <div class="ca-metric__label">Empleados</div>
+              </div>
+              <div class="ca-metric">
+                <div class="ca-metric__value">{{ metrics.vouchersActive }}</div>
+                <div class="ca-metric__label">Vouchers activos</div>
+              </div>
+              <div class="ca-metric">
+                <div class="ca-metric__value">{{ metrics.onboardingDone }}</div>
+                <div class="ca-metric__label">Onboarding listo</div>
+              </div>
+              <div class="ca-metric">
+                <div class="ca-metric__value">{{ metrics.analytics30d }}</div>
+                <div class="ca-metric__label">Eventos (30 días)</div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngSwitchDefault class="ca-panel"></div>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+</ion-content>
+

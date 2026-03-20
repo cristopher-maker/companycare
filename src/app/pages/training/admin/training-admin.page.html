@@ -1,0 +1,128 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/training"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Administrar cursos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="training-admin">
+  <div class="ta-page">
+    <ion-card *ngIf="!isStaff && !loading" class="ta-denied">
+      <ion-card-content>
+        No tienes permisos para administrar cursos. Si eres RR.HH. o administrador, revisa tu rol en
+        <strong>profiles.role</strong>.
+      </ion-card-content>
+    </ion-card>
+
+    <section *ngIf="isStaff" class="ta-grid">
+      <div class="ta-panel">
+        <div class="ta-panel__head">
+          <div>
+            <div class="ta-title">Crear / editar curso</div>
+            <div class="ta-sub">Estos cursos aparecen en “Formación → Cursos”.</div>
+          </div>
+          <button type="button" class="ta-ghost" (click)="resetDraft()">Nuevo</button>
+        </div>
+
+        <div class="ta-form">
+          <ion-item class="ta-item" lines="none">
+            <ion-input
+              label="Título"
+              labelPlacement="stacked"
+              [(ngModel)]="draft.title"
+              name="title"
+              placeholder="Ej.: Manejo del estrés del cuidador"
+              aria-label="Título"
+            ></ion-input>
+          </ion-item>
+
+          <ion-item class="ta-item" lines="none">
+            <ion-textarea
+              label="Descripción (opcional)"
+              labelPlacement="stacked"
+              [(ngModel)]="draft.description"
+              name="description"
+              placeholder="Resumen corto del contenido"
+              autoGrow="true"
+              aria-label="Descripción"
+            ></ion-textarea>
+          </ion-item>
+
+          <div class="ta-row">
+            <ion-item class="ta-item" lines="none">
+              <ion-input
+                type="number"
+                inputmode="numeric"
+                label="Duración (min)"
+                labelPlacement="stacked"
+                [(ngModel)]="draft.durationMinutes"
+                name="durationMinutes"
+                placeholder="20"
+                aria-label="Duración en minutos"
+              ></ion-input>
+            </ion-item>
+
+            <ion-item class="ta-item" lines="none">
+              <ion-select
+                label="Nivel"
+                labelPlacement="stacked"
+                [(ngModel)]="draft.level"
+                name="level"
+                interface="popover"
+                aria-label="Nivel"
+              >
+                <ion-select-option value="Básico">Básico</ion-select-option>
+                <ion-select-option value="Intermedio">Intermedio</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+
+          <ion-item class="ta-item ta-item--toggle" lines="none">
+            <ion-toggle [(ngModel)]="draft.active" name="active">Activo</ion-toggle>
+          </ion-item>
+
+          <ion-button expand="block" class="ta-save" [disabled]="saving" (click)="save()">
+            {{ draft.id ? 'Guardar cambios' : 'Crear curso' }}
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="ta-panel">
+        <div class="ta-panel__head">
+          <div>
+            <div class="ta-title">Cursos</div>
+            <div class="ta-sub">Haz click en uno para editarlo.</div>
+          </div>
+        </div>
+
+        <div class="ta-list" *ngIf="courses.length; else empty">
+          <button
+            *ngFor="let c of courses; trackBy: trackById"
+            type="button"
+            class="ta-course"
+            [class.is-inactive]="!c.active"
+            (click)="selectCourse(c)"
+          >
+            <div class="ta-course__main">
+              <div class="ta-course__title">{{ c.title }}</div>
+              <div class="ta-course__meta">{{ c.duration_minutes }} min • {{ c.level }}</div>
+            </div>
+            <div class="ta-course__actions">
+              <span class="ta-pill" [class.ta-pill--off]="!c.active">{{ c.active ? 'Activo' : 'Inactivo' }}</span>
+              <span class="ta-link" (click)="$event.stopPropagation(); toggleActive(c)">
+                {{ c.active ? 'Desactivar' : 'Activar' }}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <ng-template #empty>
+          <div class="ta-empty">Aún no hay cursos. Crea el primero a la izquierda.</div>
+        </ng-template>
+      </div>
+    </section>
+  </div>
+</ion-content>
+

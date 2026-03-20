@@ -1,0 +1,60 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Proveedores verificados</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Proveedores</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="filters ion-padding">
+    <ion-searchbar [(ngModel)]="q" placeholder="Buscar residencia, cuidador o servicio..."></ion-searchbar>
+
+    <ion-item>
+      <ion-label>Tipo</ion-label>
+      <ion-select [(ngModel)]="type" interface="popover">
+        <ion-select-option value="Todos">Todos</ion-select-option>
+        <ion-select-option *ngFor="let t of types" [value]="t">{{ t }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Solo verificados</ion-label>
+      <ion-toggle [(ngModel)]="verifiedOnly"></ion-toggle>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Precio máximo (referencial)</ion-label>
+      <ion-range [(ngModel)]="maxPrice" min="20000" max="1500000" step="10000" pin="true"></ion-range>
+    </ion-item>
+    <ion-note class="ion-padding-start ion-padding-end">
+      Esta vista es demo. Próximo paso: conectar a API para disponibilidad y precios en tiempo real.
+    </ion-note>
+  </div>
+
+  <ion-list>
+    <ion-item *ngFor="let p of providers; trackBy: trackById">
+      <ion-label>
+        <h2>{{ p.name }}</h2>
+        <p>{{ p.type }} • {{ p.area }}</p>
+        <p>
+          Desde: {{ p.priceFrom | number }} • Rating: {{ p.rating }} • Disponibilidad: {{ p.availability }}
+          <span *ngIf="p.verified"> • Verificado</span>
+        </p>
+      </ion-label>
+      <ion-button slot="end" fill="outline">Ver</ion-button>
+    </ion-item>
+  </ion-list>
+
+  <div class="empty ion-padding" *ngIf="providers.length === 0">
+    <ion-text color="medium">No hay resultados con estos filtros.</ion-text>
+  </div>
+</ion-content>
+

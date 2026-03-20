@@ -1,0 +1,131 @@
+<ion-content fullscreen class="register">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="overlay" aria-hidden="true"></div>
+
+  <div class="topbar">
+    <ion-button fill="clear" class="back" routerLink="/login" aria-label="Volver al login">
+      <ion-icon name="arrow-back-outline" slot="icon-only"></ion-icon>
+    </ion-button>
+  </div>
+
+  <div class="shell">
+    <div class="card" role="region" aria-label="Registro">
+      <div class="brand">
+        <div class="mark">CC</div>
+        <div class="brand-text">
+          <div class="name">Company Care</div>
+          <div class="sub">by Senior Advisor</div>
+        </div>
+      </div>
+
+      <h1 class="title">Crear cuenta</h1>
+      <p class="hint">Elige el tipo de cuenta para configurar tu acceso.</p>
+
+      <div class="role" role="tablist" aria-label="Tipo de cuenta">
+        <button
+          type="button"
+          class="role-btn"
+          [class.active]="role === 'employee'"
+          (click)="role = 'employee'"
+          role="tab"
+          [attr.aria-selected]="role === 'employee'"
+        >
+          Empleado
+        </button>
+        <button
+          type="button"
+          class="role-btn"
+          [class.active]="role === 'company_admin'"
+          (click)="role = 'company_admin'"
+          role="tab"
+          [attr.aria-selected]="role === 'company_admin'"
+        >
+          Empresa
+        </button>
+      </div>
+
+      <form class="form" (ngSubmit)="submit()">
+        <label class="pill" *ngIf="role !== 'company_admin'" aria-label="Nombre">
+          <input
+            [(ngModel)]="fullName"
+            name="fullName"
+            type="text"
+            autocomplete="name"
+            placeholder="Nombre y apellido"
+            required
+          />
+          <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
+        </label>
+
+        <label class="pill" *ngIf="role === 'company_admin'" aria-label="RUT empresa">
+          <input
+            [(ngModel)]="companyRut"
+            name="companyRut"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            placeholder="RUT empresa (ej: 12.345.678-9)"
+            required
+          />
+          <ion-icon name="id-card"></ion-icon>
+        </label>
+
+        <label class="pill" *ngIf="role === 'company_admin'" aria-label="Empresa">
+          <input
+            [(ngModel)]="companyName"
+            name="companyName"
+            type="text"
+            autocomplete="organization"
+            placeholder="Nombre de la empresa"
+            required
+          />
+          <ion-icon name="business-outline" aria-hidden="true"></ion-icon>
+        </label>
+
+        <label class="pill" aria-label="Email">
+          <input
+            [(ngModel)]="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder="Email"
+            required
+          />
+          <ion-icon name="mail-outline" aria-hidden="true"></ion-icon>
+        </label>
+
+        <label class="pill" aria-label="Contraseña">
+          <input
+            [(ngModel)]="password"
+            name="password"
+            [type]="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="Contraseña"
+            required
+          />
+          <button
+            type="button"
+            class="icon-btn"
+            (click)="showPassword = !showPassword"
+            [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" aria-hidden="true"></ion-icon>
+          </button>
+        </label>
+
+        <div class="msg error" *ngIf="error">{{ error }}</div>
+        <div class="msg success" *ngIf="success">{{ success }}</div>
+
+        <button class="primary" type="submit" [disabled]="loading">
+          <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+          <span *ngIf="!loading">Crear cuenta</span>
+        </button>
+
+        <div class="bottom">
+          <span class="muted">¿Ya tienes cuenta?</span>
+          <a class="link" routerLink="/login">Ingresar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</ion-content>

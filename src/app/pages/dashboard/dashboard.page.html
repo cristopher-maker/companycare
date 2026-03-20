@@ -1,0 +1,135 @@
+<ion-header class="dash-header">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Dashboard</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="refresh()" [disabled]="loading" aria-label="Actualizar">
+        <ion-icon name="refresh-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="dash">
+  <div class="dash-wrap">
+    <div class="dash-head">
+      <div class="kicker" *ngIf="mode === 'employee'">Portal de beneficios</div>
+      <div class="kicker" *ngIf="mode === 'company'">Panel Empresa</div>
+      <div class="kicker" *ngIf="mode === 'public'">Acceso</div>
+
+      <h1>Hola, {{ displayName }}</h1>
+      <p *ngIf="mode === 'employee'">
+        Tu portal de beneficios: apoyo experto, proveedores, recursos y formación.
+      </p>
+      <p *ngIf="mode === 'company'">
+        Métricas, co-branding y herramientas RR.HH.
+        <span *ngIf="companyName">· {{ companyName }}</span>
+      </p>
+      <p *ngIf="mode === 'public'">Inicia sesión para ver tu portal y seguimiento.</p>
+
+      <div class="head-actions" *ngIf="mode !== 'public'">
+        <ng-container *ngIf="mode === 'employee'">
+          <ion-button routerLink="/care-experts">Solicitar asesoría</ion-button>
+          <ion-button fill="outline" routerLink="/requests">Ver solicitudes</ion-button>
+        </ng-container>
+        <ng-container *ngIf="mode === 'company'">
+          <ion-button routerLink="/company">Administrar empresa</ion-button>
+          <ion-button fill="outline" routerLink="/vouchers">Vouchers</ion-button>
+        </ng-container>
+      </div>
+
+      <div class="head-actions" *ngIf="mode === 'public' && !loading">
+        <ion-button routerLink="/login">Ingresar</ion-button>
+        <ion-button fill="outline" routerLink="/home">Volver al inicio</ion-button>
+      </div>
+    </div>
+
+    <div class="stats" *ngIf="stats.length">
+      <div class="stat" *ngFor="let s of stats">
+        <div class="stat-icon" aria-hidden="true">
+          <ion-icon [name]="s.icon"></ion-icon>
+        </div>
+        <div class="stat-value">{{ s.value }}</div>
+        <div class="stat-label">{{ s.label }}</div>
+      </div>
+    </div>
+
+    <div class="grid" *ngIf="mode !== 'public'">
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Solicitudes recientes</div>
+          <a class="panel-link" routerLink="/requests">Ver todo</a>
+        </div>
+
+        <div class="empty" *ngIf="!recentRequests.length && !loading">Aún no hay solicitudes.</div>
+
+        <ion-list class="list" lines="none" *ngIf="recentRequests.length">
+          <ion-item button detail="false" *ngFor="let r of recentRequests" routerLink="/requests">
+            <ion-label>
+              <h3>{{ r.topic }}</h3>
+              <p>{{ r.channel }} · {{ r.status }}</p>
+            </ion-label>
+            <ion-note slot="end">{{ r.created_at | date: 'dd/MM' }}</ion-note>
+          </ion-item>
+        </ion-list>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Recursos destacados</div>
+          <a class="panel-link" routerLink="/resources">Biblioteca</a>
+        </div>
+
+        <div class="resource-grid" *ngIf="featuredResources.length">
+          <a class="res-card" *ngFor="let r of featuredResources" routerLink="/resources">
+            <div class="res-top">
+              <span class="pill">{{ r.category }}</span>
+            </div>
+            <div class="res-title">{{ r.title }}</div>
+            <div class="res-text">
+              {{ r.summary || 'Ver detalles en la biblioteca de recursos.' }}
+            </div>
+          </a>
+        </div>
+
+        <div class="empty" *ngIf="!featuredResources.length && !loading">No hay recursos para mostrar.</div>
+      </section>
+
+      <section class="panel span-2">
+        <div class="panel-head">
+          <div class="panel-title">Próximos eventos</div>
+          <a class="panel-link" routerLink="/training">Formación</a>
+        </div>
+
+        <div class="empty" *ngIf="!upcomingEvents.length && !loading">No hay eventos próximos.</div>
+
+        <div class="event-grid" *ngIf="upcomingEvents.length">
+          <div class="event" *ngFor="let e of upcomingEvents">
+            <div class="event-date">
+              <div class="d">{{ e.starts_at ? (e.starts_at | date: 'dd') : '--' }}</div>
+              <div class="m">{{ e.starts_at ? (e.starts_at | date: 'MMM') : '' }}</div>
+            </div>
+            <div class="event-body">
+              <div class="event-title">{{ e.title }}</div>
+              <div class="event-meta">
+                {{ e.format }}<span *ngIf="e.location"> · {{ e.location }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <ion-card *ngIf="mode === 'public' && !loading" class="public-card">
+      <ion-card-header>
+        <ion-card-title>Acceso</ion-card-title>
+        <ion-card-subtitle>Para ver tu portal</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        Inicia sesión con Supabase para ver tu dashboard como empleado o como empresa.
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

@@ -1,0 +1,279 @@
+:host {
+  --cc-primary: #1b4dff;
+}
+
+ion-content.register {
+  --background: transparent;
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('/assets/img/login-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 700px at 50% 40%, rgba(15, 23, 42, 0.30), rgba(15, 23, 42, 0.52)),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.25), rgba(15, 23, 42, 0.35));
+  backdrop-filter: blur(6px);
+}
+
+.topbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.topbar .back {
+  pointer-events: auto;
+  width: 42px;
+  height: 42px;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 16px;
+  --color: rgba(255, 255, 255, 0.92);
+  --background: rgba(255, 255, 255, 0.18);
+  --border-color: rgba(255, 255, 255, 0.28);
+  --border-style: solid;
+  --border-width: 1px;
+  --box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22);
+}
+
+.topbar .back::part(native) {
+  width: 42px;
+  height: 42px;
+  padding-inline: 0;
+  border-radius: 16px;
+}
+
+.topbar .back ion-icon {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 22px;
+}
+
+.shell {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 84px 16px 28px;
+  position: relative;
+  z-index: 3;
+}
+
+.card {
+  position: relative;
+  width: min(560px, 100%);
+  padding: 30px 26px 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 36px 92px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.brand-text .name {
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.brand-text .sub {
+  font-size: 12px;
+  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.title {
+  margin: 6px 0 6px;
+  font-size: 40px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.hint {
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.role {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+
+.role-btn {
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.14);
+  font-weight: 950;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.90);
+}
+
+.role-btn.active {
+  background: rgba(27, 77, 255, 0.34);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.50);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.pill ion-icon {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.icon-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.icon-btn ion-icon {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.pill input {
+  flex: 1 1 auto;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 16px;
+}
+
+.pill input::placeholder {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.primary {
+  width: 100%;
+  height: 52px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: rgba(15, 23, 42, 0.92);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+}
+
+.primary:disabled {
+  opacity: 0.65;
+}
+
+.primary ion-spinner {
+  width: 18px;
+  height: 18px;
+}
+
+.msg {
+  padding: 10px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.msg.error {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.msg.success {
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.bottom {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.muted {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 950;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

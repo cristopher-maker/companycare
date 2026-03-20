@@ -1,0 +1,44 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Contacto</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Hablemos</ion-card-title>
+      <ion-card-subtitle>Cuéntanos qué necesitas</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <form (ngSubmit)="submit()">
+        <ion-item>
+          <ion-label position="stacked">Nombre</ion-label>
+          <ion-input [(ngModel)]="name" name="name" autocomplete="name" required></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Email</ion-label>
+          <ion-input
+            [(ngModel)]="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Mensaje</ion-label>
+          <ion-textarea [(ngModel)]="message" name="message" autoGrow="true" required></ion-textarea>
+        </ion-item>
+
+        <div class="actions">
+          <ion-button type="submit" expand="block">Enviar</ion-button>
+        </div>
+      </form>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+

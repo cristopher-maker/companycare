@@ -1,0 +1,118 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Formación</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button *ngIf="isStaff" fill="clear" routerLink="/training/admin" aria-label="Administrar cursos">
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="training">
+  <div class="tr-container">
+    <header class="tr-hero-header">
+      <div class="tr-hero-content">
+        <div class="tr-hero-icon">
+          <ion-icon name="school-outline"></ion-icon>
+        </div>
+        <div class="tr-hero-text">
+          <h1>Tu formación</h1>
+          <p>Módulos y eventos para apoyar a empleados cuidadores</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="tabs-wrapper">
+      <ion-segment mode="ios" [(ngModel)]="tab" class="custom-segment" aria-label="Secciones de formación">
+        <ion-segment-button value="Cursos">
+          <ion-label>Cursos</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="Eventos">
+          <ion-label>Eventos</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+
+    <div class="tab-content" [ngSwitch]="tab">
+      <div *ngSwitchCase="'Cursos'" class="fade-in">
+        <div class="progress-card" *ngIf="courses.length > 0">
+          <div class="progress-info">
+            <div class="progress-text">
+              <span class="label">Progreso total</span>
+              <span class="value">{{ overallProgressPercent }}%</span>
+            </div>
+            <div class="progress-stats">
+              <strong>{{ completedCount }}</strong> de {{ courses.length }} completados
+            </div>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" [style.width.%]="overallProgressPercent"></div>
+          </div>
+        </div>
+
+        <div class="courses-list">
+          <article
+            *ngFor="let c of courseCards; trackBy: trackById"
+            class="course-card"
+            [ngClass]="c.state"
+            [class.is-active]="c.isActive"
+          >
+            <div class="course-main">
+              <div class="course-status-icon">
+                <ion-icon
+                  [name]="
+                    c.state === 'completed'
+                      ? 'checkmark-circle'
+                      : c.state === 'in_progress'
+                        ? 'play-circle'
+                        : 'lock-closed'
+                  "
+                ></ion-icon>
+              </div>
+              <div class="course-details">
+                <div class="course-badges">
+                  <span class="badge badge-level">{{ c.level }}</span>
+                  <span class="badge badge-time">{{ c.duration }}</span>
+                </div>
+                <h3 class="course-title">{{ c.title }}</h3>
+              </div>
+            </div>
+
+            <div class="course-progress-mini" *ngIf="c.state === 'in_progress'">
+              <div class="mini-fill" [style.width.%]="c.progress"></div>
+            </div>
+
+            <div class="course-actions">
+              <button class="btn-course-action" [disabled]="!userId" (click)="onCourseAction(c)">
+                {{ c.actionLabel }}
+                <ion-icon name="chevron-forward-outline" *ngIf="c.actionArrow"></ion-icon>
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div *ngSwitchCase="'Eventos'" class="fade-in">
+        <div class="events-grid">
+          <div class="event-item" *ngFor="let e of events; trackBy: trackById">
+            <div class="event-date">
+              <span class="day">15</span>
+              <span class="month">MAR</span>
+            </div>
+            <div class="event-info">
+              <h4>{{ e.title }}</h4>
+              <p>{{ e.format }} • 18:00 hrs</p>
+              <button class="btn-register">Reservar cupo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
+

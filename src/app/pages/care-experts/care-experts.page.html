@@ -1,0 +1,101 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Asesoría personalizada</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="care-experts">
+  <div class="ce-page">
+    <form class="ce-panel" (ngSubmit)="submitRequest()">
+      <div class="ce-hero">
+        <div class="ce-hero__icon" aria-hidden="true">
+          <ion-icon name="person-circle-outline"></ion-icon>
+        </div>
+        <div class="ce-hero__meta">
+          <div class="ce-hero__title">Care Experts</div>
+          <div class="ce-hero__subtitle">Conecta con expertos en gerontología y trabajo social</div>
+        </div>
+      </div>
+
+      <p class="ce-lead">
+        Elige un canal, indica el tema y cuéntanos tu situación. Próximo paso: integrar chat y llamadas seguras.
+      </p>
+
+      <div class="ce-section">
+        <div class="ce-label">Canal de atención</div>
+        <div class="ce-channels" role="radiogroup" aria-label="Canal de atención">
+          <button
+            type="button"
+            class="ce-channel"
+            [class.is-active]="channel === 'Chat'"
+            (click)="channel = 'Chat'"
+            role="radio"
+            [attr.aria-checked]="channel === 'Chat'"
+          >
+            <ion-icon name="chatbubble-outline" aria-hidden="true"></ion-icon>
+            <div class="ce-channel__title">Chat</div>
+            <div class="ce-channel__sub">Respuesta inmediata</div>
+          </button>
+
+          <button
+            type="button"
+            class="ce-channel"
+            [class.is-active]="channel === 'Videollamada'"
+            (click)="channel = 'Videollamada'"
+            role="radio"
+            [attr.aria-checked]="channel === 'Videollamada'"
+          >
+            <ion-icon name="videocam-outline" aria-hidden="true"></ion-icon>
+            <div class="ce-channel__title">Video</div>
+            <div class="ce-channel__sub">Cara a cara</div>
+          </button>
+
+          <button
+            type="button"
+            class="ce-channel"
+            [class.is-active]="channel === 'Llamada'"
+            (click)="channel = 'Llamada'"
+            role="radio"
+            [attr.aria-checked]="channel === 'Llamada'"
+          >
+            <ion-icon name="call-outline" aria-hidden="true"></ion-icon>
+            <div class="ce-channel__title">Llamada</div>
+            <div class="ce-channel__sub">Voz directa</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="ce-section">
+        <div class="ce-label">Tema</div>
+        <ion-item class="ce-item" lines="none">
+          <ion-select aria-label="Tema" [(ngModel)]="topic" name="topic" interface="popover">
+            <ion-select-option *ngFor="let t of topics" [value]="t">{{ t }}</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
+
+      <div class="ce-section">
+        <div class="ce-label">Cuéntanos tu situación</div>
+        <ion-item class="ce-item ce-item--textarea" lines="none">
+          <ion-textarea
+            aria-label="Cuéntanos tu situación"
+            [(ngModel)]="details"
+            name="details"
+            autoGrow="true"
+            placeholder="Ej.: mi familiar necesita apoyo 24/7, presupuesto aproximado, comuna, tiempos..."
+          ></ion-textarea>
+        </ion-item>
+      </div>
+
+      <ion-button class="ce-submit" type="submit" expand="block">Solicitar asesoría</ion-button>
+
+      <div class="ce-footnote">
+        <ion-icon name="shield-checkmark-outline" aria-hidden="true"></ion-icon>
+        <span>Tus datos están protegidos. Canal seguro con autenticación.</span>
+      </div>
+    </form>
+  </div>
+</ion-content>
