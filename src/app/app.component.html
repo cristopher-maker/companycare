@@ -22,9 +22,10 @@
       </div>
 
       <ion-list class="menu-list" lines="none">
-        <ion-menu-toggle autoHide="false" *ngFor="let p of appPages">
+        <ion-menu-toggle autoHide="false" *ngFor="let p of visiblePages">
           <ion-item
             [routerLink]="p.url"
+            [queryParams]="p.queryParams || null"
             routerDirection="root"
             detail="false"
             routerLinkActive="is-active"
@@ -56,4 +57,3 @@
     <ion-router-outlet></ion-router-outlet>
   </div>
 </ion-app>
-

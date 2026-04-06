@@ -1,14 +1,21 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import {
+  CompanyPlan,
+  CompanyPlanCapabilities,
+  CompanyPlanService,
+} from '../../core/services/company-plan.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 
-type CompanyTab = 'Miembros' | 'Branding' | 'Vouchers' | 'Onboarding' | 'Métricas';
+type CompanyTab = 'Miembros' | 'Branding' | 'Vouchers' | 'Onboarding' | 'Metricas';
 
 type CompanyRow = {
   id: string;
   name: string;
   domain: string | null;
   tax_id: string | null;
+  plan_tier: CompanyPlan;
 };
 
 type BrandingRow = {
@@ -24,6 +31,7 @@ type MemberRow = {
   member_role: MemberRole;
   full_name: string | null;
   email: string | null;
+  created_at: string | null;
 };
 
 type VoucherRow = {
@@ -42,13 +50,22 @@ type OnboardingRow = {
   status: OnboardingStatus;
 };
 
+type CareIntakeRow = {
+  id: string;
+  employee_id: string | null;
+  payload: any;
+  created_at: string;
+};
+
+type MetricsRange = '7d' | '30d' | '90d';
+
 @Component({
   selector: 'app-company',
   templateUrl: './company.page.html',
   styleUrls: ['./company.page.scss'],
 })
 export class CompanyPage {
-  public tab: CompanyTab = 'Miembros';
+  public tab: CompanyTab = 'Metricas';
 
   public loading = true;
   public saving = false;
@@ -56,6 +73,8 @@ export class CompanyPage {
 
   public companyId: string | null = null;
   public company: CompanyRow | null = null;
+  public companyPlan: CompanyPlan = 'lite';
+  public capabilities: CompanyPlanCapabilities;
 
   public linkDraft: { name: string; taxId: string; domain: string } = { name: '', taxId: '', domain: '' };
 
@@ -79,20 +98,99 @@ export class CompanyPage {
 
   public onboarding: OnboardingRow[] = [];
 
-  public metrics: { employees: number; vouchersActive: number; onboardingDone: number; analytics30d: number } = {
+  public careIntakes: CareIntakeRow[] = [];
+  public careIntakeSearch = '';
+  public selectedIntake: CareIntakeRow | null = null;
+
+  public careIntakeDraft: {
+    employeeId: string;
+    clinicalProfile: string;
+    postalCode: string;
+    radiusKm: number | null;
+    budgetWeeklyMax: number | null;
+    funding: string;
+    amenities: { ensuite: boolean; garden: boolean; library: boolean; pets: boolean };
+    ambiance: string;
+    dietary: string;
+    urgency: string;
+    caregiverName: string;
+    caregiverRelation: string;
+    caregiverCompany: string;
+  } = {
+    employeeId: '',
+    clinicalProfile: 'residential',
+    postalCode: '',
+    radiusKm: 10,
+    budgetWeeklyMax: null,
+    funding: 'self_funder',
+    amenities: { ensuite: false, garden: false, library: false, pets: false },
+    ambiance: 'small',
+    dietary: '',
+    urgency: 'immediate',
+    caregiverName: '',
+    caregiverRelation: '',
+    caregiverCompany: '',
+  };
+
+  public metrics: {
+    employees: number;
+    vouchersActive: number;
+    vouchersExpiring: number;
+    onboardingDone: number;
+    analytics30d: number;
+    activeUsers: number;
+    enquiries: number;
+  } = {
     employees: 0,
     vouchersActive: 0,
+    vouchersExpiring: 0,
     onboardingDone: 0,
     analytics30d: 0,
+    activeUsers: 0,
+    enquiries: 0,
   };
+
+  public metricsRange: MetricsRange = '30d';
+  public monthlyActivity: Array<{ label: string; value: number }> = [];
+  public trafficSummary: number[] = [];
+  public occupancyTrend: number[] = [];
+  public revenueTrend: number[] = [];
+  public recentEnquiries: Array<{ id: string; property: string; employee: string; date: string }> = [];
 
   constructor(
     private readonly auth: AuthService,
-    private readonly supabase: SupabaseService
-  ) {}
+    private readonly supabase: SupabaseService,
+    private readonly companyPlanService: CompanyPlanService,
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
+  ) {
+    this.capabilities = this.companyPlanService.getCapabilities('lite');
+  }
 
   public async ionViewWillEnter(): Promise<void> {
     await this.refresh();
+    this.applyTabFromQuery();
+  }
+
+  private applyTabFromQuery(): void {
+    const raw = (this.route.snapshot.queryParamMap.get('tab') || '').trim().toLowerCase();
+    if (!raw) return;
+
+    const mapped: CompanyTab | null =
+      raw === 'miembros' || raw === 'members'
+        ? 'Miembros'
+        : raw === 'branding' || raw === 'profile' || raw === 'settings'
+        ? 'Branding'
+        : raw === 'vouchers'
+        ? 'Vouchers'
+        : raw === 'onboarding' || raw === 'tasks'
+        ? 'Onboarding'
+        : raw === 'metricas' || raw === 'metrics' || raw === 'reporting'
+        ? 'Metricas'
+        : null;
+
+    if (!mapped || !this.isTabVisible(mapped)) return;
+    this.tab = mapped;
   }
 
   public async refresh(): Promise<void> {
@@ -100,8 +198,10 @@ export class CompanyPage {
     try {
       await this.loadRoleAndCompany();
 
-      // If admin role but not linked to a company yet, keep UI available to "crear/vincular".
-      if (!this.isCompanyAdmin) return;
+      if (!this.isCompanyAdmin) {
+        await this.router.navigateByUrl('/home');
+        return;
+      }
       if (!this.companyId) return;
 
       await Promise.all([
@@ -110,8 +210,11 @@ export class CompanyPage {
         this.loadBranding(),
         this.loadVouchers(),
         this.loadOnboarding(),
+        this.loadCareIntakes(),
         this.loadMetrics(),
       ]);
+
+      await this.loadMonitoringData();
     } catch (err: any) {
       console.error(err);
       alert(`Error: ${err?.message ?? String(err)}`);
@@ -171,7 +274,7 @@ export class CompanyPage {
 
       const insertRes = await this.supabase.client
         .from('companies')
-        .insert({ name, tax_id: taxId, domain })
+        .insert({ name, tax_id: taxId, domain, plan_tier: this.companyPlan })
         .select('id')
         .maybeSingle();
 
@@ -216,18 +319,138 @@ export class CompanyPage {
     if (!this.companyId) return;
     const { data, error } = await this.supabase.client
       .from('companies')
-      .select('id,name,domain,tax_id')
+      .select('id,name,domain,tax_id,plan_tier')
       .eq('id', this.companyId)
       .maybeSingle();
     if (error) throw error;
     this.company = (data ?? null) as CompanyRow | null;
+    this.companyPlan = this.companyPlanService.normalizePlan(this.company?.plan_tier ?? 'lite');
+    this.capabilities = this.companyPlanService.getCapabilities(this.companyPlan);
+    this.ensureAllowedTab();
+    if (this.company?.name && !this.careIntakeDraft.caregiverCompany) {
+      this.careIntakeDraft.caregiverCompany = this.company.name;
+    }
+  }
+
+  public async saveCompanyPlan(): Promise<void> {
+    if (!this.companyId) return;
+    this.saving = true;
+    try {
+      const { error } = await this.supabase.client
+        .from('companies')
+        .update({ plan_tier: this.companyPlan } as any)
+        .eq('id', this.companyId);
+      if (error) throw error;
+
+      this.capabilities = this.companyPlanService.getCapabilities(this.companyPlan);
+      this.ensureAllowedTab();
+      await this.loadCompany();
+      await this.loadMetrics();
+    } catch (err: any) {
+      console.error(err);
+      alert(`No se pudo actualizar el plan: ${err?.message ?? String(err)}`);
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  public isTabVisible(tab: CompanyTab): boolean {
+    if (tab === 'Vouchers') return this.capabilities.vouchers;
+    if (tab === 'Metricas') return this.capabilities.metrics;
+    return true;
+  }
+
+  public get enabledPlanFeatures(): string[] {
+    return this.companyPlanService.getFeatureLabels(this.companyPlan);
+  }
+
+  public get companyPlanLabel(): string {
+    switch (this.companyPlan) {
+      case 'empresa':
+        return 'Empresa';
+      case 'premium':
+        return 'Premium';
+      default:
+        return 'Lite';
+    }
+  }
+
+  public get onboardingTotalSteps(): number {
+    return this.defaultStepKeys.length;
+  }
+
+  public get onboardingPendingCount(): number {
+    return Math.max(this.onboardingTotalSteps - this.metrics.onboardingDone, 0);
+  }
+
+  public get onboardingReadyLabel(): string {
+    if (this.onboardingPercent >= 100) return 'Listo para lanzamiento';
+    if (this.onboardingPercent >= 50) return 'Implementación en progreso';
+    return 'Configuración inicial pendiente';
+  }
+
+  public get onboardingProgressCopy(): string {
+    if (this.onboardingPercent >= 100) {
+      return 'El beneficio ya quedó configurado y puede comunicarse internamente.';
+    }
+    return `Faltan ${this.onboardingPendingCount} paso(s) para dejar el beneficio listo para lanzamiento.`;
+  }
+
+  public get companyInitials(): string {
+    const source = this.company?.name?.trim() || 'Company Care';
+    return source
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
+  }
+
+  public get latestMembers(): MemberRow[] {
+    return [...this.members]
+      .sort(
+        (left, right) =>
+          new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime()
+      )
+      .slice(0, 5);
+  }
+
+  public get meaningfulMetricCards(): Array<{ label: string; value: number; detail: string }> {
+    return [
+      { label: 'Empleados', value: this.metrics.employees, detail: 'Miembros activos' },
+      { label: 'Vouchers activos', value: this.metrics.vouchersActive, detail: 'Beneficios vigentes' },
+      { label: 'Solicitudes', value: this.metrics.enquiries, detail: 'Casos dentro del rango' },
+      { label: 'Usuarios activos', value: this.metrics.activeUsers, detail: 'Con actividad en el rango' },
+      { label: 'Eventos web', value: this.metrics.analytics30d, detail: 'Actividad registrada' },
+    ].filter((item) => item.value > 0);
+  }
+
+  public get emptyMetricCards(): Array<{ label: string; value: number }> {
+    return [
+      { label: 'Vouchers activos', value: this.metrics.vouchersActive },
+      { label: 'Solicitudes', value: this.metrics.enquiries },
+      { label: 'Usuarios activos', value: this.metrics.activeUsers },
+      { label: 'Eventos web', value: this.metrics.analytics30d },
+    ].filter((item) => item.value === 0);
+  }
+
+  public get hasTrafficData(): boolean {
+    return this.trafficSummary.some((point) => point > 0);
+  }
+
+  public get hasMonthlyActivityData(): boolean {
+    return this.monthlyActivity.some((item) => item.value > 0);
+  }
+
+  private ensureAllowedTab(): void {
+    if (this.isTabVisible(this.tab)) return;
+    this.tab = 'Miembros';
   }
 
   private async loadMembers(): Promise<void> {
     if (!this.companyId) return;
     const { data, error } = await this.supabase.client
       .from('company_members')
-      .select('user_id, member_role, profiles:profiles(full_name,email)')
+      .select('user_id, member_role, created_at, profiles:profiles(full_name,email)')
       .eq('company_id', this.companyId)
       .order('created_at', { ascending: true });
     if (error) throw error;
@@ -237,7 +460,153 @@ export class CompanyPage {
       member_role: row.member_role as MemberRole,
       full_name: row.profiles?.full_name ?? null,
       email: row.profiles?.email ?? null,
+      created_at: (row.created_at as string | null) ?? null,
     }));
+  }
+
+  private async loadCareIntakes(): Promise<void> {
+    if (!this.companyId) return;
+    const { data, error } = await this.supabase.client
+      .from('care_intakes')
+      .select('id, employee_id, payload, created_at')
+      .eq('company_id', this.companyId)
+      .order('created_at', { ascending: false })
+      .limit(6);
+    if (error) throw error;
+    this.careIntakes = (data ?? []) as CareIntakeRow[];
+  }
+
+  public async createCareIntake(): Promise<void> {
+    if (!this.companyId) {
+      alert('Primero vincula una empresa.');
+      return;
+    }
+    const employeeId = this.careIntakeDraft.employeeId;
+    if (!employeeId) {
+      alert('Selecciona un empleado.');
+      return;
+    }
+    if (!this.careIntakeDraft.postalCode.trim()) {
+      alert('Ingresa un código postal.');
+      return;
+    }
+
+    this.saving = true;
+    try {
+      const payload = {
+        clinical_profile: this.careIntakeDraft.clinicalProfile,
+        location: {
+          postal_code: this.careIntakeDraft.postalCode.trim(),
+          radius_km: this.careIntakeDraft.radiusKm,
+        },
+        budget: {
+          weekly_max: this.careIntakeDraft.budgetWeeklyMax,
+          funding: this.careIntakeDraft.funding,
+        },
+        lifestyle: {
+          amenities: { ...this.careIntakeDraft.amenities },
+          ambiance: this.careIntakeDraft.ambiance,
+          dietary: this.careIntakeDraft.dietary.trim() || null,
+        },
+        urgency: this.careIntakeDraft.urgency,
+        caregiver: {
+          name: this.careIntakeDraft.caregiverName.trim() || null,
+          relation: this.careIntakeDraft.caregiverRelation.trim() || null,
+          company: this.careIntakeDraft.caregiverCompany.trim() || null,
+        },
+      };
+
+      const { error } = await this.supabase.client.from('care_intakes').insert({
+        company_id: this.companyId,
+        employee_id: employeeId,
+        created_by: this.auth.user?.id ?? null,
+        payload,
+      } as any);
+      if (error) throw error;
+
+      this.careIntakeDraft = {
+        ...this.careIntakeDraft,
+        employeeId: '',
+        clinicalProfile: 'residential',
+        postalCode: '',
+        radiusKm: 10,
+        budgetWeeklyMax: null,
+        funding: 'self_funder',
+        amenities: { ensuite: false, garden: false, library: false, pets: false },
+        ambiance: 'small',
+        dietary: '',
+        urgency: 'immediate',
+        caregiverName: '',
+        caregiverRelation: '',
+      };
+      await this.loadCareIntakes();
+    } catch (err: any) {
+      console.error(err);
+      alert(`No se pudo guardar la ficha: ${err?.message ?? String(err)}`);
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  public memberLabel(userId: string | null): string {
+    if (!userId) return 'Sin empleado';
+    const m = this.members.find((x) => x.user_id === userId);
+    if (!m) return userId;
+    return m.full_name?.trim() ? m.full_name : m.email || userId;
+  }
+
+  public clinicalProfileLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'residential':
+        return 'Cuidado residencial';
+      case 'nursing':
+        return 'Cuidado de enfermería';
+      case 'dementia':
+        return 'Demencia / Alzheimer';
+      case 'respite':
+        return 'Cuidado de respiro';
+      default:
+        return value || 'Sin perfil';
+    }
+  }
+
+  public fundingLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'self_funder':
+        return 'Pago privado';
+      case 'local_authority':
+        return 'Ayuda pública';
+      default:
+        return value || 'Sin dato';
+    }
+  }
+
+  public urgencyLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'immediate':
+        return 'Inmediata';
+      case '3m':
+        return 'En 3 meses';
+      case '6m':
+        return 'En 6 meses';
+      case 'exploring':
+        return 'Explorando opciones';
+      default:
+        return value || 'Sin dato';
+    }
+  }
+
+  public ambianceLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'small':
+        return 'Residencia pequeña y familiar';
+      case 'large':
+        return 'Residencia grande con actividades';
+      case 'either':
+        return 'Indistinto';
+      default:
+        return value || 'Sin dato';
+    }
   }
 
   public async addMember(): Promise<void> {
@@ -308,7 +677,7 @@ export class CompanyPage {
 
   public async removeMember(m: MemberRow): Promise<void> {
     if (!this.companyId) return;
-    if (!confirm('¿Eliminar este miembro de la empresa?')) return;
+    if (!confirm('Â¿Eliminar este miembro de la empresa?')) return;
 
     this.saving = true;
     try {
@@ -470,6 +839,66 @@ export class CompanyPage {
     return idx >= 0 ? this.defaultSteps[idx]! : stepKey;
   }
 
+  public stepDescription(stepKey: string): string {
+    switch (stepKey) {
+      case 'branding':
+        return 'Configura logo, colores y look & feel para que el portal se vea interno.';
+      case 'members':
+        return 'Invita a RR.HH., managers y colaboradores que usarán el beneficio.';
+      case 'vouchers':
+        return 'Publica beneficios o descuentos que quedarán visibles para empleados.';
+      case 'launch':
+        return 'Confirma comunicación interna, correo de lanzamiento y mensajes de adopción.';
+      default:
+        return 'Paso operativo del onboarding corporativo.';
+    }
+  }
+
+  public stepActionLabel(stepKey: string): string {
+    switch (stepKey) {
+      case 'branding':
+        return 'Abrir Branding';
+      case 'members':
+        return 'Abrir Miembros';
+      case 'vouchers':
+        return 'Abrir Vouchers';
+      case 'launch':
+        return 'Ver checklist';
+      default:
+        return 'Abrir';
+    }
+  }
+
+  public openOnboardingStep(stepKey: string): void {
+    switch (stepKey) {
+      case 'branding':
+        this.tab = 'Branding';
+        break;
+      case 'members':
+        this.tab = 'Miembros';
+        break;
+      case 'vouchers':
+        if (this.isTabVisible('Vouchers')) {
+          this.tab = 'Vouchers';
+        }
+        break;
+      default:
+        this.tab = 'Onboarding';
+        break;
+    }
+  }
+
+  public onboardingStatusLabel(status: OnboardingStatus): string {
+    switch (status) {
+      case 'done':
+        return 'Listo';
+      case 'skipped':
+        return 'Omitido';
+      default:
+        return 'Pendiente';
+    }
+  }
+
   public async saveOnboardingStep(s: OnboardingRow): Promise<void> {
     this.saving = true;
     try {
@@ -490,9 +919,13 @@ export class CompanyPage {
   private async loadMetrics(): Promise<void> {
     if (!this.companyId) return;
 
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const rangeDays = this.rangeToDays(this.metricsRange);
+    const rangeStart = new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000).toISOString();
 
-    const [employees, vouchersActive, onboardingDone, analytics30d] = await Promise.all([
+    const memberIds = this.members.map((member) => member.user_id).filter(Boolean);
+    const thirtyDaysAhead = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [employees, vouchersActive, vouchersExpiring, onboardingDone, analytics30d, activeUserRows, enquiries] = await Promise.all([
       this.supabase.client
         .from('company_members')
         .select('user_id', { count: 'exact', head: true })
@@ -503,6 +936,14 @@ export class CompanyPage {
         .eq('company_id', this.companyId)
         .eq('active', true),
       this.supabase.client
+        .from('vouchers')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', this.companyId)
+        .eq('active', true)
+        .not('ends_at', 'is', null)
+        .gte('ends_at', new Date().toISOString())
+        .lte('ends_at', thirtyDaysAhead),
+      this.supabase.client
         .from('company_onboarding')
         .select('id', { count: 'exact', head: true })
         .eq('company_id', this.companyId)
@@ -511,19 +952,189 @@ export class CompanyPage {
         .from('analytics_events')
         .select('id', { count: 'exact', head: true })
         .eq('company_id', this.companyId)
-        .gte('created_at', thirtyDaysAgo),
+        .gte('created_at', rangeStart),
+      this.supabase.client
+        .from('analytics_events')
+        .select('user_id')
+        .eq('company_id', this.companyId)
+        .gte('created_at', rangeStart),
+      memberIds.length
+        ? this.supabase.client
+            .from('care_requests')
+            .select('id', { count: 'exact', head: true })
+            .in('employee_id', memberIds)
+            .gte('created_at', rangeStart)
+        : Promise.resolve({ count: 0 } as { count: number | null }),
     ]);
+
+    const activeUsers = new Set(
+      ((activeUserRows.data ?? []) as Array<{ user_id: string | null }>).map((row) => row.user_id).filter(Boolean)
+    ).size;
 
     this.metrics = {
       employees: employees.count ?? 0,
       vouchersActive: vouchersActive.count ?? 0,
+      vouchersExpiring: vouchersExpiring.count ?? 0,
       onboardingDone: onboardingDone.count ?? 0,
       analytics30d: analytics30d.count ?? 0,
+      activeUsers,
+      enquiries: enquiries.count ?? 0,
     };
   }
 
   public trackById(_: number, item: { id?: string; user_id?: string }): string {
     return (item.id ?? item.user_id) as string;
   }
+
+  public get onboardingPercent(): number {
+    if (!this.defaultStepKeys.length) return 0;
+    return Math.min(100, Math.round((this.metrics.onboardingDone / this.defaultStepKeys.length) * 100));
+  }
+
+  public get monthlyPeak(): number {
+    return Math.max(...this.monthlyActivity.map((item) => item.value), 1);
+  }
+
+  public get analyticsAverage(): number {
+    const denominator = this.monthlyActivity.length || 1;
+    return Math.round(this.monthlyActivity.reduce((acc, item) => acc + item.value, 0) / denominator);
+  }
+
+  public async setMetricsRange(range: MetricsRange): Promise<void> {
+    if (this.metricsRange === range) return;
+    this.metricsRange = range;
+    await this.loadMetrics();
+    await this.loadMonitoringData();
+  }
+
+  public sparklinePoints(values: number[]): string {
+    if (!values.length) return '';
+    const max = Math.max(...values, 1);
+    const width = 100;
+    const height = 30;
+    const step = values.length > 1 ? width / (values.length - 1) : width;
+    return values
+      .map((value, index) => {
+        const x = index * step;
+        const y = height - (value / max) * height;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(' ');
+  }
+
+  private rangeToDays(range: MetricsRange): number {
+    if (range === '7d') return 7;
+    if (range === '90d') return 90;
+    return 30;
+  }
+
+  private formatBucketLabel(date: Date): string {
+    return new Intl.DateTimeFormat('es-CL', { month: 'short' }).format(date).replace('.', '');
+  }
+
+  private async loadMonitoringData(): Promise<void> {
+    if (!this.companyId) return;
+
+    const rangeDays = this.rangeToDays(this.metricsRange);
+    const startDate = new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000);
+
+    const { data: events, error: eventsError } = await this.supabase.client
+      .from('analytics_events')
+      .select('created_at')
+      .eq('company_id', this.companyId)
+      .gte('created_at', startDate.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (eventsError) throw eventsError;
+
+    const points = 12;
+    const bucketMs = Math.max(1, Math.floor((Date.now() - startDate.getTime()) / points));
+    const buckets = new Array(points).fill(0);
+
+    for (const event of events ?? []) {
+      const createdAt = new Date((event as any).created_at as string).getTime();
+      const idx = Math.min(points - 1, Math.max(0, Math.floor((createdAt - startDate.getTime()) / bucketMs)));
+      buckets[idx] += 1;
+    }
+
+    this.trafficSummary = buckets;
+    this.occupancyTrend = buckets.map((_, index) =>
+      buckets.slice(0, index + 1).reduce((acc, value) => acc + value, 0)
+    );
+
+    this.monthlyActivity = buckets.map((value, index) => {
+      const labelDate = new Date(startDate.getTime() + bucketMs * index);
+      return {
+        label: this.formatBucketLabel(labelDate),
+        value,
+      };
+    });
+
+    const memberIds = this.members.map((m) => m.user_id);
+    if (!memberIds.length) {
+      this.recentEnquiries = [];
+      return;
+    }
+
+    const { data: requests, error: requestsError } = await this.supabase.client
+      .from('care_requests')
+      .select('id, topic, employee_id, created_at')
+      .in('employee_id', memberIds)
+      .gte('created_at', startDate.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (requestsError) throw requestsError;
+
+    const requestBuckets = new Array(points).fill(0);
+    for (const request of requests ?? []) {
+      const createdAt = new Date((request as any).created_at as string).getTime();
+      const idx = Math.min(points - 1, Math.max(0, Math.floor((createdAt - startDate.getTime()) / bucketMs)));
+      requestBuckets[idx] += 1;
+    }
+    this.revenueTrend = requestBuckets;
+
+    this.recentEnquiries = (requests ?? []).slice(0, 5).map((request: any) => {
+      const date = new Date(request.created_at as string);
+      return {
+        id: (request.id as string).slice(0, 8),
+        property: (request.topic as string) || 'Consulta',
+        employee: this.memberLabel((request.employee_id as string) || null),
+        date: new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: 'short' }).format(date),
+      };
+    });
+  }
+
+  public get filteredCareIntakes(): CareIntakeRow[] {
+    const query = this.careIntakeSearch.trim().toLowerCase();
+    if (!query) return this.careIntakes;
+
+    return this.careIntakes.filter((intake) => {
+      const member = this.memberLabel(intake.employee_id).toLowerCase();
+      const clinical = this.clinicalProfileLabel(intake.payload?.clinical_profile).toLowerCase();
+      const postalCode = String(intake.payload?.location?.postal_code ?? '').toLowerCase();
+      const funding = this.fundingLabel(intake.payload?.budget?.funding).toLowerCase();
+      return [member, clinical, postalCode, funding].some((value) => value.includes(query));
+    });
+  }
+
+  public intakeAmenityLabels(intake: CareIntakeRow | null): string[] {
+    const amenities = intake?.payload?.lifestyle?.amenities ?? {};
+    const labels: string[] = [];
+    if (amenities.ensuite) labels.push('Baño privado');
+    if (amenities.garden) labels.push('Jardines');
+    if (amenities.library) labels.push('Biblioteca');
+    if (amenities.pets) labels.push('Permite mascotas');
+    return labels;
+  }
+
+  public showIntake(intake: CareIntakeRow) {
+    this.selectedIntake = intake;
+  }
+
+  public closeIntakeModal() {
+    this.selectedIntake = null;
+  }
 }
+
 

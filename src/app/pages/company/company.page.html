@@ -1,4 +1,4 @@
-<ion-header>
+﻿<ion-header class="company-header">
   <ion-toolbar>
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
@@ -8,7 +8,13 @@
 </ion-header>
 
 <ion-content class="company-admin">
-  <div class="ca-page">
+  <div
+    class="ca-page"
+    [style.--ca-primary]="branding.primary_color || '#465fff'"
+    [style.--ca-secondary]="branding.secondary_color || '#6366f1'"
+    [style.--ca-brand-primary]="branding.primary_color || '#465fff'"
+    [style.--ca-brand-secondary]="branding.secondary_color || '#6366f1'"
+  >
     <ion-card *ngIf="loading" class="ca-card">
       <ion-card-content>Cargando…</ion-card-content>
     </ion-card>
@@ -89,27 +95,115 @@
           </ion-button>
         </section>
 
-        <div class="ca-tabs">
-          <ion-segment [(ngModel)]="tab" name="tab" aria-label="Secciones de administración">
-            <ion-segment-button value="Miembros">
-              <ion-label>Miembros</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="Branding">
-              <ion-label>Branding</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="Vouchers">
-              <ion-label>Vouchers</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="Onboarding">
-              <ion-label>Onboarding</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="Métricas">
-              <ion-label>Métricas</ion-label>
-            </ion-segment-button>
-          </ion-segment>
-        </div>
+        <section class="ca-plan-card" aria-label="Plan de la empresa">
+          <div class="ca-plan-card__top">
+            <div class="ca-plan-card__copy">
+              <div class="ca-plan-card__head">
+                <div class="ca-plan-card__eyebrow">PLAN ACTUAL</div>
+                <div class="ca-plan-badge">{{ companyPlanLabel }}</div>
+              </div>
+              <div class="ca-plan-card__title">Plan y permisos</div>
+              <div class="ca-plan-card__text">
+                Este plan se lee desde la empresa contratada y define qué funciones quedan habilitadas.
+              </div>
+            </div>
 
-        <div class="ca-body" [ngSwitch]="tab">
+            <div class="ca-plan-card__side">
+              <div class="ca-plan-note">La asignación del plan se gestiona desde contratación o administración central.</div>
+              <div class="ca-plan-actions">
+                <ion-button size="small" class="ca-primary" routerLink="/packages">Mejorar plan</ion-button>
+                <ion-button size="small" fill="clear" class="ca-link-btn" routerLink="/contact">Hablar con ventas</ion-button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ca-plan-card__features">
+            <span class="ca-pill" *ngFor="let feature of enabledPlanFeatures">{{ feature }}</span>
+          </div>
+        </section>
+
+        <div class="ca-workspace">
+          <aside class="ca-sidebar" aria-label="Secciones de administración">
+            <div class="ca-sidebar__label">Secciones</div>
+            <button
+              type="button"
+              class="ca-sidebar__item"
+              *ngIf="isTabVisible('Metricas')"
+              [class.is-active]="tab === 'Metricas'"
+              (click)="tab = 'Metricas'"
+            >
+              Métricas
+            </button>
+            <button type="button" class="ca-sidebar__item" [class.is-active]="tab === 'Miembros'" (click)="tab = 'Miembros'">
+              Miembros
+            </button>
+            <button type="button" class="ca-sidebar__item" [class.is-active]="tab === 'Branding'" (click)="tab = 'Branding'">
+              Branding
+            </button>
+            <button
+              type="button"
+              class="ca-sidebar__item"
+              *ngIf="isTabVisible('Vouchers')"
+              [class.is-active]="tab === 'Vouchers'"
+              (click)="tab = 'Vouchers'"
+            >
+              Vouchers
+            </button>
+            <button
+              type="button"
+              class="ca-sidebar__item"
+              [class.is-active]="tab === 'Onboarding'"
+              (click)="tab = 'Onboarding'"
+            >
+              Onboarding
+            </button>
+          </aside>
+
+          <div class="ca-main">
+            <section class="ca-summary-metrics" aria-label="Resumen rápido">
+              <div class="ca-summary-card">
+                <div class="ca-summary-card__label">Empleados</div>
+                <div class="ca-summary-card__value">{{ metrics.employees }}</div>
+                <div class="ca-summary-card__meta">Miembros activos</div>
+              </div>
+              <div class="ca-summary-card" *ngIf="capabilities.vouchers">
+                <div class="ca-summary-card__label">Vouchers activos</div>
+                <div class="ca-summary-card__value">{{ metrics.vouchersActive }}</div>
+                <div class="ca-summary-card__meta">Beneficios vigentes</div>
+              </div>
+              <div class="ca-summary-card">
+                <div class="ca-summary-card__label">Onboarding</div>
+                <div class="ca-summary-card__value">{{ metrics.onboardingDone }}</div>
+                <div class="ca-summary-card__meta">Pasos listos</div>
+              </div>
+              <div class="ca-summary-card" *ngIf="capabilities.metrics">
+                <div class="ca-summary-card__label">Eventos (30 días)</div>
+                <div class="ca-summary-card__value">{{ metrics.analytics30d }}</div>
+                <div class="ca-summary-card__meta">Actividad reciente</div>
+              </div>
+            </section>
+
+            <div class="ca-tabs">
+              <ion-segment [(ngModel)]="tab" name="tab" aria-label="Secciones de administración">
+                <ion-segment-button value="Metricas" *ngIf="isTabVisible('Metricas')">
+                  <ion-label>Métricas</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="Miembros">
+                  <ion-label>Miembros</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="Branding">
+                  <ion-label>Branding</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="Vouchers" *ngIf="isTabVisible('Vouchers')">
+                  <ion-label>Vouchers</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="Onboarding">
+                  <ion-label>Onboarding</ion-label>
+                </ion-segment-button>
+              </ion-segment>
+            </div>
+
+            <div class="ca-body" [ngSwitch]="tab">
           <!-- MIEMBROS -->
           <div *ngSwitchCase="'Miembros'" class="ca-panel">
             <div class="ca-panel__head">
@@ -191,45 +285,375 @@
                 </div>
               </div>
             </div>
+
+            <div class="ca-box" style="margin-top: 14px;">
+              <div class="ca-box__title">Ficha de cuidado (RR.HH.)</div>
+              <div class="ca-box__hint">Evalua necesidades del colaborador para orientar la busqueda de residencias.</div>
+
+              <ng-container *ngIf="capabilities.careIntakes; else careIntakesLocked">
+                <ion-accordion-group class="ca-accordion" value="">
+                  <ion-accordion value="draft">
+                    <ion-item slot="header" class="ca-accordion__header" lines="none">
+                      <ion-label>Crear ficha</ion-label>
+                      <ion-note slot="end">Mostrar / ocultar</ion-note>
+                    </ion-item>
+
+                    <div slot="content" class="ca-accordion__content">
+                      <div class="ca-form">
+                        <ion-item class="ca-item" lines="none">
+                          <ion-select
+                            label="Empleado"
+                            labelPlacement="stacked"
+                            [(ngModel)]="careIntakeDraft.employeeId"
+                            name="intakeEmployee"
+                            interface="popover"
+                            aria-label="Empleado"
+                          >
+                            <ion-select-option *ngFor="let m of members; trackBy: trackById" [value]="m.user_id">
+                              {{ m.full_name || m.email || m.user_id }}
+                            </ion-select-option>
+                          </ion-select>
+                        </ion-item>
+
+                        <div class="ca-section">
+                          <div class="ca-section__title">1. Perfil clinico y nivel de cuidado</div>
+                          <ion-item class="ca-item" lines="none">
+                            <ion-select
+                              label="Tipo de cuidado"
+                              labelPlacement="stacked"
+                              [(ngModel)]="careIntakeDraft.clinicalProfile"
+                              name="intakeClinical"
+                              interface="popover"
+                              aria-label="Tipo de cuidado"
+                            >
+                              <ion-select-option value="residential">Cuidado residencial</ion-select-option>
+                              <ion-select-option value="nursing">Cuidado de enfermeria</ion-select-option>
+                              <ion-select-option value="dementia">Demencia / Alzheimer</ion-select-option>
+                              <ion-select-option value="respite">Cuidado de respiro</ion-select-option>
+                            </ion-select>
+                          </ion-item>
+                        </div>
+
+                        <div class="ca-section">
+                          <div class="ca-section__title">2. Ubicacion y radio</div>
+                          <div class="ca-row">
+                            <ion-item class="ca-item" lines="none">
+                              <ion-input
+                                label="Codigo postal"
+                                labelPlacement="stacked"
+                                [(ngModel)]="careIntakeDraft.postalCode"
+                                name="intakePostal"
+                                placeholder="Ej.: 7500000"
+                                aria-label="Codigo postal"
+                              ></ion-input>
+                            </ion-item>
+
+                            <ion-item class="ca-item" lines="none">
+                              <ion-input
+                                label="Radio (km)"
+                                labelPlacement="stacked"
+                                type="number"
+                                [(ngModel)]="careIntakeDraft.radiusKm"
+                                name="intakeRadius"
+                                aria-label="Radio"
+                              ></ion-input>
+                            </ion-item>
+                          </div>
+                        </div>
+
+                        <div class="ca-section">
+                          <div class="ca-section__title">3. Presupuesto</div>
+                          <div class="ca-row">
+                            <ion-item class="ca-item" lines="none">
+                              <ion-input
+                                label="Presupuesto semanal maximo"
+                                labelPlacement="stacked"
+                                type="number"
+                                [(ngModel)]="careIntakeDraft.budgetWeeklyMax"
+                                name="intakeBudget"
+                                placeholder="Ej.: 450000"
+                                aria-label="Presupuesto semanal maximo"
+                              ></ion-input>
+                            </ion-item>
+
+                            <ion-item class="ca-item" lines="none">
+                              <ion-select
+                                label="Financiamiento"
+                                labelPlacement="stacked"
+                                [(ngModel)]="careIntakeDraft.funding"
+                                name="intakeFunding"
+                                interface="popover"
+                                aria-label="Financiamiento"
+                              >
+                                <ion-select-option value="self_funder">Pago privado</ion-select-option>
+                                <ion-select-option value="local_authority">Ayuda publica</ion-select-option>
+                              </ion-select>
+                            </ion-item>
+                          </div>
+                        </div>
+
+                        <div class="ca-section">
+                          <div class="ca-section__title">4. Preferencias de estilo de vida</div>
+                          <div class="ca-chip-grid">
+                            <ion-item class="ca-item ca-item--toggle" lines="none">
+                              <ion-toggle [(ngModel)]="careIntakeDraft.amenities.ensuite" name="intakeAmenityEnsuite">
+                                Bano privado
+                              </ion-toggle>
+                            </ion-item>
+
+                            <ion-item class="ca-item ca-item--toggle" lines="none">
+                              <ion-toggle [(ngModel)]="careIntakeDraft.amenities.garden" name="intakeAmenityGarden">
+                                Jardines
+                              </ion-toggle>
+                            </ion-item>
+
+                            <ion-item class="ca-item ca-item--toggle" lines="none">
+                              <ion-toggle [(ngModel)]="careIntakeDraft.amenities.library" name="intakeAmenityLibrary">
+                                Biblioteca
+                              </ion-toggle>
+                            </ion-item>
+
+                            <ion-item class="ca-item ca-item--toggle" lines="none">
+                              <ion-toggle [(ngModel)]="careIntakeDraft.amenities.pets" name="intakeAmenityPets">
+                                Permite mascotas
+                              </ion-toggle>
+                            </ion-item>
+                          </div>
+
+                          <div class="ca-row">
+                            <ion-item class="ca-item" lines="none">
+                              <ion-select
+                                label="Ambiente"
+                                labelPlacement="stacked"
+                                [(ngModel)]="careIntakeDraft.ambiance"
+                                name="intakeAmbiance"
+                                interface="popover"
+                                aria-label="Ambiente"
+                              >
+                                <ion-select-option value="small">Residencia pequena y familiar</ion-select-option>
+                                <ion-select-option value="large">Residencia grande con actividades</ion-select-option>
+                                <ion-select-option value="either">Indistinto</ion-select-option>
+                              </ion-select>
+                            </ion-item>
+
+                            <ion-item class="ca-item" lines="none">
+                              <ion-input
+                                label="Requerimientos dieteticos/culturales"
+                                labelPlacement="stacked"
+                                [(ngModel)]="careIntakeDraft.dietary"
+                                name="intakeDietary"
+                                placeholder="Ej.: sin gluten, afinidad religiosa"
+                                aria-label="Requerimientos dieteticos y culturales"
+                              ></ion-input>
+                            </ion-item>
+                          </div>
+                        </div>
+
+                        <div class="ca-section">
+                          <div class="ca-section__title">5. Urgencia y cronograma</div>
+                          <ion-item class="ca-item" lines="none">
+                            <ion-select
+                              label="Fecha estimada de ingreso"
+                              labelPlacement="stacked"
+                              [(ngModel)]="careIntakeDraft.urgency"
+                              name="intakeUrgency"
+                              interface="popover"
+                              aria-label="Fecha estimada de ingreso"
+                            >
+                              <ion-select-option value="immediate">Inmediata</ion-select-option>
+                              <ion-select-option value="3m">En 3 meses</ion-select-option>
+                              <ion-select-option value="6m">En 6 meses</ion-select-option>
+                              <ion-select-option value="exploring">Explorando opciones</ion-select-option>
+                            </ion-select>
+                          </ion-item>
+                        </div>
+
+                        <div class="ca-section">
+                          <div class="ca-section__title">6. Datos del cuidador corporativo</div>
+                          <div class="ca-row">
+                            <ion-item class="ca-item" lines="none">
+                              <ion-input
+                                label="Nombre del empleado"
+                                labelPlacement="stacked"
+                                [(ngModel)]="careIntakeDraft.caregiverName"
+                                name="intakeCaregiverName"
+                                placeholder="Ej.: Maria Perez"
+                                aria-label="Nombre del empleado"
+                              ></ion-input>
+                            </ion-item>
+
+                            <ion-item class="ca-item" lines="none">
+                              <ion-input
+                                label="Relacion con el familiar"
+                                labelPlacement="stacked"
+                                [(ngModel)]="careIntakeDraft.caregiverRelation"
+                                name="intakeCaregiverRelation"
+                                placeholder="Ej.: Hija, hijo, esposo/a"
+                                aria-label="Relacion con el familiar"
+                              ></ion-input>
+                            </ion-item>
+                          </div>
+
+                          <ion-item class="ca-item" lines="none">
+                            <ion-input
+                              label="Empresa"
+                              labelPlacement="stacked"
+                              [(ngModel)]="careIntakeDraft.caregiverCompany"
+                              name="intakeCaregiverCompany"
+                              aria-label="Empresa"
+                            ></ion-input>
+                          </ion-item>
+                        </div>
+
+                        <ion-button expand="block" class="ca-primary" (click)="createCareIntake()" [disabled]="saving">
+                          Guardar ficha
+                        </ion-button>
+                      </div>
+                    </div>
+                  </ion-accordion>
+                </ion-accordion-group>
+
+                <div class="ca-divider"></div>
+                <div class="ca-box__title">Fichas recientes</div>
+                <div class="ca-box__hint">Busca por colaborador, perfil clínico, código postal o financiamiento.</div>
+
+                <ion-item class="ca-item ca-item--search" lines="none" *ngIf="careIntakes.length">
+                  <ion-icon name="search-outline" slot="start" aria-hidden="true"></ion-icon>
+                  <ion-input
+                    [(ngModel)]="careIntakeSearch"
+                    name="careIntakeSearch"
+                    placeholder="Buscar ficha"
+                    aria-label="Buscar ficha"
+                  ></ion-input>
+                </ion-item>
+
+                <div class="ca-empty" *ngIf="!careIntakes.length">Aún no hay fichas.</div>
+                <div class="ca-empty" *ngIf="careIntakes.length && !filteredCareIntakes.length">No se encontraron fichas.</div>
+
+                <div class="ca-list" *ngIf="filteredCareIntakes.length">
+                  <div
+                    class="ca-intake"
+                    role="button"
+                    *ngFor="let i of filteredCareIntakes; trackBy: trackById"
+                    (click)="showIntake(i)"
+                  >
+                    <div class="ca-intake__title">{{ memberLabel(i.employee_id) }}</div>
+                    <div class="ca-intake__meta">
+                      {{ clinicalProfileLabel(i.payload?.clinical_profile) }} - {{ i.created_at | date: 'dd/MM/yyyy' }}
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #careIntakesLocked>
+                <div class="ca-locked">
+                  <div class="ca-locked__title">Disponible desde Plan Empresa</div>
+                  <div class="ca-locked__text">
+                    La ficha de cuidado para RR.HH. requiere un plan con operación asistida y seguimiento.
+                  </div>
+                </div>
+              </ng-template>
+            </div>
           </div>
 
           <!-- BRANDING -->
           <div *ngSwitchCase="'Branding'" class="ca-panel">
             <div class="ca-panel__head">
               <div>
-                <div class="ca-title">Co‑branding</div>
-                <div class="ca-sub">Logo y colores para que el portal se sienta interno.</div>
+                <div class="ca-title">Co-branding</div>
+                <div class="ca-sub">Configura identidad visual y revisa una vista previa antes de guardar.</div>
               </div>
             </div>
 
-            <div class="ca-box">
-              <div class="ca-form">
-                <ion-item class="ca-item" lines="none">
-                  <ion-input
-                    label="Logo URL (opcional)"
-                    labelPlacement="stacked"
-                    [(ngModel)]="branding.logo_url"
-                    name="logoUrl"
-                    placeholder="https://…"
-                    aria-label="Logo URL"
-                  ></ion-input>
-                </ion-item>
+            <div class="ca-grid ca-grid--branding">
+              <div class="ca-box">
+                <div class="ca-box__title">Vista previa</div>
+                <div class="ca-box__hint">Así verán el portal tus colaboradores al entrar a Company Care.</div>
 
-                <div class="ca-row">
-                  <label class="ca-color">
-                    <span>Color primario</span>
-                    <input type="color" [(ngModel)]="branding.primary_color" name="primaryColor" />
-                  </label>
+                <div
+                  class="ca-brand-preview"
+                  [style.--preview-primary]="branding.primary_color || '#465fff'"
+                  [style.--preview-secondary]="branding.secondary_color || '#6366f1'"
+                >
+                  <div class="ca-brand-preview__header">
+                    <div class="ca-brand-preview__brand">
+                      <div class="ca-brand-preview__logo">
+                        <img *ngIf="branding.logo_url" [src]="branding.logo_url || ''" alt="Logo empresa" />
+                        <span *ngIf="!branding.logo_url">{{ companyInitials }}</span>
+                      </div>
+                      <div>
+                        <div class="ca-brand-preview__name">{{ company?.name || 'Tu empresa' }}</div>
+                        <div class="ca-brand-preview__sub">Portal Company Care</div>
+                      </div>
+                    </div>
+                    <div class="ca-brand-preview__badge">Vista previa</div>
+                  </div>
 
-                  <label class="ca-color">
-                    <span>Color secundario</span>
-                    <input type="color" [(ngModel)]="branding.secondary_color" name="secondaryColor" />
-                  </label>
+                  <div class="ca-brand-preview__hero">
+                    <div>
+                      <div class="ca-brand-preview__eyebrow">Beneficio activo</div>
+                      <h3>Tu branding se aplica sobre botones, tarjetas y accesos principales.</h3>
+                      <p>Esto ayuda a que el portal se perciba como un beneficio interno y no como un sitio externo.</p>
+                    </div>
+                    <button type="button" class="ca-brand-preview__cta">Ir al portal</button>
+                  </div>
+
+                  <div class="ca-brand-preview__cards">
+                    <div class="ca-brand-preview__card">
+                      <strong>Acceso a expertos</strong>
+                      <span>Chat, videollamada y seguimiento.</span>
+                    </div>
+                    <div class="ca-brand-preview__card ca-brand-preview__card--accent">
+                      <strong>Recursos corporativos</strong>
+                      <span>Guías, onboarding y comunicaciones.</span>
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-                <ion-button expand="block" class="ca-primary" (click)="saveBranding()" [disabled]="saving">
-                  Guardar branding
-                </ion-button>
+              <div class="ca-box">
+                <div class="ca-box__title">Configuración visual</div>
+                <div class="ca-box__hint">Estos cambios se aplican al portal empresa y a sus componentes principales.</div>
+
+                <div class="ca-form">
+                  <ion-item class="ca-item" lines="none">
+                    <ion-input
+                      label="Logo URL (opcional)"
+                      labelPlacement="stacked"
+                      [(ngModel)]="branding.logo_url"
+                      name="logoUrl"
+                      placeholder="https://…"
+                      aria-label="Logo URL"
+                    ></ion-input>
+                  </ion-item>
+
+                  <div class="ca-row">
+                    <label class="ca-color">
+                      <span>Color primario</span>
+                      <input type="color" [(ngModel)]="branding.primary_color" name="primaryColor" />
+                    </label>
+
+                    <label class="ca-color">
+                      <span>Color secundario</span>
+                      <input type="color" [(ngModel)]="branding.secondary_color" name="secondaryColor" />
+                    </label>
+                  </div>
+
+                  <div class="ca-brand-preview__tokens">
+                    <div class="ca-token">
+                      <span>Primario</span>
+                      <strong>{{ branding.primary_color || '#465fff' }}</strong>
+                    </div>
+                    <div class="ca-token">
+                      <span>Secundario</span>
+                      <strong>{{ branding.secondary_color || '#6366f1' }}</strong>
+                    </div>
+                  </div>
+
+                  <ion-button expand="block" class="ca-primary" (click)="saveBranding()" [disabled]="saving">
+                    Guardar branding
+                  </ion-button>
+                </div>
               </div>
             </div>
           </div>
@@ -317,7 +741,30 @@
             <div class="ca-panel__head">
               <div>
                 <div class="ca-title">Onboarding</div>
-                <div class="ca-sub">Checklist para dejar el beneficio listo.</div>
+                <div class="ca-sub">Ruta de activación para dejar el beneficio listo antes del lanzamiento interno.</div>
+              </div>
+            </div>
+
+            <div class="ca-onboarding-overview">
+              <div class="ca-onboarding-overview__main">
+                <div class="ca-onboarding-overview__eyebrow">Activación del beneficio</div>
+                <h3>{{ onboardingReadyLabel }}</h3>
+                <p>{{ onboardingProgressCopy }}</p>
+              </div>
+
+              <div class="ca-onboarding-overview__stats">
+                <div class="ca-onboarding-stat">
+                  <strong>{{ onboardingPercent }}%</strong>
+                  <span>avance total</span>
+                </div>
+                <div class="ca-onboarding-stat">
+                  <strong>{{ metrics.onboardingDone }}/{{ onboardingTotalSteps }}</strong>
+                  <span>pasos listos</span>
+                </div>
+              </div>
+
+              <div class="ca-onboarding-overview__progress" aria-label="Progreso onboarding">
+                <div class="ca-onboarding-overview__progress-fill" [style.width.%]="onboardingPercent"></div>
               </div>
             </div>
 
@@ -327,9 +774,13 @@
                 <div class="ca-step" *ngFor="let s of onboarding; trackBy: trackById">
                   <div class="ca-step__main">
                     <div class="ca-step__title">{{ stepLabel(s.step_key) }}</div>
-                    <div class="ca-step__meta">{{ s.status }}</div>
+                    <div class="ca-step__meta">{{ stepDescription(s.step_key) }}</div>
+                    <div class="ca-step__status">{{ onboardingStatusLabel(s.status) }}</div>
                   </div>
                   <div class="ca-step__actions">
+                    <ion-button fill="clear" size="small" class="ca-step__link" (click)="openOnboardingStep(s.step_key)">
+                      {{ stepActionLabel(s.step_key) }}
+                    </ion-button>
                     <ion-select
                       class="ca-mini-select"
                       aria-label="Estado del paso"
@@ -348,38 +799,242 @@
           </div>
 
           <!-- MÉTRICAS -->
-          <div *ngSwitchCase="'Métricas'" class="ca-panel">
+          <div *ngSwitchCase="'Metricas'" class="ca-panel">
             <div class="ca-panel__head">
               <div>
                 <div class="ca-title">Métricas</div>
-                <div class="ca-sub">Uso del beneficio y actividad reciente.</div>
+                <div class="ca-sub">Uso del beneficio, actividad web y avance operacional.</div>
+              </div>
+              <div class="ca-range">
+                <button type="button" [class.is-active]="metricsRange === '7d'" (click)="setMetricsRange('7d')">7d</button>
+                <button type="button" [class.is-active]="metricsRange === '30d'" (click)="setMetricsRange('30d')">30d</button>
+                <button type="button" [class.is-active]="metricsRange === '90d'" (click)="setMetricsRange('90d')">90d</button>
               </div>
             </div>
 
-            <div class="ca-metrics">
-              <div class="ca-metric">
-                <div class="ca-metric__value">{{ metrics.employees }}</div>
-                <div class="ca-metric__label">Empleados</div>
+            <section class="ca-company-overview">
+              <div class="ca-company-alerts">
+                <article class="ca-company-alert">
+                  <div class="ca-company-alert__value">{{ onboardingPendingCount }}</div>
+                  <div class="ca-company-alert__copy">
+                    <strong>Onboarding pendiente</strong>
+                    <span>Pasos aún no completados para dejar la empresa operativa.</span>
+                  </div>
+                </article>
+
+                <article class="ca-company-alert">
+                  <div class="ca-company-alert__value">{{ metrics.vouchersExpiring }}</div>
+                  <div class="ca-company-alert__copy">
+                    <strong>Vouchers por vencer</strong>
+                    <span>Beneficios que expiran en los próximos 30 días.</span>
+                  </div>
+                </article>
+
+                <article class="ca-company-alert">
+                  <div class="ca-company-alert__value">{{ metrics.enquiries }}</div>
+                  <div class="ca-company-alert__copy">
+                    <strong>Solicitudes pendientes</strong>
+                    <span>Casos detectados dentro del rango seleccionado.</span>
+                  </div>
+                </article>
               </div>
-              <div class="ca-metric">
-                <div class="ca-metric__value">{{ metrics.vouchersActive }}</div>
-                <div class="ca-metric__label">Vouchers activos</div>
+
+              <div class="ca-company-activity">
+                <section class="ca-company-panel ca-company-panel--wide">
+                  <div class="ca-company-panel__head">
+                    <div class="ca-company-panel__title">Solicitudes recientes</div>
+                    <div class="ca-company-panel__sub">Lo más accionable del período actual.</div>
+                  </div>
+
+                  <div class="ca-company-requests" *ngIf="recentEnquiries.length; else noRecentEnquiries">
+                    <div class="ca-company-requests__head">
+                      <span>ID</span>
+                      <span>Solicitud</span>
+                      <span>Empleado</span>
+                      <span>Fecha</span>
+                    </div>
+                    <div class="ca-company-requests__row" *ngFor="let row of recentEnquiries">
+                      <span>{{ row.id }}</span>
+                      <span>{{ row.property }}</span>
+                      <span>{{ row.employee }}</span>
+                      <span>{{ row.date }}</span>
+                    </div>
+                  </div>
+                  <ng-template #noRecentEnquiries>
+                    <div class="ca-company-empty">Sin consultas recientes.</div>
+                  </ng-template>
+                </section>
+
+                <section class="ca-company-panel">
+                  <div class="ca-company-panel__head">
+                    <div class="ca-company-panel__title">Últimos empleados agregados</div>
+                    <div class="ca-company-panel__sub">Ingresos más recientes a la empresa.</div>
+                  </div>
+
+                  <div class="ca-company-members" *ngIf="latestMembers.length; else noLatestMembers">
+                    <div class="ca-company-member" *ngFor="let member of latestMembers">
+                      <div class="ca-company-member__avatar">
+                        {{ (member.full_name || member.email || '?').slice(0, 1).toUpperCase() }}
+                      </div>
+                      <div class="ca-company-member__body">
+                        <strong>{{ member.full_name || member.email || member.user_id }}</strong>
+                        <span>{{ member.email || 'Sin email' }}</span>
+                      </div>
+                      <div class="ca-company-member__meta">
+                        <span>{{ member.member_role }}</span>
+                        <span>{{ member.created_at | date: 'dd MMM' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <ng-template #noLatestMembers>
+                    <div class="ca-company-empty">Aún no hay colaboradores agregados.</div>
+                  </ng-template>
+                </section>
               </div>
-              <div class="ca-metric">
-                <div class="ca-metric__value">{{ metrics.onboardingDone }}</div>
-                <div class="ca-metric__label">Onboarding listo</div>
-              </div>
-              <div class="ca-metric">
-                <div class="ca-metric__value">{{ metrics.analytics30d }}</div>
-                <div class="ca-metric__label">Eventos (30 días)</div>
-              </div>
+            </section>
+
+            <div class="ca-metrics-layout">
+              <section class="ca-chart-card" *ngIf="hasMonthlyActivityData; else noMonthlyActivity">
+                <div class="ca-chart-card__head">
+                  <div>
+                    <div class="ca-chart-card__title">Actividad mensual</div>
+                    <div class="ca-chart-card__sub">Eventos registrados en la web corporativa</div>
+                  </div>
+                  <div class="ca-chart-card__pill">Promedio {{ analyticsAverage }}</div>
+                </div>
+
+                <div class="ca-bar-chart" aria-label="Actividad mensual">
+                  <div class="ca-bar-chart__item" *ngFor="let month of monthlyActivity">
+                    <div class="ca-bar-chart__value">{{ month.value }}</div>
+                    <div class="ca-bar-chart__track">
+                      <div class="ca-bar-chart__bar" [style.height.%]="(month.value / monthlyPeak) * 100"></div>
+                    </div>
+                    <div class="ca-bar-chart__label">{{ month.label }}</div>
+                  </div>
+                </div>
+              </section>
+              <ng-template #noMonthlyActivity>
+                <section class="ca-chart-card">
+                  <div class="ca-chart-card__head">
+                    <div>
+                      <div class="ca-chart-card__title">Actividad mensual</div>
+                      <div class="ca-chart-card__sub">Eventos registrados en la web corporativa</div>
+                    </div>
+                  </div>
+                  <div class="ca-company-empty ca-company-empty--chart">Sin datos suficientes aún.</div>
+                </section>
+              </ng-template>
+
+              <section class="ca-insights-card">
+                <div class="ca-insights-card__title">Métricas relevantes</div>
+                <div class="ca-insights-card__sub">Solo indicadores con datos reales del período.</div>
+
+                <div class="ca-insight-grid" *ngIf="meaningfulMetricCards.length; else noMetricsData">
+                  <div class="ca-insight-tile" *ngFor="let item of meaningfulMetricCards">
+                    <strong>{{ item.value }}</strong>
+                    <span>{{ item.label }}</span>
+                    <small>{{ item.detail }}</small>
+                  </div>
+                </div>
+
+                <ng-template #noMetricsData>
+                  <div class="ca-company-empty">Sin datos suficientes aún.</div>
+                </ng-template>
+
+                <div class="ca-insight-muted" *ngIf="emptyMetricCards.length">
+                  <span *ngFor="let item of emptyMetricCards">{{ item.label }}: {{ item.value }}</span>
+                </div>
+              </section>
             </div>
           </div>
 
           <div *ngSwitchDefault class="ca-panel"></div>
         </div>
+      </div>
+    </div>
       </ng-container>
     </ng-container>
   </div>
 </ion-content>
+
+<ion-modal [isOpen]="!!selectedIntake" (didDismiss)="closeIntakeModal()">
+  <ng-template>
+    <ion-header class="ca-modal-header">
+      <ion-toolbar>
+        <ion-title>Ficha de cuidado</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeIntakeModal()">Cerrar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ca-modal-content ion-padding">
+      <ng-container *ngIf="selectedIntake">
+        <section class="ca-intake-modal">
+          <div class="ca-intake-modal__hero">
+            <div>
+              <div class="ca-intake-modal__eyebrow">Ficha RR.HH.</div>
+              <h2>{{ memberLabel(selectedIntake.employee_id) }}</h2>
+              <p>
+                {{ clinicalProfileLabel(selectedIntake.payload?.clinical_profile) }} •
+                {{ selectedIntake.created_at | date: 'dd/MM/yyyy' }}
+              </p>
+            </div>
+            <div class="ca-intake-modal__hero-meta">
+              <span class="ca-pill">Urgencia: {{ urgencyLabel(selectedIntake.payload?.urgency) }}</span>
+              <span class="ca-pill">Radio: {{ selectedIntake.payload?.location?.radius_km }} km</span>
+            </div>
+          </div>
+
+          <div class="ca-intake-modal__grid">
+            <article class="ca-intake-card">
+              <div class="ca-modal-label">Perfil de cuidado</div>
+              <div class="ca-modal-value">{{ clinicalProfileLabel(selectedIntake.payload?.clinical_profile) }}</div>
+              <div class="ca-intake-card__sub">
+                Financiamiento: {{ fundingLabel(selectedIntake.payload?.budget?.funding) }}
+              </div>
+            </article>
+
+            <article class="ca-intake-card">
+              <div class="ca-modal-label">Ubicación y presupuesto</div>
+              <div class="ca-modal-value">Código postal {{ selectedIntake.payload?.location?.postal_code }}</div>
+              <div class="ca-intake-card__sub">
+                Máximo semanal:
+                {{ selectedIntake.payload?.budget?.weekly_max ? (selectedIntake.payload?.budget?.weekly_max | currency:'CLP') : 'Sin dato' }}
+              </div>
+            </article>
+
+            <article class="ca-intake-card ca-intake-card--wide">
+              <div class="ca-modal-label">Preferencias de estilo de vida</div>
+              <div class="ca-intake-tags" *ngIf="intakeAmenityLabels(selectedIntake).length; else noAmenities">
+                <span class="ca-pill" *ngFor="let amenity of intakeAmenityLabels(selectedIntake)">{{ amenity }}</span>
+              </div>
+              <ng-template #noAmenities>
+                <div class="ca-intake-card__sub">Sin amenidades marcadas.</div>
+              </ng-template>
+              <div class="ca-intake-card__details">
+                <div><strong>Ambiente:</strong> {{ ambianceLabel(selectedIntake.payload?.lifestyle?.ambiance) }}</div>
+                <div><strong>Dieta:</strong> {{ selectedIntake.payload?.lifestyle?.dietary || 'N/A' }}</div>
+              </div>
+            </article>
+
+            <article class="ca-intake-card ca-intake-card--wide">
+              <div class="ca-modal-label">Datos del cuidador corporativo</div>
+              <div class="ca-intake-card__details">
+                <div><strong>Nombre:</strong> {{ selectedIntake.payload?.caregiver?.name || 'N/A' }}</div>
+                <div><strong>Relación:</strong> {{ selectedIntake.payload?.caregiver?.relation || 'N/A' }}</div>
+                <div><strong>Empresa:</strong> {{ selectedIntake.payload?.caregiver?.company || 'N/A' }}</div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </ng-container>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+
+
+
+
+
 

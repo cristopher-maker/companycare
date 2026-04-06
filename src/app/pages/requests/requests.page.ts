@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { SupabaseService } from '../../core/services/supabase.service';
 
@@ -22,7 +23,10 @@ export class RequestsPage implements OnInit, OnDestroy {
 
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly router: Router
+  ) {}
 
   public ngOnInit(): void {
     void this.refresh();
@@ -51,6 +55,28 @@ export class RequestsPage implements OnInit, OnDestroy {
       return;
     }
 
+    try {
+      const { data: profile, error: profileError } = await this.supabase.client
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+      const role = profile?.role as string | undefined;
+      if (role === 'company_admin' || role === 'manager') {
+        await this.router.navigateByUrl('/company');
+        this.loading = false;
+        this.items = [];
+        return;
+      }
+    } catch {
+      this.loading = false;
+      this.error = 'No se pudo validar el acceso.';
+      return;
+    }
+
     const { data, error } = await this.supabase.client
       .from('care_requests')
       .select('id, channel, topic, status, created_at')
@@ -66,4 +92,3 @@ export class RequestsPage implements OnInit, OnDestroy {
     this.items = (data ?? []) as CareRequestRow[];
   }
 }
-

@@ -23,3 +23,15 @@
 /* Theme variables */
 @import './theme/variables.scss';
 
+ion-modal.provider-detail-modal {
+  --width: 100vw;
+  --height: 100vh;
+  --max-width: 100vw;
+  --max-height: 100vh;
+  --border-radius: 0;
+}
+
+ion-modal.provider-detail-modal::part(content) {
+  box-shadow: none;
+  border-radius: 0;
+}

@@ -1,0 +1,209 @@
+<ion-header class="packages-header">
+  <ion-toolbar class="nav-bar" color="light">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+
+    <div class="nav">
+      <div class="brand" routerLink="/home" role="link" tabindex="0" aria-label="Company Care">
+        <span class="mark">CC</span>
+        <div class="brand-text">
+          <div class="name">Company Care</div>
+          <div class="sub">by Senior Advisor</div>
+        </div>
+      </div>
+
+      <ul class="navigation-menu desktop-only" aria-label="Navegación principal">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/home">Inicio</a>
+        </li>
+        <li class="nav-item" *ngIf="mode === 'public' || canStartCareFlow">
+          <a class="nav-link" [routerLink]="mode === 'public' ? '/login' : '/care-experts'">Care Experts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/providers">Proveedores</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/resources">Recursos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/training">Formación</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/packages">Planes</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/about">Nosotros</a>
+        </li>
+      </ul>
+
+      <ion-button size="small" fill="outline" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">
+        {{ mode === 'public' ? 'Ingresar' : 'Portal' }}
+      </ion-button>
+
+      <ion-button size="small" class="contact-btn" routerLink="/contact">Contáctanos</ion-button>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="packages-page">
+  <section class="packages-hero">
+    <div class="packages-shell">
+      <div class="packages-kicker">PLANES COMPANY CARE</div>
+      <h1>Activa el beneficio con el nivel de acompañamiento que tu empresa necesita</h1>
+      <p>
+        Desde un portal co‑brandeado con recursos hasta una operación completa con Care Experts, seguimiento de casos
+        y soporte prioritario.
+      </p>
+    </div>
+  </section>
+
+  <section class="plans" aria-label="Planes para empresas">
+    <div class="plans-shell">
+      <div class="plans-grid" role="list" aria-label="Planes disponibles">
+        <article
+          *ngFor="let plan of packagePlans"
+          class="plans-card"
+          [ngClass]="plan.accentClass"
+          role="listitem"
+          [attr.aria-label]="plan.name"
+        >
+          <div class="plans-card__badge">{{ plan.badge }}</div>
+          <div class="plans-card__title">{{ plan.name }}</div>
+          <div class="plans-card__summary">{{ plan.summary }}</div>
+          <div class="plans-card__audience">{{ plan.audience }}</div>
+
+          <ul class="plans-card__features" aria-label="Incluye">
+            <li *ngFor="let feature of plan.features">{{ feature }}</li>
+          </ul>
+
+          <ion-button
+            class="plans-card__cta"
+            expand="block"
+            [fill]="plan.id === 'empresa' ? 'solid' : 'outline'"
+            routerLink="/contact"
+          >
+            Solicitar propuesta
+          </ion-button>
+        </article>
+      </div>
+
+      <div class="plans-roi">
+        <div class="plans-roi__panel">
+          <div class="plans-roi__kicker">ROI ESTIMADO</div>
+          <h3>Calculadora simple para presentar el beneficio</h3>
+          <p>Usa un supuesto base de horas recuperadas por colaborador y costo promedio por hora.</p>
+
+          <div class="plans-roi__input">
+            <label for="roiEmployees">Cantidad de empleados cubiertos</label>
+            <ion-input
+              id="roiEmployees"
+              type="number"
+              inputmode="numeric"
+              min="50"
+              max="5000"
+              [value]="roiEmployees"
+              (ionInput)="setRoiEmployees($any($event.detail).value)"
+            ></ion-input>
+          </div>
+
+          <div class="plans-roi__notes">
+            <span>6 horas recuperadas por persona al mes</span>
+            <span>$12.000 CLP por hora referencial</span>
+          </div>
+        </div>
+
+        <div class="plans-roi__results" aria-label="Resultados estimados">
+          <div class="plans-roi__metric">
+            <div class="plans-roi__metric-label">Horas recuperadas al mes</div>
+            <div class="plans-roi__metric-value">{{ roiMonthlyHoursRecovered | number:'1.0-0' }}</div>
+          </div>
+          <div class="plans-roi__metric">
+            <div class="plans-roi__metric-label">Ahorro estimado mensual</div>
+            <div class="plans-roi__metric-value">{{ roiFormattedSavings }}</div>
+          </div>
+          <div class="plans-roi__callout">
+            Estimación referencial para conversación comercial. El alcance final depende del tamaño de la empresa,
+            adopción y nivel de acompañamiento contratado.
+          </div>
+        </div>
+      </div>
+
+      <div class="plans-compare">
+        <div class="plans-compare__head">
+          <div>
+            <div class="plans-roi__kicker">COMPARATIVA</div>
+            <h3>Qué incluye cada plan</h3>
+          </div>
+          <ion-button fill="outline" routerLink="/contact">Hablar con ventas</ion-button>
+        </div>
+
+        <div class="plans-table" role="table" aria-label="Comparativa de planes">
+          <div class="plans-table__row plans-table__row--head" role="row">
+            <div class="plans-table__cell plans-table__cell--feature" role="columnheader">Capacidad</div>
+            <div class="plans-table__cell" role="columnheader">Lite</div>
+            <div class="plans-table__cell" role="columnheader">Empresa</div>
+            <div class="plans-table__cell" role="columnheader">Premium</div>
+          </div>
+
+          <div class="plans-table__row" role="row" *ngFor="let row of planComparisonRows">
+            <div class="plans-table__cell plans-table__cell--feature" role="rowheader">{{ row.label }}</div>
+            <div class="plans-table__cell" role="cell">
+              <ion-icon [name]="row.values.lite ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
+            </div>
+            <div class="plans-table__cell" role="cell">
+              <ion-icon [name]="row.values.empresa ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
+            </div>
+            <div class="plans-table__cell" role="cell">
+              <ion-icon [name]="row.values.premium ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="plans-cta">
+        <div class="plans-cta__copy">
+          <div class="plans-roi__kicker">COTIZACIÓN</div>
+          <h3>Solicita una propuesta ajustada a tu dotación y objetivos</h3>
+          <p>Definimos plan, alcance, onboarding y métricas de adopción según tu realidad.</p>
+        </div>
+        <div class="plans-cta__actions">
+          <ion-button routerLink="/contact">Contactar comercial</ion-button>
+          <ion-button fill="outline" routerLink="/about">Ver más sobre Company Care</ion-button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <div class="footer-title">Portal</div>
+        <a routerLink="/care-experts">Care Experts</a>
+        <a routerLink="/providers">Proveedores</a>
+        <a routerLink="/resources">Recursos</a>
+        <a routerLink="/training">Formación</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-title">Empresa</div>
+        <a routerLink="/packages">Planes</a>
+        <a routerLink="/dashboard">Dashboard B2B</a>
+        <a routerLink="/dashboard">Co-branding</a>
+        <a routerLink="/dashboard">RR.HH.</a>
+        <a routerLink="/dashboard">Onboarding</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-title">Compañía</div>
+        <a routerLink="/contact">Contacto</a>
+        <a routerLink="/resources">Privacidad</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-title">Contacto</div>
+        <a href="mailto:contacto&#64;companycare.cl">contacto&#64;companycare.cl</a>
+        <a href="tel:+56900000000">+56 9 0000 0000</a>
+        <span class="footer-muted">Lun–Vie 08:00–19:00</span>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 Company Care</div>
+  </footer>
+</ion-content>

@@ -1,0 +1,51 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Casos empresa</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refresh()" [disabled]="loading">Actualizar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="company-requests">
+  <div class="company-requests__wrap">
+    <div class="company-requests__head">
+      <div class="company-requests__kicker">Panel Empresa</div>
+      <h1>Casos recientes</h1>
+      <p *ngIf="companyName">Solicitudes vinculadas a colaboradores de {{ companyName }}.</p>
+    </div>
+
+    <ion-card *ngIf="error">
+      <ion-card-header>
+        <ion-card-title>Error</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>{{ error }}</ion-card-content>
+    </ion-card>
+
+    <ion-skeleton-text *ngIf="loading" animated="true" style="width: 100%; height: 120px"></ion-skeleton-text>
+
+    <div class="company-requests__list" *ngIf="!loading && !error && items.length">
+      <article class="company-requests__item" *ngFor="let item of items">
+        <div class="company-requests__main">
+          <div class="company-requests__title">{{ item.topic }}</div>
+          <div class="company-requests__meta">
+            {{ item.employee_name || 'Sin nombre' }}
+            <span *ngIf="item.employee_email">· {{ item.employee_email }}</span>
+          </div>
+        </div>
+
+        <div class="company-requests__side">
+          <div class="company-requests__status">{{ item.channel }} · {{ item.status }}</div>
+          <div class="company-requests__date">{{ item.created_at | date: 'dd/MM/yyyy HH:mm' }}</div>
+        </div>
+      </article>
+    </div>
+
+    <ion-card *ngIf="!loading && !error && items.length === 0">
+      <ion-card-content>No hay casos recientes para esta empresa.</ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

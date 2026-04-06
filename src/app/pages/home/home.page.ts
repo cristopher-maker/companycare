@@ -14,6 +14,7 @@ export class HomePage implements OnInit, OnDestroy {
 
   public mode: HomeMode = 'public';
   public displayName = 'Usuario';
+  public canStartCareFlow = false;
 
   public heroTitle = 'Bienvenido a Company Care';
   public heroSubtitle = 'Tu panel central de beneficios y cuidado senior.';
@@ -277,6 +278,7 @@ export class HomePage implements OnInit, OnDestroy {
       this.displayName = 'Usuario';
       this.heroTitle = 'Bienvenido a Company Care';
       this.heroSubtitle = 'Tu panel central de beneficios y cuidado senior.';
+      this.canStartCareFlow = false;
       this.loading = false;
       return;
     }
@@ -290,14 +292,21 @@ export class HomePage implements OnInit, OnDestroy {
     const role = (profile?.role ?? 'employee') as string;
     this.displayName = profile?.full_name?.trim() ? profile.full_name : 'Usuario';
 
-    if (role === 'admin' || role === 'company_admin') {
+    if (role === 'admin' || role === 'company_admin' || role === 'manager') {
       this.mode = 'company';
       this.heroTitle = `Hola, ${this.displayName}`;
       this.heroSubtitle = 'Panel Empresa: métricas, co-branding y herramientas de RR.HH.';
+      this.canStartCareFlow = role === 'admin';
+    } else if (role === 'care_expert') {
+      this.mode = 'employee';
+      this.heroTitle = `Hola, ${this.displayName}`;
+      this.heroSubtitle = 'Canal interno para responder solicitudes y acompañar casos.';
+      this.canStartCareFlow = true;
     } else {
       this.mode = 'employee';
       this.heroTitle = `Hola, ${this.displayName}`;
       this.heroSubtitle = 'Portal de beneficios: expertos, proveedores, recursos y formación.';
+      this.canStartCareFlow = true;
     }
 
     this.loading = false;

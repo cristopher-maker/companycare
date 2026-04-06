@@ -1,0 +1,127 @@
+<ion-header class="ion-no-border profile-header">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Mi Perfil</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="profile-page">
+
+  <div class="profile-shell" *ngIf="!loading">
+
+<section class="profile-hero">
+  <div class="profile-hero__bg"></div>
+  <!-- ✅ avatar fuera del body, posicionado encima de la banda -->
+  <div class="profile-avatar">{{ (fullName || email || 'U').slice(0,1).toUpperCase() }}</div>
+  <div class="profile-hero__body">
+    <div class="profile-hero__info">
+      <h1>{{ fullName || 'Usuario' }}</h1>
+      <p>{{ email }}</p>
+      <div class="profile-hero__meta">
+        <span class="profile-role">{{ roleLabel(role) }}</span>
+        <span class="profile-taxid" *ngIf="companyTaxId">
+          <ion-icon name="business-outline"></ion-icon>
+          RUT {{ companyTaxId }}
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+    <!-- GRID de secciones -->
+    <div class="profile-grid">
+
+      <!-- Datos personales -->
+      <section class="profile-section">
+        <div class="profile-section__head">
+          <div class="profile-section__icon">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
+          <div>
+            <h2>Datos personales</h2>
+            <p>Actualiza tu información visible en el portal.</p>
+          </div>
+        </div>
+
+        <div class="profile-form">
+          <div class="profile-field">
+            <label>Nombre completo</label>
+            <ion-item lines="none" class="profile-item">
+              <ion-input
+                [(ngModel)]="fullName"
+                name="fullName"
+                placeholder="Ej.: Ana Pérez"
+              ></ion-input>
+            </ion-item>
+          </div>
+
+          <div class="profile-field">
+            <label>Correo electrónico</label>
+            <ion-item lines="none" class="profile-item profile-item--readonly">
+              <ion-icon name="mail-outline" slot="start" class="field-icon"></ion-icon>
+              <ion-input [value]="email" readonly="true"></ion-input>
+            </ion-item>
+          </div>
+
+          <div class="profile-field">
+            <label>Empresa <span class="optional">opcional</span></label>
+            <ion-item lines="none" class="profile-item">
+              <ion-icon name="briefcase-outline" slot="start" class="field-icon"></ion-icon>
+              <ion-input
+                [(ngModel)]="company"
+                name="company"
+                placeholder="Ej.: Advisor"
+              ></ion-input>
+            </ion-item>
+          </div>
+
+          <div class="profile-field">
+            <label>RUT empresa</label>
+            <ion-item lines="none" class="profile-item profile-item--readonly">
+              <ion-icon name="document-text-outline" slot="start" class="field-icon"></ion-icon>
+              <ion-input [value]="companyTaxId || 'No disponible'" readonly="true"></ion-input>
+            </ion-item>
+          </div>
+
+          <ion-button expand="block" class="profile-save" (click)="save()" [disabled]="saving">
+            <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+            {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+          </ion-button>
+        </div>
+      </section>
+
+      <!-- Seguridad -->
+      <section class="profile-section profile-section--security">
+        <div class="profile-section__head">
+          <div class="profile-section__icon profile-section__icon--red">
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+          </div>
+          <div>
+            <h2>Seguridad</h2>
+            <p>Gestiona el acceso y tu contraseña.</p>
+          </div>
+        </div>
+
+        <div class="security-info">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          <p>Te enviaremos un correo con un enlace para restablecer tu contraseña de forma segura.</p>
+        </div>
+
+        <ion-button expand="block" fill="outline" class="security-btn" (click)="sendResetPassword()">
+          <ion-icon name="mail-outline" slot="start"></ion-icon>
+          Enviar correo para cambiar contraseña
+        </ion-button>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="profile-loading" *ngIf="loading">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <span>Cargando perfil...</span>
+  </div>
+
+</ion-content>

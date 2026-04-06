@@ -24,10 +24,12 @@
     <ion-item *ngFor="let r of items">
       <ion-label>
         <h2>{{ r.topic }}</h2>
-        <p>{{ r.channel }} • Estado: {{ r.status }}</p>
+        <p>{{ r.channel }} · Estado: {{ r.status }}</p>
         <p>{{ r.created_at | date: 'medium' }}</p>
       </ion-label>
-      <ion-button slot="end" fill="outline" routerLink="/care-experts">Abrir</ion-button>
+      <ion-button slot="end" fill="outline" [routerLink]="['/care-experts']" [queryParams]="{ request: r.id }">
+        Abrir
+      </ion-button>
     </ion-item>
   </ion-list>
 

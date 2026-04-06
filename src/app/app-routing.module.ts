@@ -36,6 +36,11 @@ const routes: Routes = [
     loadChildren: () => import('./pages/about/about.module').then((m) => m.AboutPageModule),
   },
   {
+    path: 'packages',
+    loadChildren: () =>
+      import('./pages/packages/packages.module').then((m) => m.PackagesPageModule),
+  },
+  {
     path: 'services',
     loadChildren: () =>
       import('./pages/services/services.module').then((m) => m.ServicesPageModule),
@@ -85,6 +90,19 @@ const routes: Routes = [
     path: 'company',
     canMatch: [authGuard],
     loadChildren: () => import('./pages/company/company.module').then((m) => m.CompanyPageModule),
+  },
+  {
+    path: 'company-requests',
+    canMatch: [authGuard],
+    loadChildren: () =>
+      import('./pages/company-requests/company-requests.module').then(
+        (m) => m.CompanyRequestsPageModule
+      ),
+  },
+  {
+    path: 'profile',
+    canMatch: [authGuard],
+    loadChildren: () => import('./pages/profile/profile.module').then((m) => m.ProfilePageModule),
   },
   {
     path: '**',

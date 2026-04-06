@@ -14,6 +14,8 @@ type PendingRegistration = {
   savedAt: number;
 };
 
+export type ProfileRole = 'employee' | 'admin' | 'company_admin' | 'manager' | 'care_expert';
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly sessionSubject = new BehaviorSubject<Session | null>(null);
@@ -82,6 +84,20 @@ export class AuthService {
   public async signOut(): Promise<void> {
     const { error } = await this.supabase.client.auth.signOut();
     if (error) throw error;
+  }
+
+  public async getCurrentProfileRole(): Promise<ProfileRole | null> {
+    const user = this.user;
+    if (!user) return null;
+
+    const { data, error } = await this.supabase.client
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    return (data?.role as ProfileRole | undefined) ?? null;
   }
 
   public savePendingRegistration(input: Omit<PendingRegistration, 'savedAt'>): void {

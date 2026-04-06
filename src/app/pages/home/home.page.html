@@ -17,8 +17,8 @@
         <li class="nav-item">
           <a class="nav-link" routerLink="/home">Inicio</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/care-experts">Care Experts</a>
+        <li class="nav-item" *ngIf="mode === 'public' || canStartCareFlow">
+          <a class="nav-link" [routerLink]="mode === 'public' ? '/login' : '/care-experts'">Care Experts</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" routerLink="/providers">Proveedores</a>
@@ -28,6 +28,9 @@
         </li>
         <li class="nav-item">
           <a class="nav-link" routerLink="/training">Formación</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/packages">Planes</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" routerLink="/about">Nosotros</a>
@@ -128,7 +131,13 @@
 
     <div class="features-inner">
       <div class="features-grid" role="list" aria-label="Beneficios">
-        <a class="feature-card feature-card--blue" routerLink="/care-experts" role="listitem" aria-label="Asesoría personalizada">
+        <a
+          *ngIf="mode === 'public' || canStartCareFlow"
+          class="feature-card feature-card--blue"
+          [routerLink]="mode === 'public' ? '/login' : '/care-experts'"
+          role="listitem"
+          aria-label="Asesoría personalizada"
+        >
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="chatbubbles-outline"></ion-icon>
           </div>
@@ -164,7 +173,13 @@
           <div class="feature-card__cta">Ver más</div>
         </a>
 
-        <a class="feature-card feature-card--slate" routerLink="/requests" role="listitem" aria-label="Seguimiento de casos">
+        <a
+          *ngIf="mode === 'public' || canStartCareFlow"
+          class="feature-card feature-card--slate"
+          [routerLink]="mode === 'public' ? '/login' : '/requests'"
+          role="listitem"
+          aria-label="Seguimiento de casos"
+        >
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="clipboard-outline"></ion-icon>
           </div>
@@ -173,7 +188,13 @@
           <div class="feature-card__cta">Ver más</div>
         </a>
 
-        <a class="feature-card feature-card--indigo" routerLink="/dashboard" role="listitem" aria-label="Panel Empresa">
+        <a
+          *ngIf="mode === 'public' || mode === 'company'"
+          class="feature-card feature-card--indigo"
+          [routerLink]="mode === 'public' ? '/login' : '/dashboard'"
+          role="listitem"
+          aria-label="Panel Empresa"
+        >
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="business-outline"></ion-icon>
           </div>
@@ -194,7 +215,13 @@
       </div>
 
       <div class="categories-grid" role="list" aria-label="Accesos populares">
-        <a class="category-card category-card--blue" routerLink="/requests" role="listitem" aria-label="Seguimiento de casos">
+        <a
+          *ngIf="mode === 'public' || canStartCareFlow"
+          class="category-card category-card--blue"
+          [routerLink]="mode === 'public' ? '/login' : '/requests'"
+          role="listitem"
+          aria-label="Seguimiento de casos"
+        >
           <div class="category-card__body">
             <div class="category-card__title">Seguimiento de casos</div>
             <div class="category-card__text">Estado, historial y acompañamiento en tus solicitudes.</div>
@@ -214,7 +241,13 @@
           </div>
         </a>
 
-        <a class="category-card category-card--green" routerLink="/dashboard" role="listitem" aria-label="Panel Empresa">
+        <a
+          *ngIf="mode === 'public' || mode === 'company'"
+          class="category-card category-card--green"
+          [routerLink]="mode === 'public' ? '/login' : '/dashboard'"
+          role="listitem"
+          aria-label="Panel Empresa"
+        >
           <div class="category-card__body">
             <div class="category-card__title">Panel Empresa</div>
             <div class="category-card__text">Métricas, co‑branding y herramientas para<br>RR.HH.</div>
@@ -367,6 +400,7 @@
       </div>
       <div class="footer-col">
         <div class="footer-title">Empresa</div>
+        <a routerLink="/packages">Planes</a>
         <a routerLink="/dashboard">Dashboard B2B</a>
         <a routerLink="/dashboard">Co-branding</a>
         <a routerLink="/dashboard">RR.HH.</a>
