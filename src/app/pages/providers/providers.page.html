@@ -124,7 +124,7 @@
 
         <section class="providers-results">
           <div class="results-head">
-            <h2>Mostrando {{ filteredProviders.length }} resultados</h2>
+            <h2>Mostrando {{ visibleProviders.length }} de {{ filteredProviders.length }} resultados</h2>
           </div>
 
           <div class="state-box state-box--loading" *ngIf="loading">
@@ -193,8 +193,18 @@
           </div>
 
           <div class="results-load-more" *ngIf="!loading && !error && canLoadMore">
-            <ion-button fill="outline" (click)="loadMore()">Cargar más</ion-button>
+            <ion-button fill="outline" (click)="loadMore()">Cargar 24 más</ion-button>
+            <span>{{ filteredProviders.length - visibleProviders.length }} pendientes</span>
           </div>
+
+          <ion-infinite-scroll
+            *ngIf="!loading && !error"
+            threshold="140px"
+            [disabled]="!canLoadMore"
+            (ionInfinite)="loadMore($event)"
+          >
+            <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más proveedores..."></ion-infinite-scroll-content>
+          </ion-infinite-scroll>
         </section>
       </div>
     </div>

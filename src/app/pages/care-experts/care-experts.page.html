@@ -81,13 +81,13 @@
         </ion-item>
       </div>
 
-      <div class="ce-section ce-appointments" *ngIf="canScheduleAppointment">
-        <div class="ce-section__head">
-          <div>
-            <div class="ce-label">Agendar hora</div>
-            <div class="ce-section__hint">Reserva una llamada o videollamada con fecha y hora.</div>
+        <div class="ce-section ce-appointments" *ngIf="canScheduleAppointment">
+          <div class="ce-section__head">
+            <div>
+              <div class="ce-label">Agendar hora</div>
+              <div class="ce-section__hint">Reserva una llamada o videollamada con fecha y hora. Las videollamadas intentan generar enlace de Google Meet.</div>
+            </div>
           </div>
-        </div>
 
         <div class="ce-appointment-form">
           <ion-item class="ce-item" lines="none">
@@ -142,7 +142,7 @@
         </ion-button>
       </div>
 
-      <ion-button *ngIf="!activeRequestId" class="ce-submit" type="submit" expand="block" [disabled]="loading" shape="round">
+      <ion-button *ngIf="channel === 'Chat' && !hasActiveChatRequest" class="ce-submit" type="submit" expand="block" [disabled]="loading" shape="round">
         {{ loading ? 'Creando chat...' : 'Iniciar chat' }}
         <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
       </ion-button>
@@ -152,7 +152,7 @@
         <span>Tus datos estan protegidos por encriptacion de extremo a extremo.</span>
       </div>
 
-      <div class="ce-chat-container" *ngIf="activeRequestId" aria-label="Chat con Care Experts">
+      <div class="ce-chat-container" *ngIf="hasActiveChatRequest" aria-label="Chat con Care Experts">
         <div class="ce-chat__head">
           <div>
             <div class="ce-chat__title">Chat activo</div>
@@ -193,10 +193,39 @@
           <div class="ce-chat__hint">Seguimiento de tus llamadas y videollamadas.</div>
         </div>
 
+        <div class="ce-next-appointment" *ngIf="nextAppointment as appointment">
+          <div class="ce-next-appointment__eyebrow">Próxima cita</div>
+          <div class="ce-next-appointment__title">
+            {{ appointment.kind }} · {{ appointment.scheduled_for | date: 'dd/MM/yyyy HH:mm' }}
+          </div>
+          <div class="ce-next-appointment__meta" *ngIf="hasMeetingLink(appointment); else pendingMeetLink">
+            Tu enlace ya está listo para entrar a la reunión.
+          </div>
+          <ng-template #pendingMeetLink>
+            <div class="ce-next-appointment__meta">
+              El enlace de Google Meet aparecerá aquí cuando quede generado.
+            </div>
+          </ng-template>
+          <button
+            type="button"
+            class="ce-next-appointment__link"
+            *ngIf="hasMeetingLink(appointment)"
+            (click)="openMeeting(appointment)"
+          >
+            Ir a la próxima cita
+          </button>
+        </div>
+
         <div class="ce-appointment-card" *ngFor="let appointment of employeeAppointments">
           <div>
             <div class="ce-appointment-card__title">{{ appointment.kind }}</div>
             <div class="ce-appointment-card__meta">{{ appointment.scheduled_for | date: 'dd/MM/yyyy HH:mm' }}</div>
+            <div class="ce-appointment-card__meta" *ngIf="appointment.meeting_code">
+              Código Meet: {{ appointment.meeting_code }}
+            </div>
+            <button type="button" class="ce-appointment-card__link" *ngIf="hasMeetingLink(appointment)" (click)="openMeeting(appointment)">
+              Unirse a Google Meet
+            </button>
           </div>
           <div class="ce-badge ce-badge--appointment">{{ appointmentStatusLabel(appointment.status) }}</div>
         </div>
@@ -482,6 +511,12 @@
             <div>
               <div class="ce-appointment-card__title">{{ appointment.kind }}</div>
               <div class="ce-appointment-card__meta">{{ appointment.scheduled_for | date: 'dd/MM HH:mm' }}</div>
+              <div class="ce-appointment-card__meta" *ngIf="appointment.meeting_code">
+                Código Meet: {{ appointment.meeting_code }}
+              </div>
+              <button type="button" class="ce-appointment-card__link" *ngIf="hasMeetingLink(appointment)" (click)="openMeeting(appointment)">
+                Abrir Meet
+              </button>
             </div>
             <ion-select
               class="ce-appointment-status"

@@ -204,9 +204,14 @@ export class ProvidersPage implements OnInit, OnDestroy {
     this.canLoadMore = this.visibleCount < this.filteredProviders.length;
   }
 
-  public loadMore(): void {
+  public loadMore(event?: CustomEvent): void {
     this.visibleCount += 24;
     this.updateVisibleProviders();
+    const target = event?.target as { complete?: () => Promise<void> | void; disabled?: boolean } | undefined;
+    target?.complete?.();
+    if (target) {
+      target.disabled = !this.canLoadMore;
+    }
   }
 
   public priceLabel(value: number | null): string {
@@ -319,7 +324,6 @@ export class ProvidersPage implements OnInit, OnDestroy {
     };
   }
 }
-
 
 
 

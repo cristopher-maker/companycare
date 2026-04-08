@@ -1,4 +1,4 @@
-<ion-header class="packages-header">
+﻿<ion-header class="packages-header">
   <ion-toolbar class="nav-bar" color="light">
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
@@ -30,7 +30,7 @@
           <a class="nav-link" routerLink="/training">Formación</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" routerLink="/packages">Planes</a>
+          <a class="nav-link nav-link--active" routerLink="/packages">Planes</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" routerLink="/about">Nosotros</a>
@@ -47,20 +47,50 @@
 </ion-header>
 
 <ion-content class="packages-page">
-  <section class="packages-hero">
-    <div class="packages-shell">
-      <div class="packages-kicker">PLANES COMPANY CARE</div>
-      <h1>Activa el beneficio con el nivel de acompañamiento que tu empresa necesita</h1>
-      <p>
-        Desde un portal co‑brandeado con recursos hasta una operación completa con Care Experts, seguimiento de casos
-        y soporte prioritario.
-      </p>
-    </div>
-  </section>
+  <div class="packages-hero__backdrop">
+    <div class="blob blob--one"></div>
+    <div class="blob blob--two"></div>
+    <div class="blob blob--three"></div>
+    <div class="blob blob--four"></div>
+    <div class="blob blob--five"></div> <div class="dot dot--one"></div>
+    <div class="dot dot--two"></div>
+    <div class="dot dot--three"></div>
+  </div>
 
-  <section class="plans" aria-label="Planes para empresas">
-    <div class="plans-shell">
-      <div class="plans-grid" role="list" aria-label="Planes disponibles">
+  <section class="packages-hero">
+    <div class="packages-shell packages-shell--hero">
+      <div class="packages-hero__top">
+        <div class="packages-hero__copy">
+          <div class="packages-kicker">PLATAFORMA COMPANY CARE</div>
+          <h1>
+            Activa el beneficio con el nivel de acompañamiento que tu
+            <span>empresa</span>
+            necesita
+          </h1>
+          <p>
+            Desde un portal co-brandeado con recursos hasta una operación completa con Care Experts, seguimiento de casos
+            y soporte prioritario.
+          </p>
+        </div>
+
+        <div class="packages-hero__visual" aria-hidden="true">
+          <div class="packages-hero__visual-ribbon"></div>
+          <div class="packages-hero__bubble packages-hero__bubble--lite">
+            <span>{{ packagePlans[0].name }}</span>
+          </div>
+          <div class="packages-hero__bubble packages-hero__bubble--empresa">
+            <span>{{ packagePlans[1].name }}</span>
+          </div>
+          <div class="packages-hero__bubble packages-hero__bubble--premium">
+            <span>{{ packagePlans[2].name }}</span>
+          </div>
+          <span class="packages-hero__spark packages-hero__spark--one"></span>
+          <span class="packages-hero__spark packages-hero__spark--two"></span>
+          <span class="packages-hero__spark packages-hero__spark--three"></span>
+        </div>
+      </div>
+
+      <div class="plans-grid plans-grid--hero" role="list" aria-label="Planes disponibles">
         <article
           *ngFor="let plan of packagePlans"
           class="plans-card"
@@ -68,7 +98,6 @@
           role="listitem"
           [attr.aria-label]="plan.name"
         >
-          <div class="plans-card__badge">{{ plan.badge }}</div>
           <div class="plans-card__title">{{ plan.name }}</div>
           <div class="plans-card__summary">{{ plan.summary }}</div>
           <div class="plans-card__audience">{{ plan.audience }}</div>
@@ -87,45 +116,86 @@
           </ion-button>
         </article>
       </div>
+    </div>
+  </section>
 
+  <section class="plans" aria-label="Planes para empresas">
+    <div class="plans-shell">
       <div class="plans-roi">
-        <div class="plans-roi__panel">
-          <div class="plans-roi__kicker">ROI ESTIMADO</div>
-          <h3>Calculadora simple para presentar el beneficio</h3>
-          <p>Usa un supuesto base de horas recuperadas por colaborador y costo promedio por hora.</p>
-
-          <div class="plans-roi__input">
-            <label for="roiEmployees">Cantidad de empleados cubiertos</label>
-            <ion-input
-              id="roiEmployees"
-              type="number"
-              inputmode="numeric"
-              min="50"
-              max="5000"
-              [value]="roiEmployees"
-              (ionInput)="setRoiEmployees($any($event.detail).value)"
-            ></ion-input>
+        <div class="plans-roi__hero">
+          <div class="plans-roi__intro">
+            <div class="plans-roi__kicker">CALCULADORA DE IMPACTO</div>
+            <h3>El verdadero costo del cuidado en tu empresa</h3>
+            <p>
+              Ingresa la cantidad de empleados para estimar el impacto económico anual asociado a responsabilidades de cuidado en tu organización.
+            </p>
           </div>
 
-          <div class="plans-roi__notes">
-            <span>6 horas recuperadas por persona al mes</span>
-            <span>$12.000 CLP por hora referencial</span>
+          <div class="plans-roi__control">
+            <div class="plans-roi__display" aria-label="Cantidad de empleados">
+              <div class="plans-roi__display-value">{{ roiEmployees | number:'1.0-0' }}</div>
+              <div class="plans-roi__display-label">empleados</div>
+            </div>
+
+            <div class="plans-roi__bounds" aria-hidden="true">
+              <span>Mín: 50</span>
+              <span>Máx: 5.000</span>
+            </div>
+
+            <ion-range
+              class="plans-roi__range"
+              min="50"
+              max="5000"
+              step="10"
+              snaps="false"
+              [value]="roiEmployees"
+              (ionInput)="setRoiEmployees($any($event.detail).value)"
+            ></ion-range>
+
+            <div class="plans-roi__input">
+              <label for="roiEmployees">O escribe la dotación manualmente</label>
+              <ion-input
+                id="roiEmployees"
+                type="number"
+                inputmode="numeric"
+                min="50"
+                max="5000"
+                [value]="roiEmployees"
+                (ionInput)="setRoiEmployees($any($event.detail).value)"
+              ></ion-input>
+            </div>
           </div>
         </div>
 
         <div class="plans-roi__results" aria-label="Resultados estimados">
           <div class="plans-roi__metric">
-            <div class="plans-roi__metric-label">Horas recuperadas al mes</div>
+            <div class="plans-roi__metric-value">{{ roiImpactedEmployees | number:'1.0-0' }}</div>
+            <div class="plans-roi__metric-title">Colaboradores con responsabilidades de cuidado</div>
+            <div class="plans-roi__metric-copy">
+              Estimación basada en que <strong>{{ roiCaregiverRateLabel }}</strong> de la dotación enfrenta tareas de cuidado.
+            </div>
+          </div>
+
+          <div class="plans-roi__metric plans-roi__metric--impact">
+            <div class="plans-roi__metric-value">{{ roiFormattedAnnualCost }}</div>
+            <div class="plans-roi__metric-title">Costo anual estimado para la empresa</div>
+            <div class="plans-roi__metric-copy">
+              Pérdida referencial en productividad, ausentismo y rotación, usando un costo de <strong>{{ roiFormattedCostPerCaregiver }}</strong> por cuidador al año.
+            </div>
+          </div>
+
+          <div class="plans-roi__metric plans-roi__metric--recovery">
             <div class="plans-roi__metric-value">{{ roiMonthlyHoursRecovered | number:'1.0-0' }}</div>
+            <div class="plans-roi__metric-title">Horas recuperables por mes</div>
+            <div class="plans-roi__metric-copy">
+              Potencial mensual de recuperación si la empresa logra compensar el <strong>{{ roiRecoveryLabel }}</strong> de las horas hoy perdidas.
+            </div>
           </div>
-          <div class="plans-roi__metric">
-            <div class="plans-roi__metric-label">Ahorro estimado mensual</div>
-            <div class="plans-roi__metric-value">{{ roiFormattedSavings }}</div>
-          </div>
-          <div class="plans-roi__callout">
-            Estimación referencial para conversación comercial. El alcance final depende del tamaño de la empresa,
-            adopción y nivel de acompañamiento contratado.
-          </div>
+        </div>
+
+        <div class="plans-roi__notes">
+          <span>* Supuestos referenciales para conversación comercial.</span>
+          <span>** Ajustamos la propuesta según dotación, operación y nivel de acompañamiento.</span>
         </div>
       </div>
 
@@ -134,11 +204,15 @@
           <div>
             <div class="plans-roi__kicker">COMPARATIVA</div>
             <h3>Qué incluye cada plan</h3>
+            <p class="plans-compare__summary">
+              La diferencia no está solo en el precio. Cambia el nivel de acompañamiento, gestión y operación que recibe tu empresa.
+            </p>
           </div>
           <ion-button fill="outline" routerLink="/contact">Hablar con ventas</ion-button>
         </div>
 
-        <div class="plans-table" role="table" aria-label="Comparativa de planes">
+        <div class="plans-compare__table-wrap">
+          <div class="plans-table" role="table" aria-label="Comparativa de planes">
           <div class="plans-table__row plans-table__row--head" role="row">
             <div class="plans-table__cell plans-table__cell--feature" role="columnheader">Capacidad</div>
             <div class="plans-table__cell" role="columnheader">Lite</div>
@@ -158,6 +232,7 @@
               <ion-icon [name]="row.values.premium ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -199,7 +274,7 @@
       </div>
       <div class="footer-col">
         <div class="footer-title">Contacto</div>
-        <a href="mailto:contacto&#64;companycare.cl">contacto&#64;companycare.cl</a>
+    <a href="mailto:contacto&#64;companycare.cl">contacto&#64;companycare.cl</a>
         <a href="tel:+56900000000">+56 9 0000 0000</a>
         <span class="footer-muted">Lun–Vie 08:00–19:00</span>
       </div>

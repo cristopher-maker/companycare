@@ -306,6 +306,53 @@ ion-content.care-experts {
   margin-bottom: 14px;
 }
 
+.ce-next-appointment {
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(27, 77, 255, 0.16);
+  background: linear-gradient(135deg, rgba(27, 77, 255, 0.08), rgba(27, 77, 255, 0.02));
+}
+
+.ce-next-appointment__eyebrow {
+  color: var(--ce-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ce-next-appointment__title {
+  margin-top: 6px;
+  color: var(--ce-text-main);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.ce-next-appointment__meta {
+  margin-top: 6px;
+  color: var(--ce-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ce-next-appointment__link {
+  margin-top: 12px;
+  appearance: none;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ce-primary);
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ce-next-appointment__link:hover {
+  background: var(--ce-primary-hover);
+}
+
 .ce-appointment-card {
   display: flex;
   align-items: center;
@@ -332,6 +379,17 @@ ion-content.care-experts {
   color: var(--ce-text-muted);
   font-size: 13px;
   font-weight: 500;
+}
+
+.ce-appointment-card__link {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #3158ff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .ce-footnote {

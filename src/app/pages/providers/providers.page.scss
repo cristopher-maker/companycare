@@ -14,6 +14,41 @@
 
 .providers-header ion-toolbar {
   --background: var(--dir-bg);
+  --min-height: 64px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+.providers-header ion-title {
+  color: var(--dir-text-main);
+  font-weight: 800;
+}
+
+.btn-refresh {
+  --color: var(--dir-text-main);
+  --background-hover: rgba(27, 77, 255, 0.08);
+  --border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  margin-right: 2px;
+}
+
+.btn-refresh ion-icon {
+  font-size: 22px;
+  color: var(--dir-text-main);
+}
+
+.btn-refresh[disabled] {
+  opacity: 0.7;
+}
+
+.spin {
+  animation: providers-spin 0.9s linear infinite;
+}
+
+@keyframes providers-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 ion-content.providers-page, .modal-bg {
@@ -198,6 +233,31 @@ ion-content.providers-page, .modal-bg {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.providers-results {
+  min-width: 0;
+}
+
+.results-load-more {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  ion-button {
+    --border-radius: 999px;
+    --padding-start: 22px;
+    --padding-end: 22px;
+    margin: 0;
+  }
+
+  span {
+    color: var(--dir-text-muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
 }
 
 /* Tarjeta de Proveedor Estilo Airbnb/Moderno */

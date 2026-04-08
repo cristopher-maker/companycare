@@ -1,0 +1,2 @@
+[functions.create-google-meet]
+verify_jwt = false

@@ -1,5 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-
+﻿﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 type PackagePlan = {
@@ -21,9 +20,14 @@ type PackagesMode = 'public' | 'employee' | 'company';
 export class PackagesPage implements OnInit, OnDestroy {
   public mode: PackagesMode = 'public';
   public canStartCareFlow = false;
+  
+  // Variables Calculadora ROI Chile
   public roiEmployees = 250;
-  public readonly roiHoursRecoveredPerEmployee = 6;
-  public readonly roiHourlyCostClp = 12000;
+  private readonly porcentajeCuidadores = 0.15; // 15% de la dotación (Datos ENDIDE/CASEN)
+  private readonly horasPerdidasAlAno = 48; // 6 días hábiles en trámites/presentismo
+  private readonly costoHoraPromedio = 12000; // CLP referencial
+  private readonly impactoCompanyCare = 0.50; // Asumimos recuperar el 50% de las horas perdidas
+
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
   public readonly packagePlans: PackagePlan[] = [
@@ -31,11 +35,11 @@ export class PackagesPage implements OnInit, OnDestroy {
       id: 'lite',
       name: 'Plan Lite',
       badge: 'Entrada',
-      summary: 'Portal co‑brandeado con recursos esenciales y onboarding básico.',
+      summary: 'Portal co-brandeado con recursos esenciales y onboarding básico.',
       audience: 'Empresas que quieren activar el beneficio rápido.',
       accentClass: 'plans-card--lite',
       features: [
-        'Portal co‑brandeado',
+        'Portal co-brandeado',
         'Biblioteca de recursos',
         'Onboarding básico',
         'Soporte limitado',
@@ -74,46 +78,16 @@ export class PackagesPage implements OnInit, OnDestroy {
   ];
 
   public readonly planComparisonRows = [
-    {
-      label: 'Portal co‑brandeado',
-      values: { lite: true, empresa: true, premium: true },
-    },
-    {
-      label: 'Recursos y guías',
-      values: { lite: true, empresa: true, premium: true },
-    },
-    {
-      label: 'Onboarding RR.HH.',
-      values: { lite: true, empresa: true, premium: true },
-    },
-    {
-      label: 'Fichas de cuidado RR.HH.',
-      values: { lite: false, empresa: true, premium: true },
-    },
-    {
-      label: 'Métricas del beneficio',
-      values: { lite: false, empresa: true, premium: true },
-    },
-    {
-      label: 'Vouchers y beneficios',
-      values: { lite: false, empresa: true, premium: true },
-    },
-    {
-      label: 'Formación para managers',
-      values: { lite: false, empresa: true, premium: true },
-    },
-    {
-      label: 'Care Experts ilimitados',
-      values: { lite: false, empresa: false, premium: true },
-    },
-    {
-      label: 'Seguimiento de casos',
-      values: { lite: false, empresa: false, premium: true },
-    },
-    {
-      label: 'Soporte prioritario',
-      values: { lite: false, empresa: false, premium: true },
-    },
+    { label: 'Portal co-brandeado', values: { lite: true, empresa: true, premium: true } },
+    { label: 'Recursos y guías', values: { lite: true, empresa: true, premium: true } },
+    { label: 'Onboarding RR.HH.', values: { lite: true, empresa: true, premium: true } },
+    { label: 'Fichas de cuidado RR.HH.', values: { lite: false, empresa: true, premium: true } },
+    { label: 'Métricas del beneficio', values: { lite: false, empresa: true, premium: true } },
+    { label: 'Vouchers y beneficios', values: { lite: false, empresa: true, premium: true } },
+    { label: 'Formación para managers', values: { lite: false, empresa: true, premium: true } },
+    { label: 'Care Experts ilimitados', values: { lite: false, empresa: false, premium: true } },
+    { label: 'Seguimiento de casos', values: { lite: false, empresa: false, premium: true } },
+    { label: 'Soporte prioritario', values: { lite: false, empresa: false, premium: true } },
   ] as const;
 
   constructor(private readonly supabase: SupabaseService) {}
@@ -127,25 +101,63 @@ export class PackagesPage implements OnInit, OnDestroy {
     this.unsub?.data.subscription.unsubscribe();
   }
 
+  // --- Lógica del ROI ---
   public setRoiEmployees(value: number | string | null): void {
     const parsed = typeof value === 'number' ? value : Number(value);
     this.roiEmployees = Number.isFinite(parsed) ? Math.max(50, Math.min(5000, parsed)) : 250;
   }
 
+  // Calcula las horas que se recuperan AL MES
   public get roiMonthlyHoursRecovered(): number {
-    return this.roiEmployees * this.roiHoursRecoveredPerEmployee;
+    const cuidadores = this.roiEmployees * this.porcentajeCuidadores;
+    const horasRecuperadasAlAno = cuidadores * this.horasPerdidasAlAno * this.impactoCompanyCare;
+    return horasRecuperadasAlAno / 12;
   }
 
-  public get roiMonthlySavingsClp(): number {
-    return this.roiMonthlyHoursRecovered * this.roiHourlyCostClp;
+  public get roiImpactedEmployees(): number {
+    return Math.round(this.roiEmployees * this.porcentajeCuidadores);
   }
 
-  public get roiFormattedSavings(): string {
+  public get roiAnnualCost(): number {
+    return this.roiImpactedEmployees * this.horasPerdidasAlAno * this.costoHoraPromedio;
+  }
+
+  public get roiFormattedAnnualCost(): string {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP',
       maximumFractionDigits: 0,
-    }).format(this.roiMonthlySavingsClp);
+    }).format(this.roiAnnualCost);
+  }
+
+  public get roiFormattedCostPerCaregiver(): string {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      maximumFractionDigits: 0,
+    }).format(this.horasPerdidasAlAno * this.costoHoraPromedio);
+  }
+
+  public get roiCaregiverRateLabel(): string {
+    return `${Math.round(this.porcentajeCuidadores * 100)}%`;
+  }
+
+  public get roiRecoveryLabel(): string {
+    return `${Math.round(this.impactoCompanyCare * 100)}%`;
+  }
+
+  // Calcula el ahorro total de la empresa AL MES
+  public get roiFormattedSavings(): string {
+    const cuidadores = this.roiEmployees * this.porcentajeCuidadores;
+    const costoOcultoAnual = cuidadores * this.horasPerdidasAlAno * this.costoHoraPromedio;
+    const ahorroAnual = costoOcultoAnual * this.impactoCompanyCare;
+    const ahorroMensual = ahorroAnual / 12; // Calculamos el mensual para ser más atractivos
+
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      maximumFractionDigits: 0,
+    }).format(ahorroMensual);
   }
 
   private async refresh(): Promise<void> {

@@ -65,6 +65,10 @@ type AppointmentRow = {
   notes: string | null;
   status: AppointmentStatus;
   created_at: string;
+  meeting_provider?: string | null;
+  meeting_url?: string | null;
+  meeting_code?: string | null;
+  meeting_space_name?: string | null;
 };
 
 @Component({
@@ -81,6 +85,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
   public loading = false;
   public activeRequestId: string | null = null;
+  public activeRequestChannel: SupportChannel | null = null;
   public messages: CareMessage[] = [];
   public messageDraft = '';
   public expertRequests: ExpertRequest[] = [];
@@ -192,6 +197,10 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     return this.channel === 'Videollamada' || this.channel === 'Llamada';
   }
 
+  public get hasActiveChatRequest(): boolean {
+    return !!this.activeRequestId && this.activeRequestChannel === 'Chat';
+  }
+
   private realtimeChannel: any | null = null;
   private readonly allowedRoles: ProfileRole[] = ['employee', 'care_expert', 'admin'];
 
@@ -245,6 +254,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       if (requestError) throw requestError;
 
       this.activeRequestId = requestRow.id as string;
+      this.activeRequestChannel = 'Chat';
 
       const { error: messageError } = await this.supabase.client.from('care_messages').insert({
         request_id: this.activeRequestId,
@@ -295,6 +305,14 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
   }
 
+  public hasMeetingLink(appointment: AppointmentRow): boolean {
+    return !!appointment.meeting_url && appointment.kind === 'Videollamada';
+  }
+
+  public get nextAppointment(): AppointmentRow | null {
+    return this.employeeAppointments[0] ?? null;
+  }
+
   public async scheduleAppointment(): Promise<void> {
     if (this.expertMode) return;
 
@@ -334,18 +352,30 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         if (requestError) throw requestError;
         requestId = requestRow.id as string;
         this.activeRequestId = requestId;
+        this.activeRequestChannel = this.appointmentKind;
       }
 
-      const { error } = await this.supabase.client.from('appointments').insert({
-        request_id: requestId,
-        employee_id: user.id,
-        expert_id: null,
-        kind: this.appointmentKind,
-        scheduled_for: scheduledFor.toISOString(),
-        notes: this.appointmentNotes.trim() || null,
-        created_by: user.id,
-      });
+      const { data: appointmentRow, error } = await this.supabase.client
+        .from('appointments')
+        .insert({
+          request_id: requestId,
+          employee_id: user.id,
+          expert_id: null,
+          kind: this.appointmentKind,
+          scheduled_for: scheduledFor.toISOString(),
+          notes: this.appointmentNotes.trim() || null,
+          created_by: user.id,
+        })
+        .select('id')
+        .single<{ id: string }>();
       if (error) throw error;
+
+      if (this.appointmentKind === 'Videollamada' && appointmentRow?.id) {
+        const { error: meetingError } = await this.createGoogleMeetForAppointment(appointmentRow.id);
+        if (meetingError) {
+          alert(`La cita se creó, pero no se pudo generar el enlace de Google Meet. ${meetingError}`);
+        }
+      }
 
       this.appointmentDate = '';
       this.appointmentTime = '';
@@ -363,6 +393,11 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
   public selectAppointmentTime(slot: string): void {
     this.appointmentTime = slot;
+  }
+
+  public openMeeting(appointment: AppointmentRow): void {
+    if (!appointment.meeting_url) return;
+    window.open(appointment.meeting_url, '_blank', 'noopener,noreferrer');
   }
 
   public async sendMessage(): Promise<void> {
@@ -605,7 +640,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
   public async selectExpertRequest(request: ExpertRequest): Promise<void> {
     this.selectedRequest = request;
-    this.activeRequestId = request.id;
+      this.activeRequestId = request.id;
+    this.activeRequestChannel = request.channel;
     this.statusDraft = request.status;
     this.channel = request.channel;
     this.topic = request.topic;
@@ -665,13 +701,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   }
 
   private async bootstrap(): Promise<void> {
-    const { data: sessionData } = await this.supabase.client.auth.getSession();
-    const sessionUser = sessionData.session?.user ?? this.auth.user;
-
-    if (!sessionUser) {
-      await this.router.navigateByUrl('/login');
-      return;
-    }
+const { data: sessionData } = await this.supabase.client.auth.getSession();
 
     try {
       const role = await this.auth.getCurrentProfileRole();
@@ -714,6 +744,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       if (!data?.id) throw new Error('No se encontró la solicitud.');
 
       this.activeRequestId = data.id as string;
+      this.activeRequestChannel = (data.channel as SupportChannel) ?? 'Chat';
       this.channel = (data.channel as SupportChannel) ?? 'Chat';
       this.topic = (data.topic as string) ?? this.topic;
 
@@ -799,7 +830,9 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
     const { data, error } = await this.supabase.client
       .from('appointments')
-      .select('id, request_id, employee_id, expert_id, kind, scheduled_for, notes, status, created_at')
+      .select(
+        'id, request_id, employee_id, expert_id, kind, scheduled_for, notes, status, created_at, meeting_provider, meeting_url, meeting_code, meeting_space_name'
+      )
       .eq('employee_id', userId)
       .order('scheduled_for', { ascending: true })
       .limit(6);
@@ -821,7 +854,9 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
     const { data, error } = await this.supabase.client
       .from('appointments')
-      .select('id, request_id, employee_id, expert_id, kind, scheduled_for, notes, status, created_at')
+      .select(
+        'id, request_id, employee_id, expert_id, kind, scheduled_for, notes, status, created_at, meeting_provider, meeting_url, meeting_code, meeting_space_name'
+      )
       .eq('request_id', request.id)
       .order('scheduled_for', { ascending: true })
       .limit(6);
@@ -893,6 +928,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
     this.selectedRequest = nextRequest;
     this.activeRequestId = nextRequest?.id ?? null;
+    this.activeRequestChannel = nextRequest?.channel ?? null;
     this.statusDraft = nextRequest?.status ?? 'open';
 
     if (nextRequest) {
@@ -908,6 +944,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       this.selectedHistory = [];
       this.selectedTags = [];
       this.selectedAppointments = [];
+      this.activeRequestChannel = null;
       await this.teardownRealtime();
     }
   }
@@ -1185,5 +1222,61 @@ export class CareExpertsPage implements OnInit, OnDestroy {
           }
         : message
     );
+  }
+
+  private async createGoogleMeetForAppointment(appointmentId: string): Promise<{ error: string | null }> {
+    const session = await this.supabase.client.auth.getSession();
+    const accessToken = session.data.session?.access_token;
+
+    if (!accessToken) {
+      return { error: 'Tu sesión expiró. Vuelve a iniciar sesión e inténtalo otra vez.' };
+    }
+
+    const { data, error } = await this.supabase.client.functions.invoke(
+      'create-google-meet',
+      {
+        body: { appointmentId },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (error) {
+      const context = (error as any).context;
+
+      if (context instanceof Response) {
+        try {
+          const payload = await context.json();
+          if (payload?.error) {
+            return { error: String(payload.error) };
+          }
+        } catch {
+          try {
+            const text = await context.text();
+            if (text.trim()) {
+              return { error: text };
+            }
+          } catch {
+            // ignore secondary parsing errors
+          }
+        }
+      }
+
+      if (error.message === 'Failed to send a request to the Edge Function') {
+        return {
+          error:
+            'No se pudo conectar con la Edge Function. Verifica que `create-google-meet` esté desplegada y que la configuración CORS/JWT actualizada ya esté publicada en Supabase.',
+        };
+      }
+
+      return { error: error.message };
+    }
+
+    if ((data as any)?.error) {
+      return { error: String((data as any).error) };
+    }
+
+    return { error: null };
   }
 }
