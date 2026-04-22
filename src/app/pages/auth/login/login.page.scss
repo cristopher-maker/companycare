@@ -119,6 +119,22 @@ ion-content.login {
   color: rgba(255, 255, 255, 0.84);
 }
 
+.pill__icon-button {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pill__icon-button ion-icon {
+  pointer-events: none;
+}
+
 .pill input {
   flex: 1 1 auto;
   border: 0;

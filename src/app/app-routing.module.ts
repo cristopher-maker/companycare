@@ -81,6 +81,11 @@ const routes: Routes = [
       import('./pages/requests/requests.module').then((m) => m.RequestsPageModule),
   },
   {
+    path: 'tasks',
+    canMatch: [authGuard],
+    loadChildren: () => import('./pages/tasks/tasks.module').then((m) => m.TasksPageModule),
+  },
+  {
     path: 'vouchers',
     canMatch: [authGuard],
     loadChildren: () =>

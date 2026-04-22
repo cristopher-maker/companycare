@@ -14,6 +14,18 @@ type AppPage = { title: string; url: string; icon: string; queryParams?: Record<
 export class AppComponent {
   public readonly appTitle = 'Company Care by Senior Advisor';
   public profileRole: ProfileRole | null = null;
+  private readonly primaryPageUrls = new Set([
+    '/home',
+    '/dashboard',
+    '/care-experts',
+    '/providers',
+    '/resources',
+    '/training',
+    '/requests',
+    '/tasks',
+    '/vouchers',
+    '/company',
+  ]);
 
   public readonly appPages: AppPage[] = [
     { title: 'Inicio', url: '/home', icon: 'home' },
@@ -23,6 +35,7 @@ export class AppComponent {
     { title: 'Recursos digitales', url: '/resources', icon: 'library' },
     { title: 'Formación', url: '/training', icon: 'school' },
     { title: 'Mis solicitudes', url: '/requests', icon: 'reader' },
+    { title: 'Mis tareas', url: '/tasks', icon: 'checkbox' },
     { title: 'Vouchers', url: '/vouchers', icon: 'pricetag' },
     { title: 'Administrar empresa', url: '/company', icon: 'business' },
     { title: 'Perfil', url: '/profile', icon: 'person-circle' },
@@ -54,7 +67,9 @@ export class AppComponent {
     const isEmployeeLike = this.profileRole === 'employee' || this.profileRole === 'admin';
 
     if (isCompany) {
-      return this.appPages.filter((page) => page.url !== '/care-experts' && page.url !== '/requests');
+      return this.appPages.filter(
+        (page) => page.url !== '/care-experts' && page.url !== '/requests' && page.url !== '/tasks'
+      );
     }
 
     if (isCareExpert) {
@@ -66,6 +81,14 @@ export class AppComponent {
     }
 
     return this.appPages;
+  }
+
+  public get primaryPages(): AppPage[] {
+    return this.visiblePages.filter((page) => this.primaryPageUrls.has(page.url));
+  }
+
+  public get secondaryPages(): AppPage[] {
+    return this.visiblePages.filter((page) => !this.primaryPageUrls.has(page.url));
   }
 
   public async closeMenu(): Promise<void> {

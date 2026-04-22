@@ -15,6 +15,7 @@ export class LoginPage implements OnDestroy {
   public mode: Mode = 'Ingresar';
   public email = '';
   public password = '';
+  public showPassword = false;
   public rememberMe = true;
   public loading = false;
   public error: string | null = null;
@@ -44,6 +45,10 @@ export class LoginPage implements OnDestroy {
 
   public goRegister(): void {
     void this.router.navigate(['/register'], { queryParams: { role: 'employee' } });
+  }
+
+  public togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 
   public async submit(): Promise<void> {

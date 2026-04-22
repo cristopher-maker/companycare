@@ -1,0 +1,33 @@
+{
+  "uid": "company_care_integration_app",
+  "type": "app",
+  "config": {
+    "name": "Company Care Integration",
+    "description": "Integración profesional para la gestión de beneficios corporativos de Senior Advisor y Comercial Ovni.",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [
+        "https://api.hubapi.com"
+      ],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "contacto@senioradvisor.cl",
+      "documentationUrl": "https://senioradvisor.cl",
+      "supportUrl": "https://senioradvisor.cl",
+      "supportPhone": "+56912345678"
+    }
+  }
+}

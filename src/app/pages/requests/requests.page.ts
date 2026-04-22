@@ -9,6 +9,13 @@ type CareRequestRow = {
   topic: string;
   status: string;
   created_at: string;
+  details: string | null;
+  appointment?: {
+    kind: string;
+    scheduled_for: string;
+    meeting_code: string | null;
+    status: string;
+  } | null;
 };
 
 @Component({
@@ -79,7 +86,7 @@ export class RequestsPage implements OnInit, OnDestroy {
 
     const { data, error } = await this.supabase.client
       .from('care_requests')
-      .select('id, channel, topic, status, created_at')
+      .select('id, channel, topic, status, created_at, details')
       .eq('employee_id', userId)
       .order('created_at', { ascending: false });
 
@@ -89,6 +96,79 @@ export class RequestsPage implements OnInit, OnDestroy {
       return;
     }
 
-    this.items = (data ?? []) as CareRequestRow[];
+    const requests = (data ?? []) as CareRequestRow[];
+    const requestIds = requests.map((item) => item.id);
+
+    if (!requestIds.length) {
+      this.items = [];
+      return;
+    }
+
+    const { data: appointments } = await this.supabase.client
+      .from('appointments')
+      .select('request_id, kind, scheduled_for, meeting_code, status')
+      .in('request_id', requestIds)
+      .order('scheduled_for', { ascending: true });
+
+    const appointmentByRequestId = new Map<string, CareRequestRow['appointment']>();
+    for (const appointment of appointments ?? []) {
+      const requestId = appointment.request_id as string | null;
+      if (!requestId || appointmentByRequestId.has(requestId)) {
+        continue;
+      }
+
+      appointmentByRequestId.set(requestId, {
+        kind: (appointment.kind as string) ?? 'Sesión',
+        scheduled_for: appointment.scheduled_for as string,
+        meeting_code: (appointment.meeting_code as string | null | undefined) ?? null,
+        status: (appointment.status as string) ?? 'scheduled',
+      });
+    }
+
+    this.items = requests.map((item) => ({
+      ...item,
+      appointment: appointmentByRequestId.get(item.id) ?? null,
+    }));
+  }
+
+  public statusLabel(status: string): string {
+    switch (status) {
+      case 'open':
+        return 'Abierta';
+      case 'assigned':
+        return 'Asignada';
+      case 'in_progress':
+        return 'En progreso';
+      case 'resolved':
+        return 'Resuelta';
+      case 'closed':
+        return 'Cerrada';
+      default:
+        return status;
+    }
+  }
+
+  public appointmentStatusLabel(status: string): string {
+    switch (status) {
+      case 'scheduled':
+        return 'Agendada';
+      case 'confirmed':
+        return 'Confirmada';
+      case 'completed':
+        return 'Completada';
+      case 'cancelled':
+        return 'Cancelada';
+      default:
+        return status;
+    }
+  }
+
+  public detailPreview(details: string | null): string {
+    const value = details?.trim();
+    if (!value) {
+      return 'Sin contexto adicional informado.';
+    }
+
+    return value.length > 180 ? `${value.slice(0, 180)}...` : value;
   }
 }

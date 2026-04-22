@@ -1,4 +1,5 @@
-﻿import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿﻿import { Component, ElementRef, OnDestroy, OnInit, ViewChild, AfterViewInit, NgZone, Renderer2 } from '@angular/core';
+import { IonContent } from '@ionic/angular';
 
 import { SupabaseService } from '../../core/services/supabase.service';
 
@@ -9,8 +10,9 @@ type HomeMode = 'public' | 'employee' | 'company';
   templateUrl: './home.page.html',
   styleUrls: ['./home.page.scss'],
 })
-export class HomePage implements OnInit, OnDestroy {
+export class HomePage implements OnInit, OnDestroy, AfterViewInit {
   public loading = true;
+  public isHeaderScrolled = false;
 
   public mode: HomeMode = 'public';
   public displayName = 'Usuario';
@@ -62,6 +64,8 @@ export class HomePage implements OnInit, OnDestroy {
   private badgeRafId: number | null = null;
   private readonly badgeDurationMs = 6500;
   private carouselTimerId: number | null = null;
+  private readonly loadedSlideIndexes = new Set<number>([0]);
+  private idleWarmupTimerId: number | null = null;
 
   private readonly badgeStorageKey = 'companycare:home:badge:v1';
   private badgeSegmentStartEpochMs = Date.now();
@@ -69,7 +73,16 @@ export class HomePage implements OnInit, OnDestroy {
   private badgePausedMs = 0;
   private badgeLastPersistEpochMs = 0;
 
-  constructor(private readonly supabase: SupabaseService) {
+  @ViewChild('scrollbar', { static: true }) scrollbar!: ElementRef;
+  @ViewChild(IonContent) content!: IonContent;
+  @ViewChild('lavaCanvas') private lavaCanvasRef?: ElementRef<HTMLCanvasElement>;
+  private animationId: number | null = null;
+
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly ngZone: NgZone,
+    private readonly renderer: Renderer2
+  ) {
     this.heroBgUrl = this.assetUrl('img/carousel-1.jpeg');
     this.aboutBgUrl = this.assetUrl('img/about-us.jpg');
     this.heroSlides = this.heroSlides.map((slide) => ({
@@ -82,29 +95,65 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
+    this.renderer.addClass(document.body, 'dark-page-active');
     void this.refresh();
     this.unsub = this.supabase.client.auth.onAuthStateChange(() => void this.refresh());
     this.restoreBadgeState();
     this.startBadgeProgress();
+    this.preloadFirstHeroImage();
+    this.scheduleHeroWarmup();
     this.startCarousel();
   }
 
+  public ngAfterViewInit(): void {
+    this.initLava();
+  }
+
   public ngOnDestroy(): void {
+    this.renderer.removeClass(document.body, 'dark-page-active');
     this.unsub?.data.subscription.unsubscribe();
     this.persistBadgeState(this.getBadgeProgress());
     this.stopBadgeProgress();
     this.stopCarousel();
+    this.stopHeroWarmup();
+    if (this.animationId) cancelAnimationFrame(this.animationId);
+  }
+
+  public async onScroll(event: CustomEvent<{ scrollTop: number }>): Promise<void> {
+    const scrollTop = event.detail.scrollTop;
+
+    // Header scroll logic
+    const shouldBeScrolled = scrollTop > 50;
+    if (this.isHeaderScrolled !== shouldBeScrolled) {
+      this.ngZone.run(() => (this.isHeaderScrolled = shouldBeScrolled));
+    }
+
+    // Custom scrollbar logic
+    if (this.scrollbar?.nativeElement && this.content) {
+      const scrollElement = await this.content.getScrollElement();
+      const scrollHeight = scrollElement.scrollHeight;
+      const clientHeight = scrollElement.clientHeight;
+
+      if (scrollHeight > clientHeight) {
+        const progress = scrollTop / (scrollHeight - clientHeight);
+        const thumbHeight = 120; // As defined in SCSS
+        const maxMove = clientHeight - thumbHeight;
+        this.scrollbar.nativeElement.style.setProperty('--scroll-y', `${progress * maxMove}px`);
+      }
+    }
   }
 
   public nextSlide(): void {
     if (this.heroSlides.length <= 1) return;
     this.activeSlideIndex = (this.activeSlideIndex + 1) % this.heroSlides.length;
+    this.markSlideAsLoaded(this.activeSlideIndex);
   }
 
   public prevSlide(): void {
     if (this.heroSlides.length <= 1) return;
     this.activeSlideIndex =
       (this.activeSlideIndex - 1 + this.heroSlides.length) % this.heroSlides.length;
+    this.markSlideAsLoaded(this.activeSlideIndex);
   }
 
   public setActiveSlide(index: number): void {
@@ -113,8 +162,15 @@ export class HomePage implements OnInit, OnDestroy {
       return;
     }
     this.activeSlideIndex = Math.max(0, Math.min(this.heroSlides.length - 1, index));
+    this.markSlideAsLoaded(this.activeSlideIndex);
     this.stopCarousel();
     this.startCarousel();
+  }
+
+  public slideBackgroundFor(index: number): string {
+    if (!this.loadedSlideIndexes.has(index)) return 'none';
+    const image = this.heroSlides[index]?.image ?? '';
+    return image ? `url('${image}')` : 'none';
   }
 
   public pauseCarousel(paused: boolean): void {
@@ -226,6 +282,51 @@ export class HomePage implements OnInit, OnDestroy {
     this.carouselTimerId = null;
   }
 
+  private markSlideAsLoaded(index: number): void {
+    if (index < 0 || index >= this.heroSlides.length) return;
+    if (this.loadedSlideIndexes.has(index)) return;
+    this.loadedSlideIndexes.add(index);
+  }
+
+  private preloadFirstHeroImage(): void {
+    const firstImage = this.heroSlides[0]?.image;
+    if (!firstImage || typeof window === 'undefined') return;
+
+    try {
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = firstImage;
+    } catch {
+      // ignore
+    }
+  }
+
+  private scheduleHeroWarmup(): void {
+    if (typeof window === 'undefined') return;
+    this.stopHeroWarmup();
+
+    const warmup = () => {
+      for (let i = 1; i < this.heroSlides.length; i += 1) {
+        this.markSlideAsLoaded(i);
+        try {
+          const image = new Image();
+          image.decoding = 'async';
+          image.src = this.heroSlides[i].image;
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    this.idleWarmupTimerId = window.setTimeout(warmup, 1500);
+  }
+
+  private stopHeroWarmup(): void {
+    if (this.idleWarmupTimerId === null) return;
+    window.clearTimeout(this.idleWarmupTimerId);
+    this.idleWarmupTimerId = null;
+  }
+
   private persistBadgeState(progress: number): void {
     const now = Date.now();
     if (now - this.badgeLastPersistEpochMs < 750) return;
@@ -322,5 +423,60 @@ export class HomePage implements OnInit, OnDestroy {
       return `assets/${path}`;
     }
   }
-}
 
+  private initLava() {
+    const canvas = this.lavaCanvasRef?.nativeElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
+    const blobs = Array.from({ length: 9 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 80 + Math.random() * 120,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.5,
+      hue: Math.random() < 0.5 ? 280 + Math.random() * 30 : 310 + Math.random() * 30,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.003 + Math.random() * 0.004
+    }));
+
+    const draw = () => {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#1a0a2e');
+      gradient.addColorStop(1, '#3c103f');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      blobs.forEach(b => {
+        b.phase += b.speed;
+        b.x += b.vx + Math.sin(b.phase * 0.7) * 0.3;
+        b.y += b.vy + Math.cos(b.phase * 0.5) * 0.4;
+
+        if (b.x < -b.r) b.x = canvas.width + b.r;
+        if (b.x > canvas.width + b.r) b.x = -b.r;
+        if (b.y < -b.r) b.y = canvas.height + b.r;
+        if (b.y > canvas.height + b.r) b.y = -b.r;
+
+        const pulse = 1 + 0.18 * Math.sin(b.phase * 1.3);
+        const gr = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * pulse);
+        gr.addColorStop(0, `hsla(${b.hue}, 100%, 65%, 0.55)`);
+        gr.addColorStop(0.5, `hsla(${b.hue + 15}, 90%, 55%, 0.25)`);
+        gr.addColorStop(1, `hsla(${b.hue + 30}, 80%, 45%, 0)`);
+
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = gr;
+        ctx.fill();
+      });
+      this.animationId = requestAnimationFrame(draw);
+    };
+    draw();
+  }
+}

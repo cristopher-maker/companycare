@@ -1,24 +1,107 @@
-<ion-header>
+<ion-header class="ion-no-border services-header">
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Servicios</ion-title>
+    <div class="services-nav">
+      <div class="services-nav__left">
+        <ion-menu-button></ion-menu-button>
+        <div class="services-brand" routerLink="/home">
+          <div class="services-brand__mark">CC</div>
+          <div class="services-brand__meta">
+            <div class="services-brand__name">Company Care</div>
+            <div class="services-brand__sub">Servicios</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="services-nav__actions">
+        <ion-button fill="clear" routerLink="/packages">Planes</ion-button>
+        <ion-button class="services-nav__cta" routerLink="/contact">Contactar</ion-button>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ion-grid>
-    <ion-row>
-      <ion-col size="12" sizeMd="6" *ngFor="let s of services">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>{{ s.title }}</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>{{ s.description }}</ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
-</ion-content>
+<ion-content class="services-page" [fullscreen]="true">
+  <div class="services-shell">
+    <section class="services-hero">
+      <div class="services-hero__copy">
+        <div class="services-kicker">SERVICIOS</div>
+        <h1>Servicios para diagnosticar, ordenar y dar continuidad.</h1>
+        <p>
+          Convertimos necesidades operativas en planes accionables, con acompanamiento claro y foco en resultados.
+        </p>
 
+        <div class="services-hero__actions">
+          <ion-button class="services-btn services-btn--primary" routerLink="/contact">Solicitar reunion</ion-button>
+          <ion-button class="services-btn services-btn--secondary" fill="outline" routerLink="/packages">
+            Ver planes
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="services-hero__panel">
+        <div class="services-hero__eyebrow">Que resolvemos</div>
+        <div class="services-hero__metric">
+          <span class="services-hero__metric-value">3</span>
+          <span class="services-hero__metric-label">frentes de trabajo integrados</span>
+        </div>
+        <ul class="services-hero__list">
+          <li>Diagnostico de situacion actual</li>
+          <li>Plan de accion priorizado</li>
+          <li>Seguimiento con indicadores y reportes</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="services-grid-section" aria-label="Servicios principales">
+      <div class="services-grid">
+        <article
+          class="service-card"
+          *ngFor="let service of serviceHighlights"
+          [ngClass]="'service-card--' + service.accent"
+        >
+          <div class="service-card__icon" aria-hidden="true">
+            <ion-icon [name]="service.icon"></ion-icon>
+          </div>
+
+          <div class="service-card__title">{{ service.title }}</div>
+          <div class="service-card__description">{{ service.description }}</div>
+
+          <div class="service-card__label">Incluye</div>
+          <ul class="service-card__deliverables">
+            <li *ngFor="let item of service.deliverables">{{ item }}</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="services-process" aria-label="Como trabajamos">
+      <div class="services-section-head">
+        <div class="services-kicker">METODO</div>
+        <h2>Como trabajamos</h2>
+        <p>Un proceso simple para pasar de diagnostico a resultados sostenibles.</p>
+      </div>
+
+      <div class="services-steps">
+        <article class="services-step" *ngFor="let step of workSteps">
+          <div class="services-step__index">{{ step.step }}</div>
+          <div class="services-step__title">{{ step.title }}</div>
+          <div class="services-step__text">{{ step.text }}</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="services-cta" aria-label="Cierre">
+      <div class="services-cta__copy">
+        <div class="services-kicker">SIGUIENTE PASO</div>
+        <h2>Si ya tienes claro el problema, podemos ayudarte a ordenarlo.</h2>
+        <p>
+          Partimos con un diagnostico breve, definimos prioridades y dejamos un plan ejecutable para tu equipo.
+        </p>
+      </div>
+
+      <div class="services-cta__actions">
+        <ion-button class="services-btn services-btn--primary" routerLink="/contact">Hablar con el equipo</ion-button>
+      </div>
+    </section>
+  </div>
+</ion-content>

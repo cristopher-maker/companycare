@@ -1,61 +1,50 @@
-<ion-header class="home-header">
-  <ion-toolbar class="nav-bar" color="light">
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-
-    <div class="nav">
-      <div class="brand" routerLink="/home" role="link" tabindex="0" aria-label="Company Care">
-        <span class="mark">CC</span>
-        <div class="brand-text">
-          <div class="name">Company Care</div>
-          <div class="sub">by Senior Advisor</div>
+<div class="scrollbar-custom" #scrollbar></div>
+<ion-header class="ion-no-border home-header" [translucent]="true" [class.is-scrolled]="isHeaderScrolled">
+  <ion-toolbar>
+    <div class="cc-nav">
+      <div class="cc-nav-left">
+        <ion-menu-button></ion-menu-button>
+        <div class="cc-brand" routerLink="/home">
+          <div class="cc-mark">CC</div>
+          <div class="cc-brand-text">
+            <div class="name">Company Care</div>
+            <div class="sub">by Senior Advisor</div>
+          </div>
         </div>
       </div>
 
-      <ul class="navigation-menu desktop-only" aria-label="Navegación principal">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/home">Inicio</a>
-        </li>
+      <ul class="cc-nav-links">
+        <li><a routerLink="/home" routerLinkActive="active-link">Inicio</a></li>
         <li class="nav-item" *ngIf="mode === 'public' || canStartCareFlow">
-          <a class="nav-link" [routerLink]="mode === 'public' ? '/login' : '/care-experts'">Care Experts</a>
+          <a [routerLink]="mode === 'public' ? '/login' : '/care-experts'">Care Experts</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/providers">Proveedores</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/resources">Recursos</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/training">Formación</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/packages">Planes</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/about">Nosotros</a>
-        </li>
+        <li><a routerLink="/providers">Proveedores</a></li>
+        <li><a routerLink="/resources">Recursos</a></li>
+        <li><a routerLink="/training">Formación</a></li>
+        <li><a routerLink="/packages">Planes</a></li>
+        <li><a routerLink="/about">Nosotros</a></li>
       </ul>
 
-
-        <ion-button size="small" fill="outline" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">
+      <div class="cc-nav-actions">
+        <button class="btn-ghost" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">
           {{ mode === 'public' ? 'Ingresar' : 'Portal' }}
-        </ion-button>
-
-        <ion-button size="small" class="contact-btn" routerLink="/contact">Contáctanos</ion-button>
-      
+        </button>
+        <button class="btn-glow" routerLink="/contact">Contáctanos</button>
+      </div>
     </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="home" [style.--hero-illustration-image]="'url(' + heroBgUrl + ')'">
+<ion-content class="home" [fullscreen]="true" [scrollEvents]="true" (ionScroll)="onScroll($event)" [style.--hero-illustration-image]="'url(' + heroBgUrl + ')'">
+  <canvas #lavaCanvas class="lava-canvas" aria-hidden="true"></canvas>
+
   <section class="hero hero--carousel">
     <div class="hero-bg" aria-hidden="true">
       <div
         class="hero-bg__slide"
         *ngFor="let slide of heroSlides; let i = index"
         [class.is-active]="i === activeSlideIndex"
-        [style.backgroundImage]="'url(' + slide.image + ')'"
+        [style.backgroundImage]="slideBackgroundFor(i)"
       ></div>
     </div>
     <div class="hero-overlay" aria-hidden="true"></div>
@@ -138,6 +127,11 @@
           role="listitem"
           aria-label="Asesoría personalizada"
         >
+          <div class="feature-card__waves" aria-hidden="true">
+            <span class="feature-card__wave feature-card__wave--1"></span>
+            <span class="feature-card__wave feature-card__wave--2"></span>
+            <span class="feature-card__wave feature-card__wave--3"></span>
+          </div>
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="chatbubbles-outline"></ion-icon>
           </div>
@@ -147,6 +141,11 @@
         </a>
 
         <a class="feature-card feature-card--green" routerLink="/providers" role="listitem" aria-label="Proveedores verificados">
+          <div class="feature-card__waves" aria-hidden="true">
+            <span class="feature-card__wave feature-card__wave--1"></span>
+            <span class="feature-card__wave feature-card__wave--2"></span>
+            <span class="feature-card__wave feature-card__wave--3"></span>
+          </div>
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="home-outline"></ion-icon>
           </div>
@@ -156,6 +155,11 @@
         </a>
 
         <a class="feature-card feature-card--amber" routerLink="/resources" role="listitem" aria-label="Biblioteca de recursos">
+          <div class="feature-card__waves" aria-hidden="true">
+            <span class="feature-card__wave feature-card__wave--1"></span>
+            <span class="feature-card__wave feature-card__wave--2"></span>
+            <span class="feature-card__wave feature-card__wave--3"></span>
+          </div>
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="book-outline"></ion-icon>
           </div>
@@ -165,6 +169,11 @@
         </a>
 
         <a class="feature-card feature-card--violet" routerLink="/training" role="listitem" aria-label="Formación">
+          <div class="feature-card__waves" aria-hidden="true">
+            <span class="feature-card__wave feature-card__wave--1"></span>
+            <span class="feature-card__wave feature-card__wave--2"></span>
+            <span class="feature-card__wave feature-card__wave--3"></span>
+          </div>
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="school-outline"></ion-icon>
           </div>
@@ -180,6 +189,11 @@
           role="listitem"
           aria-label="Seguimiento de casos"
         >
+          <div class="feature-card__waves" aria-hidden="true">
+            <span class="feature-card__wave feature-card__wave--1"></span>
+            <span class="feature-card__wave feature-card__wave--2"></span>
+            <span class="feature-card__wave feature-card__wave--3"></span>
+          </div>
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="clipboard-outline"></ion-icon>
           </div>
@@ -195,6 +209,11 @@
           role="listitem"
           aria-label="Panel Empresa"
         >
+          <div class="feature-card__waves" aria-hidden="true">
+            <span class="feature-card__wave feature-card__wave--1"></span>
+            <span class="feature-card__wave feature-card__wave--2"></span>
+            <span class="feature-card__wave feature-card__wave--3"></span>
+          </div>
           <div class="feature-card__icon" aria-hidden="true">
             <ion-icon name="business-outline"></ion-icon>
           </div>
@@ -222,9 +241,15 @@
           role="listitem"
           aria-label="Seguimiento de casos"
         >
+          <div class="category-card__waves" aria-hidden="true">
+            <span class="category-card__wave category-card__wave--1"></span>
+            <span class="category-card__wave category-card__wave--2"></span>
+            <span class="category-card__wave category-card__wave--3"></span>
+          </div>
           <div class="category-card__body">
             <div class="category-card__title">Seguimiento de casos</div>
             <div class="category-card__text">Estado, historial y acompañamiento en tus solicitudes.</div>
+            <div class="category-card__cta">Ver más</div>
           </div>
           <div class="category-card__badge" aria-hidden="true">
             <ion-icon name="clipboard-outline"></ion-icon>
@@ -232,9 +257,15 @@
         </a>
 
         <a class="category-card category-card--violet" routerLink="/resources" role="listitem" aria-label="Biblioteca de recursos">
+          <div class="category-card__waves" aria-hidden="true">
+            <span class="category-card__wave category-card__wave--1"></span>
+            <span class="category-card__wave category-card__wave--2"></span>
+            <span class="category-card__wave category-card__wave--3"></span>
+          </div>
           <div class="category-card__body">
             <div class="category-card__title">Biblioteca de recursos</div>
             <div class="category-card__text">Guías prácticas, checklists y alternativas de financiación.</div>
+            <div class="category-card__cta">Ver más</div>
           </div>
           <div class="category-card__badge" aria-hidden="true">
             <ion-icon name="book-outline"></ion-icon>
@@ -248,9 +279,15 @@
           role="listitem"
           aria-label="Panel Empresa"
         >
+          <div class="category-card__waves" aria-hidden="true">
+            <span class="category-card__wave category-card__wave--1"></span>
+            <span class="category-card__wave category-card__wave--2"></span>
+            <span class="category-card__wave category-card__wave--3"></span>
+          </div>
           <div class="category-card__body">
             <div class="category-card__title">Panel Empresa</div>
             <div class="category-card__text">Métricas, co‑branding y herramientas para<br>RR.HH.</div>
+            <div class="category-card__cta">Ver más</div>
           </div>
           <div class="category-card__badge" aria-hidden="true">
             <ion-icon name="business-outline"></ion-icon>
@@ -260,26 +297,19 @@
     </div>
   </section>
 
-  <section class="about-band" aria-label="Sobre nosotros" [style.--about-bg]="'url(' + aboutBgUrl + ')'">
+  <section class="about-band" aria-label="Sobre nosotros">
     <div class="about-band__bg" aria-hidden="true"></div>
     <div class="about-band__overlay" aria-hidden="true"></div>
-
     <div class="about-band__inner">
       <h2 class="about-band__title">SOBRE NOSOTROS</h2>
       <p class="about-band__lead">
-        Company Care ayuda a empleados cuidadores a tomar decisiones informadas con menos estrés: orientación experta,
-        recursos claros, proveedores verificados y apoyo continuo.
+        Ayudamos a empleados cuidadores a tomar decisiones informadas con menos estrés.
       </p>
       <p class="about-band__text">
-        Este es un espacio para contar tu historia, el impacto del beneficio y cómo acompañas a las empresas y sus
-        equipos.
+        Combinamos orientación experta, recursos claros, proveedores verificados y apoyo continuo para que tu equipo pueda enfocarse en lo que más importa.
       </p>
-
-      <ion-button fill="outline" class="about-band__cta" routerLink="/about">Más información</ion-button>
+      <ion-button fill="outline" class="about-band__cta" routerLink="/about">Más sobre nosotros</ion-button>
     </div>
-
-
-
   </section>
 
   <section class="faq" aria-label="Preguntas frecuentes">

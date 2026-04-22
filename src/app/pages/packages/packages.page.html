@@ -1,61 +1,41 @@
-﻿<ion-header class="packages-header">
-  <ion-toolbar class="nav-bar" color="light">
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-
-    <div class="nav">
-      <div class="brand" routerLink="/home" role="link" tabindex="0" aria-label="Company Care">
-        <span class="mark">CC</span>
-        <div class="brand-text">
-          <div class="name">Company Care</div>
-          <div class="sub">by Senior Advisor</div>
+﻿﻿<ion-header class="ion-no-border packages-header">
+  <ion-toolbar>
+    <div class="cc-nav">
+      <div class="cc-nav-left">
+        <ion-menu-button></ion-menu-button>
+        <div class="cc-brand" routerLink="/home">
+          <div class="cc-mark">CC</div>
+          <div class="cc-brand-text">
+            <div class="name">Company Care</div>
+            <div class="sub">by Senior Advisor</div>
+          </div>
         </div>
       </div>
 
-      <ul class="navigation-menu desktop-only" aria-label="Navegación principal">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/home">Inicio</a>
+      <ul class="cc-nav-links">
+        <li><a routerLink="/home">Inicio</a></li>
+        <li *ngIf="mode === 'public' || canStartCareFlow">
+          <a [routerLink]="mode === 'public' ? '/login' : '/care-experts'">Care Experts</a>
         </li>
-        <li class="nav-item" *ngIf="mode === 'public' || canStartCareFlow">
-          <a class="nav-link" [routerLink]="mode === 'public' ? '/login' : '/care-experts'">Care Experts</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/providers">Proveedores</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/resources">Recursos</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/training">Formación</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-link--active" routerLink="/packages">Planes</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/about">Nosotros</a>
-        </li>
+        <li><a routerLink="/providers">Proveedores</a></li>
+        <li><a routerLink="/resources">Recursos</a></li>
+        <li><a routerLink="/training">Formación</a></li>
+        <li><a routerLink="/packages" routerLinkActive="active-link">Planes</a></li>
+        <li><a routerLink="/about">Nosotros</a></li>
       </ul>
 
-      <ion-button size="small" fill="outline" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">
-        {{ mode === 'public' ? 'Ingresar' : 'Portal' }}
-      </ion-button>
-
-      <ion-button size="small" class="contact-btn" routerLink="/contact">Contáctanos</ion-button>
+      <div class="cc-nav-actions">
+        <button class="btn-ghost" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">
+          {{ mode === 'public' ? 'Ingresar' : 'Portal' }}
+        </button>
+        <button class="btn-glow" routerLink="/contact">Contáctanos</button>
+      </div>
     </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="packages-page">
-  <div class="packages-hero__backdrop">
-    <div class="blob blob--one"></div>
-    <div class="blob blob--two"></div>
-    <div class="blob blob--three"></div>
-    <div class="blob blob--four"></div>
-    <div class="blob blob--five"></div> <div class="dot dot--one"></div>
-    <div class="dot dot--two"></div>
-    <div class="dot dot--three"></div>
-  </div>
+  <canvas #lavaCanvas class="lava-canvas" aria-hidden="true"></canvas>
 
   <section class="packages-hero">
     <div class="packages-shell packages-shell--hero">
@@ -63,30 +43,13 @@
         <div class="packages-hero__copy">
           <div class="packages-kicker">PLATAFORMA COMPANY CARE</div>
           <h1>
-            Activa el beneficio con el nivel de acompañamiento que tu
+            Activa el beneficio con una oferta simple para la
             <span>empresa</span>
-            necesita
+            que quieres vender
           </h1>
           <p>
-            Desde un portal co-brandeado con recursos hasta una operación completa con Care Experts, seguimiento de casos
-            y soporte prioritario.
+            Dejamos dos planes claros: una capa base para activar el beneficio y una capa completa para operar con Care Experts, seguimiento y soporte.
           </p>
-        </div>
-
-        <div class="packages-hero__visual" aria-hidden="true">
-          <div class="packages-hero__visual-ribbon"></div>
-          <div class="packages-hero__bubble packages-hero__bubble--lite">
-            <span>{{ packagePlans[0].name }}</span>
-          </div>
-          <div class="packages-hero__bubble packages-hero__bubble--empresa">
-            <span>{{ packagePlans[1].name }}</span>
-          </div>
-          <div class="packages-hero__bubble packages-hero__bubble--premium">
-            <span>{{ packagePlans[2].name }}</span>
-          </div>
-          <span class="packages-hero__spark packages-hero__spark--one"></span>
-          <span class="packages-hero__spark packages-hero__spark--two"></span>
-          <span class="packages-hero__spark packages-hero__spark--three"></span>
         </div>
       </div>
 
@@ -98,22 +61,25 @@
           role="listitem"
           [attr.aria-label]="plan.name"
         >
-          <div class="plans-card__title">{{ plan.name }}</div>
-          <div class="plans-card__summary">{{ plan.summary }}</div>
-          <div class="plans-card__audience">{{ plan.audience }}</div>
-
+          <div class="plans-card__deco">
+            <svg class="plans-card__deco-img" enable-background="new 0 0 300 100" height="100px" id="Layer_1" preserveAspectRatio="none" version="1.1" viewBox="0 0 300 100" width="300px" x="0px" xml:space="preserve" y="0px">
+                <path class="deco-layer deco-layer--1" d="M30.913,43.944c0,0,42.911-34.464,87.51-14.191c77.31,35.14,113.304-1.952,146.638-4.729c48.654-4.056,69.94,16.218,69.94,16.218v54.396H30.913V43.944z" fill="#FFFFFF" opacity="0.6"></path>
+                <path class="deco-layer deco-layer--2" d="M-35.667,44.628c0,0,42.91-34.463,87.51-14.191c77.31,35.141,113.304-1.952,146.639-4.729c48.653-4.055,69.939,16.218,69.939,16.218v54.396H-35.667V44.628z" fill="#FFFFFF" opacity="0.6"></path>
+                <path class="deco-layer deco-layer--3" d="M43.415,98.342c0,0,48.283-68.927,109.133-68.927c65.886,0,97.983,67.914,97.983,67.914v3.716H42.401L43.415,98.342z" fill="#FFFFFF" opacity="0.7"></path>
+                <path class="deco-layer deco-layer--4" d="M-34.667,62.998c0,0,56-45.667,120.316-27.839C167.484,57.842,197,41.332,232.286,30.428c53.07-16.399,104.047,36.903,104.047,36.903l1.333,36.667l-372-2.954L-34.667,62.998z" fill="#FFFFFF"></path>
+            </svg>
+            <div class="plans-card__price">
+              <span class="plans-card__currency">$</span>{{ plan.price }}
+              <span class="plans-card__period">{{ plan.period }}</span>
+            </div>
+            <h3 class="plans-card__header-title">{{ plan.name }}</h3>
+          </div>
           <ul class="plans-card__features" aria-label="Incluye">
-            <li *ngFor="let feature of plan.features">{{ feature }}</li>
+            <li *ngFor="let feature of plan.features" class="plans-card__feature">{{ feature }}</li>
           </ul>
-
-          <ion-button
-            class="plans-card__cta"
-            expand="block"
-            [fill]="plan.id === 'empresa' ? 'solid' : 'outline'"
-            routerLink="/contact"
-          >
+          <button class="plans-card__action" routerLink="/contact">
             Solicitar propuesta
-          </ion-button>
+          </button>
         </article>
       </div>
     </div>
@@ -121,8 +87,8 @@
 
   <section class="plans" aria-label="Planes para empresas">
     <div class="plans-shell">
-      <div class="plans-roi">
-        <div class="plans-roi__hero">
+      <div class="plans-roi" style="display: contents;">
+        <div class="plans-roi__panel">
           <div class="plans-roi__intro">
             <div class="plans-roi__kicker">CALCULADORA DE IMPACTO</div>
             <h3>El verdadero costo del cuidado en tu empresa</h3>
@@ -205,31 +171,27 @@
             <div class="plans-roi__kicker">COMPARATIVA</div>
             <h3>Qué incluye cada plan</h3>
             <p class="plans-compare__summary">
-              La diferencia no está solo en el precio. Cambia el nivel de acompañamiento, gestión y operación que recibe tu empresa.
+              La diferencia está en cuánto acompañamiento operativo y experto necesita tu empresa para que el beneficio realmente se use.
             </p>
           </div>
-          <ion-button fill="outline" routerLink="/contact">Hablar con ventas</ion-button>
+          
         </div>
 
         <div class="plans-compare__table-wrap">
           <div class="plans-table" role="table" aria-label="Comparativa de planes">
           <div class="plans-table__row plans-table__row--head" role="row">
             <div class="plans-table__cell plans-table__cell--feature" role="columnheader">Capacidad</div>
-            <div class="plans-table__cell" role="columnheader">Lite</div>
-            <div class="plans-table__cell" role="columnheader">Empresa</div>
-            <div class="plans-table__cell" role="columnheader">Premium</div>
+            <div class="plans-table__cell" role="columnheader">Plataforma</div>
+            <div class="plans-table__cell" role="columnheader">Acompañamiento</div>
           </div>
 
           <div class="plans-table__row" role="row" *ngFor="let row of planComparisonRows">
             <div class="plans-table__cell plans-table__cell--feature" role="rowheader">{{ row.label }}</div>
             <div class="plans-table__cell" role="cell">
-              <ion-icon [name]="row.values.lite ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
+              <ion-icon [name]="row.values.plataforma ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
             </div>
             <div class="plans-table__cell" role="cell">
-              <ion-icon [name]="row.values.empresa ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
-            </div>
-            <div class="plans-table__cell" role="cell">
-              <ion-icon [name]="row.values.premium ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
+              <ion-icon [name]="row.values.acompanamiento ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
             </div>
           </div>
         </div>
@@ -250,35 +212,5 @@
     </div>
   </section>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-col">
-        <div class="footer-title">Portal</div>
-        <a routerLink="/care-experts">Care Experts</a>
-        <a routerLink="/providers">Proveedores</a>
-        <a routerLink="/resources">Recursos</a>
-        <a routerLink="/training">Formación</a>
-      </div>
-      <div class="footer-col">
-        <div class="footer-title">Empresa</div>
-        <a routerLink="/packages">Planes</a>
-        <a routerLink="/dashboard">Dashboard B2B</a>
-        <a routerLink="/dashboard">Co-branding</a>
-        <a routerLink="/dashboard">RR.HH.</a>
-        <a routerLink="/dashboard">Onboarding</a>
-      </div>
-      <div class="footer-col">
-        <div class="footer-title">Compañía</div>
-        <a routerLink="/contact">Contacto</a>
-        <a routerLink="/resources">Privacidad</a>
-      </div>
-      <div class="footer-col">
-        <div class="footer-title">Contacto</div>
-    <a href="mailto:contacto&#64;companycare.cl">contacto&#64;companycare.cl</a>
-        <a href="tel:+56900000000">+56 9 0000 0000</a>
-        <span class="footer-muted">Lun–Vie 08:00–19:00</span>
-      </div>
-    </div>
-    <div class="footer-bottom">© 2026 Company Care</div>
-  </footer>
+  <app-footer></app-footer>
 </ion-content>

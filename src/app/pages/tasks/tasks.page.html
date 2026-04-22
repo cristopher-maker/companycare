@@ -1,0 +1,202 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Mis tareas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refresh()" [disabled]="loading || saving">
+        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+        Actualizar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+ 
+<ion-content class="tasks-page">
+ 
+  <!-- Error -->
+  <div class="tk-error" *ngIf="error">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    {{ error }}
+  </div>
+ 
+  <!-- Skeleton -->
+  <div class="tk-shell" *ngIf="loading">
+    <div class="tk-metrics">
+      <div class="tk-metric" *ngFor="let _ of [1,2,3]">
+        <ion-skeleton-text animated style="width:40px;height:28px;border-radius:8px"></ion-skeleton-text>
+        <ion-skeleton-text animated style="width:70px;height:14px;border-radius:6px;margin-top:6px"></ion-skeleton-text>
+      </div>
+    </div>
+    <div class="tk-skeleton-card" *ngFor="let _ of [1,2,3]">
+      <ion-skeleton-text animated style="width:100%;height:72px;border-radius:16px"></ion-skeleton-text>
+    </div>
+  </div>
+ 
+  <!-- Contenido principal -->
+  <div class="tk-shell" *ngIf="!loading && !error">
+ 
+    <!-- Métricas -->
+    <section class="tk-metrics">
+      <div class="tk-metric tk-metric--accent">
+        <div class="tk-metric__value">{{ pendingCount }}</div>
+        <div class="tk-metric__label">Pendientes</div>
+      </div>
+      <div class="tk-metric">
+        <div class="tk-metric__value">{{ inProgressCount }}</div>
+        <div class="tk-metric__label">En progreso</div>
+      </div>
+      <div class="tk-metric tk-metric--green">
+        <div class="tk-metric__value">{{ completedCount }}</div>
+        <div class="tk-metric__label">Completadas</div>
+      </div>
+    </section>
+ 
+    <!-- Crear tarea -->
+    <section class="tk-create">
+      <ion-item class="tk-create__item" lines="none">
+        <ion-input
+          aria-label="Nueva tarea"
+          [(ngModel)]="draftTitle"
+          name="draftTitle"
+          placeholder="Ej.: subir receta, confirmar videollamada…"
+          enterkeyhint="done"
+          (keyup.enter)="addTask()"
+        ></ion-input>
+      </ion-item>
+      <ion-item class="tk-create__item tk-create__item--date" lines="none">
+        <ion-input
+          aria-label="Fecha límite"
+          type="date"
+          [(ngModel)]="draftDueDate"
+          name="draftDueDate"
+        ></ion-input>
+      </ion-item>
+      <ion-button
+        class="tk-create__btn"
+        (click)="addTask()"
+        [disabled]="!draftTitle.trim() || saving"
+      >
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Agregar
+      </ion-button>
+    </section>
+ 
+    <!-- Filtros -->
+    <div class="tk-filters">
+      <button
+        class="tk-filter-chip"
+        *ngFor="let f of filterOptions"
+        [class.is-active]="activeFilter === f.value"
+        (click)="setFilter(f.value)"
+      >
+        {{ f.label }}
+        <span class="tk-filter-chip__count">{{ countByFilter(f.value) }}</span>
+      </button>
+    </div>
+ 
+    <!-- Lista -->
+    <div class="tk-list" *ngIf="filteredItems.length; else emptyState">
+      <article
+        class="tk-card"
+        *ngFor="let task of filteredItems; trackBy: trackById"
+        [class.is-done]="task.status === 'done'"
+        [class.is-in-progress]="task.status === 'in_progress'"
+      >
+ 
+        <!-- Indicador de prioridad -->
+        <div class="tk-card__priority-bar" [class]="'is-' + task.priority" aria-hidden="true"></div>
+ 
+        <!-- Checkbox visual -->
+        <button
+          type="button"
+          class="tk-check"
+          [class.is-done]="task.status === 'done'"
+          [class.is-progress]="task.status === 'in_progress'"
+          (click)="cycleStatus(task)"
+          [attr.aria-label]="'Estado: ' + statusLabel(task.status)"
+        >
+          <ion-icon
+            [name]="task.status === 'done' ? 'checkmark' : task.status === 'in_progress' ? 'time-outline' : ''"
+          ></ion-icon>
+        </button>
+ 
+        <!-- Contenido -->
+        <div class="tk-card__body">
+          <div class="tk-card__title">{{ task.title }}</div>
+          <div class="tk-card__meta">
+            <span class="tk-badge" [class]="'tk-badge--' + task.status">
+              {{ statusLabel(task.status) }}
+            </span>
+            <span class="tk-badge tk-badge--date" *ngIf="task.due_at">
+              <ion-icon name="calendar-outline"></ion-icon>
+              {{ task.due_at | date: 'dd/MM/yyyy' }}
+            </span>
+            <span class="tk-badge tk-badge--case" *ngIf="task.request_topic">
+              <ion-icon name="briefcase-outline"></ion-icon>
+              {{ task.request_topic }}
+            </span>
+            <span class="tk-badge tk-badge--personal" *ngIf="!task.request_topic">
+              Personal
+            </span>
+          </div>
+        </div>
+ 
+        <!-- Acciones -->
+        <div class="tk-card__actions">
+          <button
+            type="button"
+            class="tk-action-btn"
+            *ngIf="task.status === 'pending'"
+            (click)="updateTaskStatus(task, 'in_progress')"
+          >
+            Iniciar
+          </button>
+          <button
+            type="button"
+            class="tk-action-btn"
+            *ngIf="task.status !== 'done'"
+            (click)="updateTaskStatus(task, 'done')"
+          >
+            Hecha
+          </button>
+          <button
+            type="button"
+            class="tk-action-btn"
+            *ngIf="task.status === 'done'"
+            (click)="updateTaskStatus(task, 'pending')"
+          >
+            Reabrir
+          </button>
+          <button
+            type="button"
+            class="tk-action-btn tk-action-btn--case"
+            *ngIf="task.request_id"
+            [routerLink]="['/care-experts']"
+            [queryParams]="{ request: task.request_id }"
+          >
+            <ion-icon name="open-outline"></ion-icon>
+            Ver caso
+          </button>
+          <button
+            type="button"
+            class="tk-action-btn tk-action-btn--danger"
+            (click)="removeTask(task)"
+          >
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </div>
+      </article>
+    </div>
+ 
+    <ng-template #emptyState>
+      <div class="tk-empty">
+        <ion-icon name="checkmark-done-circle-outline"></ion-icon>
+        <p *ngIf="activeFilter === 'all'">Aún no tienes tareas. Agrégalas para organizar mejor tu caso.</p>
+        <p *ngIf="activeFilter !== 'all'">No hay tareas en este estado.</p>
+      </div>
+    </ng-template>
+ 
+  </div>
+</ion-content>

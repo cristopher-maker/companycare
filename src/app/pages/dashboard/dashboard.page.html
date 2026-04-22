@@ -57,6 +57,46 @@
     </div>
 
     <div class="grid" *ngIf="mode !== 'public'">
+      <section class="panel span-2" *ngIf="mode === 'employee'">
+        <div class="panel-head">
+          <div class="panel-title">Mi ficha de cuidado</div>
+          <button type="button" class="panel-link panel-link--button" (click)="openEmployeeCareIntake()">
+            {{ employeeCareIntakeId ? 'Editar ficha' : 'Completar ficha' }}
+          </button>
+        </div>
+
+        <div class="intake-summary" *ngIf="employeeCareIntakeId; else noIntake">
+          <div class="intake-summary__grid">
+            <div class="intake-summary__item">
+              <span>Tipo de apoyo</span>
+              <strong>{{ careTypeLabel(employeeCareIntakeDraft.careType) }}</strong>
+            </div>
+            <div class="intake-summary__item">
+              <span>Relación</span>
+              <strong>{{ employeeCareIntakeDraft.caregiverRelation || 'Sin dato' }}</strong>
+            </div>
+            <div class="intake-summary__item">
+              <span>Nivel de dependencia</span>
+              <strong>{{ dependencyLevelLabel(employeeCareIntakeDraft.dependencyLevel) }}</strong>
+            </div>
+            <div class="intake-summary__item">
+              <span>Contacto preferido</span>
+              <strong>{{ preferredContactLabel(employeeCareIntakeDraft.preferredContact) }}</strong>
+            </div>
+          </div>
+
+          <div class="intake-summary__meta" *ngIf="employeeCareIntakeUpdatedAt">
+            Última actualización: {{ employeeCareIntakeUpdatedAt | date: 'dd/MM/yyyy HH:mm' }}
+          </div>
+        </div>
+
+        <ng-template #noIntake>
+          <div class="empty">
+            Completa tu ficha una vez para que el experto vea tu contexto, preferencias y urgencia desde el primer contacto.
+          </div>
+        </ng-template>
+      </section>
+
       <section class="panel">
         <div class="panel-head">
           <div class="panel-title">Solicitudes recientes</div>
@@ -131,5 +171,203 @@
         Inicia sesión con Supabase para ver tu dashboard como empleado o como empresa.
       </ion-card-content>
     </ion-card>
+
+    <ion-modal [isOpen]="employeeCareIntakeOpen" (didDismiss)="closeEmployeeCareIntake()">
+      <ng-template>
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Mi ficha de cuidado</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="closeEmployeeCareIntake()">Cerrar</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+
+        <ion-content>
+          <div class="intake-modal">
+            <div class="intake-modal__intro">
+              <h2>Completa tu contexto una sola vez</h2>
+              <p>Esto ayuda a que la asesoría, el chat y las citas partan con información útil sobre tu situación.</p>
+            </div>
+
+            <div class="intake-form">
+              <div class="intake-form__row">
+                <ion-item class="intake-item" lines="none">
+                  <ion-select
+                    label="Tipo de apoyo"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.careType"
+                    name="employeeCareType"
+                    interface="popover"
+                  >
+                    <ion-select-option value="guidance">Orientación general</ion-select-option>
+                    <ion-select-option value="home_care">Cuidados a domicilio</ion-select-option>
+                    <ion-select-option value="residential">Residencia</ion-select-option>
+                    <ion-select-option value="nursing">Enfermería</ion-select-option>
+                    <ion-select-option value="dementia">Demencia / Alzheimer</ion-select-option>
+                    <ion-select-option value="respite">Cuidado de respiro</ion-select-option>
+                  </ion-select>
+                </ion-item>
+
+                <ion-item class="intake-item" lines="none">
+                  <ion-input
+                    label="Edad de la persona cuidada"
+                    labelPlacement="stacked"
+                    type="number"
+                    [(ngModel)]="employeeCareIntakeDraft.careReceiverAge"
+                    name="employeeCareReceiverAge"
+                  ></ion-input>
+                </ion-item>
+              </div>
+
+              <div class="intake-form__row">
+                <ion-item class="intake-item" lines="none">
+                  <ion-input
+                    label="Condición principal"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.primaryCondition"
+                    name="employeePrimaryCondition"
+                  ></ion-input>
+                </ion-item>
+
+                <ion-item class="intake-item" lines="none">
+                  <ion-select
+                    label="Nivel de dependencia"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.dependencyLevel"
+                    name="employeeDependencyLevel"
+                    interface="popover"
+                  >
+                    <ion-select-option value="low">Baja</ion-select-option>
+                    <ion-select-option value="medium">Media</ion-select-option>
+                    <ion-select-option value="high">Alta</ion-select-option>
+                    <ion-select-option value="full">Dependencia total</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
+
+              <div class="intake-form__row">
+                <ion-item class="intake-item" lines="none">
+                  <ion-input
+                    label="Ciudad o comuna"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.city"
+                    name="employeeCity"
+                  ></ion-input>
+                </ion-item>
+
+                <ion-item class="intake-item" lines="none">
+                  <ion-input
+                    label="Código postal"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.postalCode"
+                    name="employeePostalCode"
+                  ></ion-input>
+                </ion-item>
+              </div>
+
+              <ion-item class="intake-item" lines="none">
+                <ion-input
+                  label="Red de apoyo actual"
+                  labelPlacement="stacked"
+                  [(ngModel)]="employeeCareIntakeDraft.supportNetwork"
+                  name="employeeSupportNetwork"
+                ></ion-input>
+              </ion-item>
+
+              <div class="intake-form__row">
+                <ion-item class="intake-item" lines="none">
+                  <ion-input
+                    label="Presupuesto mensual máximo"
+                    labelPlacement="stacked"
+                    type="number"
+                    [(ngModel)]="employeeCareIntakeDraft.budgetMonthlyMax"
+                    name="employeeBudgetMonthlyMax"
+                  ></ion-input>
+                </ion-item>
+
+                <ion-item class="intake-item" lines="none">
+                  <ion-select
+                    label="Financiamiento"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.funding"
+                    name="employeeFunding"
+                    interface="popover"
+                  >
+                    <ion-select-option value="self_funder">Pago privado</ion-select-option>
+                    <ion-select-option value="local_authority">Ayuda pública</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
+
+              <div class="intake-form__row">
+                <ion-item class="intake-item" lines="none">
+                  <ion-select
+                    label="Contacto preferido"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.preferredContact"
+                    name="employeePreferredContact"
+                    interface="popover"
+                  >
+                    <ion-select-option value="chat">Chat</ion-select-option>
+                    <ion-select-option value="phone">Llamada</ion-select-option>
+                    <ion-select-option value="video">Videollamada</ion-select-option>
+                  </ion-select>
+                </ion-item>
+
+                <ion-item class="intake-item" lines="none">
+                  <ion-select
+                    label="Urgencia"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.urgency"
+                    name="employeeUrgency"
+                    interface="popover"
+                  >
+                    <ion-select-option value="immediate">Inmediata</ion-select-option>
+                    <ion-select-option value="3m">En 3 meses</ion-select-option>
+                    <ion-select-option value="6m">En 6 meses</ion-select-option>
+                    <ion-select-option value="exploring">Explorando opciones</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
+
+              <div class="intake-form__row">
+                <ion-item class="intake-item" lines="none">
+                  <ion-input
+                    label="Tu nombre"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.caregiverName"
+                    name="employeeCaregiverName"
+                  ></ion-input>
+                </ion-item>
+
+                <ion-item class="intake-item" lines="none">
+                  <ion-input
+                    label="Relación con la persona cuidada"
+                    labelPlacement="stacked"
+                    [(ngModel)]="employeeCareIntakeDraft.caregiverRelation"
+                    name="employeeCaregiverRelation"
+                  ></ion-input>
+                </ion-item>
+              </div>
+
+              <ion-item class="intake-item" lines="none">
+                <ion-textarea
+                  label="Notas relevantes"
+                  labelPlacement="stacked"
+                  autoGrow="true"
+                  [(ngModel)]="employeeCareIntakeDraft.notes"
+                  name="employeeIntakeNotes"
+                ></ion-textarea>
+              </ion-item>
+
+              <ion-button expand="block" (click)="saveEmployeeCareIntake()" [disabled]="loading">
+                Guardar mi ficha
+              </ion-button>
+            </div>
+          </div>
+        </ion-content>
+      </ng-template>
+    </ion-modal>
   </div>
 </ion-content>

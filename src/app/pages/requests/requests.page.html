@@ -10,7 +10,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content class="requests-page">
   <ion-card *ngIf="error">
     <ion-card-header>
       <ion-card-title>Error</ion-card-title>
@@ -20,23 +20,44 @@
 
   <ion-skeleton-text *ngIf="loading" animated="true" style="width: 100%; height: 120px"></ion-skeleton-text>
 
-  <ion-list *ngIf="!loading && !error">
-    <ion-item *ngFor="let r of items">
-      <ion-label>
-        <h2>{{ r.topic }}</h2>
-        <p>{{ r.channel }} · Estado: {{ r.status }}</p>
-        <p>{{ r.created_at | date: 'medium' }}</p>
-      </ion-label>
-      <ion-button slot="end" fill="outline" [routerLink]="['/care-experts']" [queryParams]="{ request: r.id }">
-        Abrir
-      </ion-button>
-    </ion-item>
-  </ion-list>
+  <div class="requests-shell" *ngIf="!loading && !error">
+    <div class="requests-list" *ngIf="items.length; else emptyRequests">
+      <article class="request-card" *ngFor="let r of items">
+        <div class="request-card__head">
+          <div>
+            <h2 class="request-card__title">{{ r.topic }}</h2>
+            <div class="request-card__meta">
+              <span>{{ r.channel }}</span>
+              <span>Estado: {{ statusLabel(r.status) }}</span>
+              <span>{{ r.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+          <ion-button fill="outline" [routerLink]="['/care-experts']" [queryParams]="{ request: r.id }">
+            Abrir
+          </ion-button>
+        </div>
 
-  <ion-card *ngIf="!loading && !error && items.length === 0">
-    <ion-card-content>
-      Aún no tienes solicitudes. Puedes iniciar una en <a routerLink="/care-experts">Care Experts</a>.
-    </ion-card-content>
-  </ion-card>
+        <p class="request-card__details">{{ detailPreview(r.details) }}</p>
+
+        <div class="request-card__appointment" *ngIf="r.appointment as appointment">
+          <div class="request-card__appointment-title">Próxima cita</div>
+          <div class="request-card__appointment-meta">
+            <span>{{ appointment.kind }} · {{ appointment.scheduled_for | date: 'dd/MM/yyyy HH:mm' }}</span>
+            <span>{{ appointmentStatusLabel(appointment.status) }}</span>
+          </div>
+          <div class="request-card__appointment-code" *ngIf="appointment.meeting_code">
+            Código Meet: {{ appointment.meeting_code }}
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #emptyRequests>
+      <ion-card>
+        <ion-card-content>
+          Aún no tienes solicitudes. Puedes iniciar una en <a routerLink="/care-experts">Care Experts</a>.
+        </ion-card-content>
+      </ion-card>
+    </ng-template>
+  </div>
 </ion-content>
-

@@ -1,14 +1,16 @@
-﻿﻿import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿﻿﻿﻿import { Component, ElementRef, OnDestroy, OnInit, ViewChild, AfterViewInit, Renderer2 } from '@angular/core';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 type PackagePlan = {
-  id: 'lite' | 'empresa' | 'premium';
+  id: 'plataforma' | 'acompanamiento';
   name: string;
   badge: string;
   summary: string;
   audience: string;
   accentClass: string;
   features: string[];
+  price: string;
+  period: string;
 };
 type PackagesMode = 'public' | 'employee' | 'company';
 
@@ -17,7 +19,7 @@ type PackagesMode = 'public' | 'employee' | 'company';
   templateUrl: './packages.page.html',
   styleUrls: ['./packages.page.scss'],
 })
-export class PackagesPage implements OnInit, OnDestroy {
+export class PackagesPage implements OnInit, OnDestroy, AfterViewInit {
   public mode: PackagesMode = 'public';
   public canStartCareFlow = false;
   
@@ -30,75 +32,78 @@ export class PackagesPage implements OnInit, OnDestroy {
 
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
+  @ViewChild('lavaCanvas') private lavaCanvasRef?: ElementRef<HTMLCanvasElement>;
+  private animationId: number | null = null;
+
   public readonly packagePlans: PackagePlan[] = [
     {
-      id: 'lite',
-      name: 'Plan Lite',
-      badge: 'Entrada',
-      summary: 'Portal co-brandeado con recursos esenciales y onboarding básico.',
-      audience: 'Empresas que quieren activar el beneficio rápido.',
-      accentClass: 'plans-card--lite',
+      id: 'plataforma',
+      name: 'Plan Plataforma',
+      badge: 'Base',
+      summary: 'Portal co-brandeado con activación rápida, recursos y una capa inicial de soporte para RR.HH.',
+      audience: 'Empresas que quieren partir con una solución liviana y escalable.',
+      accentClass: 'plans-card--plataforma',
       features: [
         'Portal co-brandeado',
         'Biblioteca de recursos',
-        'Onboarding básico',
-        'Soporte limitado',
+        'Onboarding RR.HH.',
+        'Acceso acotado a Care Experts',
+        'Métricas base del beneficio',
       ],
+      price: '99',
+      period: '/mes',
     },
     {
-      id: 'empresa',
-      name: 'Plan Empresa',
-      badge: 'Recomendado',
-      summary: 'Capa operativa para RR.HH. con seguimiento y gestión de beneficio.',
-      audience: 'Equipos que necesitan control, adopción y reporting.',
-      accentClass: 'plans-card--empresa',
+      id: 'acompanamiento',
+      name: 'Plan Acompañamiento',
+      badge: 'Más vendido',
+      summary: 'Cobertura completa con Care Experts, seguimiento de casos y soporte prioritario.',
+      audience: 'Empresas que quieren resolver casos reales y sostener la adopción.',
+      accentClass: 'plans-card--acompanamiento',
       features: [
-        'Todo lo del Plan Lite',
-        'Fichas de cuidado RR.HH.',
-        'Métricas del portal',
+        'Todo lo de Plan Plataforma',
+        'Fichas de cuidado y derivación',
         'Vouchers corporativos',
-        'Formación para managers',
-      ],
-    },
-    {
-      id: 'premium',
-      name: 'Plan Premium',
-      badge: 'Escala',
-      summary: 'Cobertura completa con atención experta y acompañamiento continuo.',
-      audience: 'Empresas que quieren una solución de alta intervención.',
-      accentClass: 'plans-card--premium',
-      features: [
-        'Todo lo del Plan Empresa',
         'Care Experts ilimitados',
         'Seguimiento de casos',
+        'Formación extendida para managers',
         'Eventos y webinars',
         'Soporte prioritario',
       ],
+      price: '249',
+      period: '/mes',
     },
   ];
 
   public readonly planComparisonRows = [
-    { label: 'Portal co-brandeado', values: { lite: true, empresa: true, premium: true } },
-    { label: 'Recursos y guías', values: { lite: true, empresa: true, premium: true } },
-    { label: 'Onboarding RR.HH.', values: { lite: true, empresa: true, premium: true } },
-    { label: 'Fichas de cuidado RR.HH.', values: { lite: false, empresa: true, premium: true } },
-    { label: 'Métricas del beneficio', values: { lite: false, empresa: true, premium: true } },
-    { label: 'Vouchers y beneficios', values: { lite: false, empresa: true, premium: true } },
-    { label: 'Formación para managers', values: { lite: false, empresa: true, premium: true } },
-    { label: 'Care Experts ilimitados', values: { lite: false, empresa: false, premium: true } },
-    { label: 'Seguimiento de casos', values: { lite: false, empresa: false, premium: true } },
-    { label: 'Soporte prioritario', values: { lite: false, empresa: false, premium: true } },
+    { label: 'Portal co-brandeado', values: { plataforma: true, acompanamiento: true } },
+    { label: 'Recursos y guías', values: { plataforma: true, acompanamiento: true } },
+    { label: 'Onboarding RR.HH.', values: { plataforma: true, acompanamiento: true } },
+    { label: 'Fichas de cuidado RR.HH.', values: { plataforma: false, acompanamiento: true } },
+    { label: 'Métricas del beneficio', values: { plataforma: true, acompanamiento: true } },
+    { label: 'Formación para managers', values: { plataforma: false, acompanamiento: true } },
+    { label: 'Vouchers y beneficios', values: { plataforma: false, acompanamiento: true } },
+    { label: 'Acceso completo a Care Experts', values: { plataforma: false, acompanamiento: true } },
+    { label: 'Seguimiento de casos', values: { plataforma: false, acompanamiento: true } },
+    { label: 'Soporte prioritario', values: { plataforma: false, acompanamiento: true } },
   ] as const;
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(private readonly supabase: SupabaseService, private readonly renderer: Renderer2) {}
 
   public ngOnInit(): void {
+    this.renderer.addClass(document.body, 'dark-page-active');
     void this.refresh();
     this.unsub = this.supabase.client.auth.onAuthStateChange(() => void this.refresh());
   }
 
   public ngOnDestroy(): void {
+    this.renderer.removeClass(document.body, 'dark-page-active');
     this.unsub?.data.subscription.unsubscribe();
+    if (this.animationId) cancelAnimationFrame(this.animationId);
+  }
+
+  public ngAfterViewInit(): void {
+    this.initLava();
   }
 
   // --- Lógica del ROI ---
@@ -186,5 +191,62 @@ export class PackagesPage implements OnInit, OnDestroy {
 
     this.mode = 'employee';
     this.canStartCareFlow = true;
+  }
+
+  private initLava() {
+    const canvas = this.lavaCanvasRef?.nativeElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
+    const blobs = Array.from({ length: 9 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 80 + Math.random() * 120,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.5,
+      hue: Math.random() < 0.5 ? 280 + Math.random() * 30 : 310 + Math.random() * 30,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.003 + Math.random() * 0.004
+    }));
+
+    const draw = () => {
+      // Dibuja un gradiente sutil en lugar de un color sólido
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#1a0a2e'); // Púrpura oscuro (arriba)
+      gradient.addColorStop(1, '#3c103f'); // Magenta oscuro (abajo)
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      blobs.forEach(b => {
+        b.phase += b.speed;
+        b.x += b.vx + Math.sin(b.phase * 0.7) * 0.3;
+        b.y += b.vy + Math.cos(b.phase * 0.5) * 0.4;
+
+        if (b.x < -b.r) b.x = canvas.width + b.r;
+        if (b.x > canvas.width + b.r) b.x = -b.r;
+        if (b.y < -b.r) b.y = canvas.height + b.r;
+        if (b.y > canvas.height + b.r) b.y = -b.r;
+
+        const pulse = 1 + 0.18 * Math.sin(b.phase * 1.3);
+        const gr = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * pulse);
+        gr.addColorStop(0, `hsla(${b.hue}, 100%, 65%, 0.55)`);
+        gr.addColorStop(0.5, `hsla(${b.hue + 15}, 90%, 55%, 0.25)`);
+        gr.addColorStop(1, `hsla(${b.hue + 30}, 80%, 45%, 0)`);
+
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = gr;
+        ctx.fill();
+      });
+      this.animationId = requestAnimationFrame(draw);
+    };
+    draw();
   }
 }

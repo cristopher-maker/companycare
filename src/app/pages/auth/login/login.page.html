@@ -28,12 +28,19 @@
           <input
             [(ngModel)]="password"
             name="password"
-            type="password"
+            [type]="showPassword ? 'text' : 'password'"
             autocomplete="current-password"
             placeholder="Contraseña"
             required
           />
-          <ion-icon name="lock-closed-outline" aria-hidden="true"></ion-icon>
+          <button
+            class="pill__icon-button"
+            type="button"
+            [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            (click)="togglePasswordVisibility()"
+          >
+            <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" aria-hidden="true"></ion-icon>
+          </button>
         </label>
 
         <div class="row" *ngIf="mode !== 'Magic link'">

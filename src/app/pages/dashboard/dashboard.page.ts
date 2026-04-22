@@ -35,6 +35,24 @@ type UpcomingEvent = {
   join_url: string | null;
 };
 
+type EmployeeCareIntakeDraft = {
+  careType: string;
+  careReceiverAge: number | null;
+  primaryCondition: string;
+  dependencyLevel: string;
+  city: string;
+  postalCode: string;
+  supportNetwork: string;
+  budgetMonthlyMax: number | null;
+  funding: string;
+  preferredContact: string;
+  urgency: string;
+  caregiverName: string;
+  caregiverRelation: string;
+  notes: string;
+  amenities: { ensuite: boolean; garden: boolean; library: boolean; pets: boolean };
+};
+
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.page.html',
@@ -50,6 +68,11 @@ export class DashboardPage implements OnInit, OnDestroy {
   public recentRequests: RecentRequest[] = [];
   public featuredResources: FeaturedResource[] = [];
   public upcomingEvents: UpcomingEvent[] = [];
+  public employeeCareIntakeOpen = false;
+  public employeeCareIntakeId: string | null = null;
+  public employeeCompanyId: string | null = null;
+  public employeeCareIntakeUpdatedAt: string | null = null;
+  public employeeCareIntakeDraft: EmployeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
 
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
@@ -71,6 +94,11 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.recentRequests = [];
     this.featuredResources = [];
     this.upcomingEvents = [];
+    this.employeeCareIntakeId = null;
+    this.employeeCompanyId = null;
+    this.employeeCareIntakeUpdatedAt = null;
+    this.employeeCareIntakeOpen = false;
+    this.employeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
 
     const { data: sessionData } = await this.supabase.client.auth.getSession();
     const user = sessionData.session?.user;
@@ -98,7 +126,10 @@ export class DashboardPage implements OnInit, OnDestroy {
       this.companyName = company?.name ?? null;
       await this.loadCompanyDashboard(company?.id ?? null);
     } else {
-      await this.loadEmployeeDashboard(user.id);
+      const company = await this.getMyCompany(user.id);
+      this.companyName = company?.name ?? null;
+      this.employeeCompanyId = company?.id ?? null;
+      await this.loadEmployeeDashboard(user.id, company?.id ?? null);
     }
 
     this.loading = false;
@@ -124,7 +155,217 @@ export class DashboardPage implements OnInit, OnDestroy {
     return { id: company.id as string, name: company.name as string };
   }
 
-  private async loadEmployeeDashboard(userId: string): Promise<void> {
+  public openEmployeeCareIntake(): void {
+    this.employeeCareIntakeOpen = true;
+  }
+
+  public closeEmployeeCareIntake(): void {
+    this.employeeCareIntakeOpen = false;
+  }
+
+  public intakeAmenityList(): string[] {
+    const amenities = this.employeeCareIntakeDraft.amenities;
+    return [
+      amenities.ensuite ? 'Baño privado' : null,
+      amenities.garden ? 'Jardines' : null,
+      amenities.library ? 'Biblioteca' : null,
+      amenities.pets ? 'Acepta mascotas' : null,
+    ].filter(Boolean) as string[];
+  }
+
+  public clinicalProfileLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'residential':
+        return 'Cuidado residencial';
+      case 'nursing':
+        return 'Cuidado de enfermería';
+      case 'dementia':
+        return 'Demencia / Alzheimer';
+      case 'respite':
+        return 'Cuidado de respiro';
+      default:
+        return value || 'Sin perfil';
+    }
+  }
+
+  public fundingLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'self_funder':
+        return 'Pago privado';
+      case 'local_authority':
+        return 'Ayuda pública';
+      default:
+        return value || 'Sin dato';
+    }
+  }
+
+  public urgencyLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'immediate':
+        return 'Inmediata';
+      case '3m':
+        return 'En 3 meses';
+      case '6m':
+        return 'En 6 meses';
+      case 'exploring':
+        return 'Explorando opciones';
+      default:
+        return value || 'Sin dato';
+    }
+  }
+
+  public ambianceLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'small':
+        return 'Residencia pequeña y familiar';
+      case 'large':
+        return 'Residencia grande con actividades';
+      case 'either':
+        return 'Indistinto';
+      default:
+        return value || 'Sin dato';
+    }
+  }
+
+  public careTypeLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'guidance':
+        return 'Orientación general';
+      case 'home_care':
+        return 'Cuidados a domicilio';
+      case 'residential':
+        return 'Residencia';
+      case 'nursing':
+        return 'Enfermería';
+      case 'dementia':
+        return 'Demencia / Alzheimer';
+      case 'respite':
+        return 'Cuidado de respiro';
+      default:
+        return value || 'Sin perfil';
+    }
+  }
+
+  public dependencyLevelLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'low':
+        return 'Baja';
+      case 'medium':
+        return 'Media';
+      case 'high':
+        return 'Alta';
+      case 'full':
+        return 'Dependencia total';
+      default:
+        return value || 'Sin dato';
+    }
+  }
+
+  public preferredContactLabel(value: string | null | undefined): string {
+    switch (value) {
+      case 'chat':
+        return 'Chat';
+      case 'phone':
+        return 'Llamada';
+      case 'video':
+        return 'Videollamada';
+      default:
+        return value || 'Sin dato';
+    }
+  }
+
+  public async saveEmployeeCareIntake(): Promise<void> {
+    const userId = (await this.supabase.client.auth.getSession()).data.session?.user?.id ?? null;
+    if (!userId) return;
+    if (!this.employeeCompanyId) {
+      alert('No encontramos una empresa asociada a tu usuario para guardar la ficha.');
+      return;
+    }
+    if (!this.employeeCareIntakeDraft.caregiverRelation.trim()) {
+      alert('Ingresa un código postal.');
+      return;
+    }
+
+    this.loading = true;
+    try {
+      const payload = {
+        care_type: this.employeeCareIntakeDraft.careType,
+        care_receiver: {
+          age: this.employeeCareIntakeDraft.careReceiverAge,
+          primary_condition: this.employeeCareIntakeDraft.primaryCondition.trim() || null,
+          dependency_level: this.employeeCareIntakeDraft.dependencyLevel,
+        },
+        location: {
+          city: this.employeeCareIntakeDraft.city.trim() || null,
+          postal_code: this.employeeCareIntakeDraft.postalCode.trim() || null,
+        },
+        family_context: {
+          support_network: this.employeeCareIntakeDraft.supportNetwork.trim() || null,
+        },
+        budget: {
+          monthly_max: this.employeeCareIntakeDraft.budgetMonthlyMax,
+          funding: this.employeeCareIntakeDraft.funding,
+        },
+        preferences: {
+          preferred_contact: this.employeeCareIntakeDraft.preferredContact,
+        },
+        urgency: this.employeeCareIntakeDraft.urgency,
+        caregiver: {
+          name: this.employeeCareIntakeDraft.caregiverName.trim() || null,
+          relation: this.employeeCareIntakeDraft.caregiverRelation.trim() || null,
+          company: this.companyName || null,
+        },
+        notes: this.employeeCareIntakeDraft.notes.trim() || null,
+      };
+
+      const query = this.employeeCareIntakeId
+        ? this.supabase.client.from('care_intakes').update({ payload }).eq('id', this.employeeCareIntakeId)
+        : this.supabase.client.from('care_intakes').insert({
+            company_id: this.employeeCompanyId,
+            employee_id: userId,
+            created_by: userId,
+            payload,
+          } as any);
+
+      const { error } = await query;
+      if (error) throw error;
+
+      if (!this.employeeCareIntakeId && this.employeeCompanyId) {
+        // Enviar a HubSpot solo cuando se crea, no al actualizar
+        try {
+          const profileRes = await this.supabase.client
+            .from('profiles')
+            .select('full_name')
+            .eq('id', userId)
+            .maybeSingle();
+
+          const userName = profileRes.data?.full_name || 'Empleado';
+
+          await this.supabase.client.functions.invoke('hubspot-integration', {
+            body: {
+              action: 'create_deal',
+              companyId: this.employeeCompanyId,
+              dealname: `Solicitud: ${userName} (${this.careTypeLabel(this.employeeCareIntakeDraft.careType)})`,
+              employee_id: userId,
+              comuna: this.employeeCareIntakeDraft.city,
+              dependency: this.employeeCareIntakeDraft.dependencyLevel,
+            },
+          });
+        } catch (hubspotErr) {
+          console.warn('No se pudo sincronizar el caso con HubSpot:', hubspotErr);
+        }
+      }
+
+      await this.loadEmployeeCareIntake(userId);
+      this.employeeCareIntakeOpen = false;
+    } catch (err: any) {
+      alert(`No se pudo guardar tu ficha: ${err?.message ?? String(err)}`);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private async loadEmployeeDashboard(userId: string, companyId: string | null): Promise<void> {
     const nowIso = new Date().toISOString();
 
     const [
@@ -196,6 +437,10 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.recentRequests = (recentRequests.data ?? []) as RecentRequest[];
     this.featuredResources = (featuredResources.data ?? []) as FeaturedResource[];
     this.upcomingEvents = (upcomingEvents.data ?? []) as UpcomingEvent[];
+
+    if (companyId) {
+      await this.loadEmployeeCareIntake(userId);
+    }
   }
 
   private async loadCompanyDashboard(companyId: string | null): Promise<void> {
@@ -280,5 +525,65 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.featuredResources = (resources ?? []) as FeaturedResource[];
     this.upcomingEvents = (events ?? []) as UpcomingEvent[];
 
+  }
+
+  private async loadEmployeeCareIntake(userId: string): Promise<void> {
+    const { data, error } = await this.supabase.client
+      .from('care_intakes')
+      .select('id, payload, updated_at, created_at')
+      .eq('employee_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data?.id) {
+      this.employeeCareIntakeId = null;
+      this.employeeCareIntakeUpdatedAt = null;
+      this.employeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
+      return;
+    }
+
+    const payload = (data.payload as any) ?? {};
+    this.employeeCareIntakeId = data.id as string;
+    this.employeeCareIntakeUpdatedAt = (data.updated_at as string | undefined) ?? (data.created_at as string | undefined) ?? null;
+    this.employeeCareIntakeDraft = {
+      careType: payload?.care_type ?? payload?.clinical_profile ?? 'guidance',
+      careReceiverAge: payload?.care_receiver?.age ?? payload?.family?.age ?? null,
+      primaryCondition: payload?.care_receiver?.primary_condition ?? '',
+      dependencyLevel: payload?.care_receiver?.dependency_level ?? 'medium',
+      city: payload?.location?.city ?? payload?.location?.comuna ?? '',
+      postalCode: payload?.location?.postal_code ?? '',
+      supportNetwork: payload?.family_context?.support_network ?? '',
+      budgetMonthlyMax: payload?.budget?.monthly_max ?? payload?.budget?.weekly_max ?? null,
+      funding: payload?.budget?.funding ?? 'self_funder',
+      preferredContact: payload?.preferences?.preferred_contact ?? 'chat',
+      urgency: payload?.urgency ?? 'immediate',
+      caregiverName: payload?.caregiver?.name ?? '',
+      caregiverRelation: payload?.caregiver?.relation ?? '',
+      notes: payload?.notes ?? '',
+      amenities: { ensuite: false, garden: false, library: false, pets: false },
+    };
+  }
+
+  private createDefaultCareIntakeDraft(): EmployeeCareIntakeDraft {
+    return {
+      careType: 'guidance',
+      careReceiverAge: null,
+      primaryCondition: '',
+      dependencyLevel: 'medium',
+      city: '',
+      postalCode: '',
+      supportNetwork: '',
+      budgetMonthlyMax: null,
+      funding: 'self_funder',
+      preferredContact: 'chat',
+      urgency: 'immediate',
+      caregiverName: '',
+      caregiverRelation: '',
+      notes: '',
+      amenities: { ensuite: false, garden: false, library: false, pets: false },
+    };
   }
 }

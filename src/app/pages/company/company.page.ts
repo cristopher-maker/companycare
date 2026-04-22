@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+﻿﻿import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -7,6 +7,7 @@ import {
   CompanyPlanService,
 } from '../../core/services/company-plan.service';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { environment } from '../../../environments/environment';
 
 type CompanyTab = 'Miembros' | 'Branding' | 'Vouchers' | 'Onboarding' | 'Metricas';
 
@@ -150,6 +151,21 @@ export class CompanyPage {
     enquiries: 0,
   };
 
+  public hubspotPipeline: { id: string; label: string } | null = null;
+  public hubspotLeadStatusMetrics: Record<
+    'nuevo' | 'contactado' | 'evaluacion' | 'match' | 'cerrado' | 'perdido',
+    number
+  > = {
+    nuevo: 0,
+    contactado: 0,
+    evaluacion: 0,
+    match: 0,
+    cerrado: 0,
+    perdido: 0,
+  };
+  public hubspotLoading = false;
+  public hubspotError = '';
+
   public metricsRange: MetricsRange = '30d';
   public monthlyActivity: Array<{ label: string; value: number }> = [];
   public trafficSummary: number[] = [];
@@ -214,6 +230,7 @@ export class CompanyPage {
         this.loadMetrics(),
       ]);
 
+      await this.loadHubspotMetrics();
       await this.loadMonitoringData();
     } catch (err: any) {
       console.error(err);
@@ -524,6 +541,31 @@ export class CompanyPage {
       } as any);
       if (error) throw error;
 
+      // Sincronizar nuevo caso con HubSpot
+      try {
+        const profileRes = await this.supabase.client
+          .from('profiles')
+          .select('full_name')
+          .eq('id', employeeId)
+          .maybeSingle();
+
+        const userName = profileRes.data?.full_name || 'Empleado';
+
+        await this.supabase.client.functions.invoke('hubspot-integration', {
+          body: {
+            action: 'create_deal',
+            companyId: this.companyId,
+            dealname: `Solicitud de HR para: ${userName} (${this.clinicalProfileLabel(this.careIntakeDraft.clinicalProfile)})`,
+            employee_id: employeeId,
+            comuna: this.careIntakeDraft.postalCode,
+            care_profile: this.careIntakeDraft.clinicalProfile,
+            amount: this.careIntakeDraft.budgetWeeklyMax,
+          },
+        });
+      } catch (hubspotErr) {
+        console.warn('No se pudo sincronizar el caso con HubSpot:', hubspotErr);
+      }
+
       this.careIntakeDraft = {
         ...this.careIntakeDraft,
         employeeId: '',
@@ -643,6 +685,35 @@ export class CompanyPage {
         { onConflict: 'company_id,user_id' }
       );
       if (insertError) throw insertError;
+
+      // Sincronizar con HubSpot si es un empleado
+      if (this.memberRole === 'employee') {
+        try {
+          const parts = (profile.full_name || '').split(' ');
+          const firstname = parts[0] || '';
+          const lastname = parts.slice(1).join(' ') || '';
+
+          const { data: hubspotData, error: hubspotError } = await this.supabase.client.functions.invoke(
+            'hubspot-integration',
+            {
+              body: {
+                action: 'create_contact',
+                email: profile.email,
+                firstname: firstname,
+                lastname: lastname,
+                companyId: this.companyId,
+              },
+            }
+          );
+
+          const hubspotMessage = hubspotError || hubspotData?.error;
+          if (hubspotMessage) {
+            console.warn('El empleado fue agregado localmente, pero falló la sincronización con HubSpot:', hubspotMessage);
+          }
+        } catch (hubspotErr) {
+          console.warn('Error inesperado llamando a HubSpot:', hubspotErr);
+        }
+      }
 
       this.memberEmail = '';
       this.memberRole = 'employee';
@@ -982,6 +1053,72 @@ export class CompanyPage {
     };
   }
 
+  public get hubspotTotalLeads(): number {
+    return Object.values(this.hubspotLeadStatusMetrics).reduce((acc, value) => acc + value, 0);
+  }
+
+  public get hubspotStatusCards(): Array<{ label: string; value: number }> {
+    return [
+      { label: 'Nuevos', value: this.hubspotLeadStatusMetrics.nuevo },
+      { label: 'Contactados', value: this.hubspotLeadStatusMetrics.contactado },
+      { label: 'En evaluación', value: this.hubspotLeadStatusMetrics.evaluacion },
+      { label: 'Match', value: this.hubspotLeadStatusMetrics.match },
+      { label: 'Cerrados', value: this.hubspotLeadStatusMetrics.cerrado },
+      { label: 'Perdidos', value: this.hubspotLeadStatusMetrics.perdido },
+    ];
+  }
+
+  private async loadHubspotMetrics(): Promise<void> {
+    if (!this.companyId) return;
+
+    this.hubspotLoading = true;
+    this.hubspotError = '';
+    this.hubspotPipeline = null;
+    this.hubspotLeadStatusMetrics = {
+      nuevo: 0,
+      contactado: 0,
+      evaluacion: 0,
+      match: 0,
+      cerrado: 0,
+      perdido: 0,
+    };
+
+    try {
+      const rangeDays = this.rangeToDays(this.metricsRange);
+      const { data, error } = await this.supabase.client.functions.invoke(
+        'hubspot-integration',
+        { body: { action: 'list_pipeline_summary', rangeDays, companyId: this.companyId } }
+      );
+      
+      if (error) throw error;
+      if (!data) {
+        throw new Error('Respuesta vacía desde HubSpot.');
+      }
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      this.hubspotPipeline = (data.pipeline as { id: string; label: string } | null) ?? null;
+      this.hubspotLeadStatusMetrics = {
+        nuevo: Number(data.leadStatusMetrics?.nuevo ?? 0),
+        contactado: Number(data.leadStatusMetrics?.contactado ?? 0),
+        evaluacion: Number(data.leadStatusMetrics?.evaluacion ?? 0),
+        match: Number(data.leadStatusMetrics?.match ?? 0),
+        cerrado: Number(data.leadStatusMetrics?.cerrado ?? 0),
+        perdido: Number(data.leadStatusMetrics?.perdido ?? 0),
+      };
+    } catch (err: any) {
+      console.error('HubSpot metrics error', err);
+      if (err?.message && err.message !== 'Edge Function returned a non-2xx status code') {
+        this.hubspotError = String(err.message);
+      } else {
+        this.hubspotError = 'No se pudieron cargar métricas HubSpot.';
+      }
+    } finally {
+      this.hubspotLoading = false;
+    }
+  }
+
   public trackById(_: number, item: { id?: string; user_id?: string }): string {
     return (item.id ?? item.user_id) as string;
   }
@@ -1004,6 +1141,7 @@ export class CompanyPage {
     if (this.metricsRange === range) return;
     this.metricsRange = range;
     await this.loadMetrics();
+    await this.loadHubspotMetrics();
     await this.loadMonitoringData();
   }
 
@@ -1136,5 +1274,3 @@ export class CompanyPage {
     this.selectedIntake = null;
   }
 }
-
-

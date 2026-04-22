@@ -1,4 +1,4 @@
-﻿<ion-header class="company-header">
+﻿﻿<ion-header class="company-header">
   <ion-toolbar>
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
@@ -77,54 +77,17 @@
       </ion-card>
 
       <ng-container *ngIf="companyId">
-        <section class="ca-hero" aria-label="Empresa">
-          <div class="ca-hero__left">
-            <div class="ca-hero__icon" aria-hidden="true">
-              <ion-icon name="business-outline"></ion-icon>
-            </div>
-            <div class="ca-hero__meta">
-              <div class="ca-hero__title">{{ company?.name || 'Empresa' }}</div>
-              <div class="ca-hero__sub">
-                <span *ngIf="company?.tax_id">RUT: {{ company?.tax_id }}</span>
-                <span *ngIf="company?.domain">• {{ company?.domain }}</span>
-              </div>
-            </div>
-          </div>
-          <ion-button fill="clear" (click)="refresh()" [disabled]="saving" aria-label="Actualizar">
-            <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
-          </ion-button>
-        </section>
-
-        <section class="ca-plan-card" aria-label="Plan de la empresa">
-          <div class="ca-plan-card__top">
-            <div class="ca-plan-card__copy">
-              <div class="ca-plan-card__head">
-                <div class="ca-plan-card__eyebrow">PLAN ACTUAL</div>
-                <div class="ca-plan-badge">{{ companyPlanLabel }}</div>
-              </div>
-              <div class="ca-plan-card__title">Plan y permisos</div>
-              <div class="ca-plan-card__text">
-                Este plan se lee desde la empresa contratada y define qué funciones quedan habilitadas.
-              </div>
-            </div>
-
-            <div class="ca-plan-card__side">
-              <div class="ca-plan-note">La asignación del plan se gestiona desde contratación o administración central.</div>
-              <div class="ca-plan-actions">
-                <ion-button size="small" class="ca-primary" routerLink="/packages">Mejorar plan</ion-button>
-                <ion-button size="small" fill="clear" class="ca-link-btn" routerLink="/contact">Hablar con ventas</ion-button>
-              </div>
-            </div>
-          </div>
-
-          <div class="ca-plan-card__features">
-            <span class="ca-pill" *ngFor="let feature of enabledPlanFeatures">{{ feature }}</span>
-          </div>
-        </section>
-
         <div class="ca-workspace">
           <aside class="ca-sidebar" aria-label="Secciones de administración">
-            <div class="ca-sidebar__label">Secciones</div>
+            <div class="ca-sidebar__header">
+              <div class="ca-sidebar__logo">{{ companyInitials }}</div>
+              <div class="ca-sidebar__info">
+                <div class="ca-sidebar__name">{{ company?.name || 'Company Care' }}</div>
+                <div class="ca-sidebar__sub">Panel empresa</div>
+              </div>
+            </div>
+
+            <div class="ca-sidebar__label">Principal</div>
             <button
               type="button"
               class="ca-sidebar__item"
@@ -132,14 +95,31 @@
               [class.is-active]="tab === 'Metricas'"
               (click)="tab = 'Metricas'"
             >
+              <ion-icon slot="start" name="stats-chart-outline"></ion-icon>
               Métricas
             </button>
             <button type="button" class="ca-sidebar__item" [class.is-active]="tab === 'Miembros'" (click)="tab = 'Miembros'">
+              <ion-icon slot="start" name="people-outline"></ion-icon>
               Miembros
+              <span class="ca-sidebar__badge" *ngIf="members.length">{{ members.length }}</span>
+            </button>
+            <button
+              type="button"
+              class="ca-sidebar__item"
+              *ngIf="capabilities.careIntakes"
+              [class.is-active]="tab === 'Miembros'"
+              (click)="tab = 'Miembros'"
+            >
+              <ion-icon slot="start" name="document-text-outline"></ion-icon>
+              Fichas cuidado
+              <span class="ca-sidebar__badge" *ngIf="careIntakes.length">{{ careIntakes.length }}</span>
             </button>
             <button type="button" class="ca-sidebar__item" [class.is-active]="tab === 'Branding'" (click)="tab = 'Branding'">
+              <ion-icon slot="start" name="brush-outline"></ion-icon>
               Branding
             </button>
+
+            <div class="ca-sidebar__label">Gestión</div>
             <button
               type="button"
               class="ca-sidebar__item"
@@ -147,6 +127,7 @@
               [class.is-active]="tab === 'Vouchers'"
               (click)="tab = 'Vouchers'"
             >
+              <ion-icon slot="start" name="gift-outline"></ion-icon>
               Vouchers
             </button>
             <button
@@ -155,53 +136,62 @@
               [class.is-active]="tab === 'Onboarding'"
               (click)="tab = 'Onboarding'"
             >
+              <ion-icon slot="start" name="rocket-outline"></ion-icon>
               Onboarding
+            </button>
+
+            <div class="ca-sidebar__label">Sistema</div>
+            <button type="button" class="ca-sidebar__item" [class.is-active]="false">
+              <ion-icon slot="start" name="settings-outline"></ion-icon>
+              Configuración
             </button>
           </aside>
 
           <div class="ca-main">
-            <section class="ca-summary-metrics" aria-label="Resumen rápido">
-              <div class="ca-summary-card">
-                <div class="ca-summary-card__label">Empleados</div>
-                <div class="ca-summary-card__value">{{ metrics.employees }}</div>
-                <div class="ca-summary-card__meta">Miembros activos</div>
+            <section class="ca-hero" aria-label="Empresa">
+              <div class="ca-hero__left">
+                <div class="ca-hero__icon" aria-hidden="true">
+                  <ion-icon name="business-outline"></ion-icon>
+                </div>
+                <div class="ca-hero__meta">
+                  <div class="ca-hero__title">{{ company?.name || 'Empresa' }}</div>
+                  <div class="ca-hero__sub">
+                    <span *ngIf="company?.tax_id">RUT: {{ company?.tax_id }}</span>
+                    <span *ngIf="company?.domain">• {{ company?.domain }}</span>
+                  </div>
+                </div>
               </div>
-              <div class="ca-summary-card" *ngIf="capabilities.vouchers">
-                <div class="ca-summary-card__label">Vouchers activos</div>
-                <div class="ca-summary-card__value">{{ metrics.vouchersActive }}</div>
-                <div class="ca-summary-card__meta">Beneficios vigentes</div>
-              </div>
-              <div class="ca-summary-card">
-                <div class="ca-summary-card__label">Onboarding</div>
-                <div class="ca-summary-card__value">{{ metrics.onboardingDone }}</div>
-                <div class="ca-summary-card__meta">Pasos listos</div>
-              </div>
-              <div class="ca-summary-card" *ngIf="capabilities.metrics">
-                <div class="ca-summary-card__label">Eventos (30 días)</div>
-                <div class="ca-summary-card__value">{{ metrics.analytics30d }}</div>
-                <div class="ca-summary-card__meta">Actividad reciente</div>
-              </div>
+              <ion-button fill="clear" (click)="refresh()" [disabled]="saving" aria-label="Actualizar">
+                <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+              </ion-button>
             </section>
 
-            <div class="ca-tabs">
-              <ion-segment [(ngModel)]="tab" name="tab" aria-label="Secciones de administración">
-                <ion-segment-button value="Metricas" *ngIf="isTabVisible('Metricas')">
-                  <ion-label>Métricas</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="Miembros">
-                  <ion-label>Miembros</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="Branding">
-                  <ion-label>Branding</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="Vouchers" *ngIf="isTabVisible('Vouchers')">
-                  <ion-label>Vouchers</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="Onboarding">
-                  <ion-label>Onboarding</ion-label>
-                </ion-segment-button>
-              </ion-segment>
-            </div>
+            <section class="ca-plan-card" aria-label="Plan de la empresa">
+              <div class="ca-plan-card__top">
+                <div class="ca-plan-card__copy">
+                  <div class="ca-plan-card__head">
+                    <div class="ca-plan-card__eyebrow">PLAN ACTUAL</div>
+                    <div class="ca-plan-badge">{{ companyPlanLabel }}</div>
+                  </div>
+                  <div class="ca-plan-card__title">Plan y permisos</div>
+                  <div class="ca-plan-card__text">
+                    Este plan se lee desde la empresa contratada y define qué funciones quedan habilitadas.
+                  </div>
+                </div>
+
+                <div class="ca-plan-card__side">
+                  <div class="ca-plan-note">La asignación del plan se gestiona desde contratación o administración central.</div>
+                  <div class="ca-plan-actions">
+                    <ion-button size="small" class="ca-primary" routerLink="/packages">Mejorar plan</ion-button>
+                    <ion-button size="small" fill="clear" class="ca-link-btn" routerLink="/contact">Hablar con ventas</ion-button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ca-plan-card__features">
+                <span class="ca-pill" *ngFor="let feature of enabledPlanFeatures">{{ feature }}</span>
+              </div>
+            </section>
 
             <div class="ca-body" [ngSwitch]="tab">
           <!-- MIEMBROS -->
@@ -812,97 +802,146 @@
               </div>
             </div>
 
-            <section class="ca-company-overview">
-              <div class="ca-company-alerts">
-                <article class="ca-company-alert">
-                  <div class="ca-company-alert__value">{{ onboardingPendingCount }}</div>
-                  <div class="ca-company-alert__copy">
-                    <strong>Onboarding pendiente</strong>
-                    <span>Pasos aún no completados para dejar la empresa operativa.</span>
-                  </div>
-                </article>
+            <div class="dashboard-kpi-grid">
+              <div class="dashboard-kpi-card">
+                <div class="dashboard-kpi-card__label">Empleados</div>
+                <div class="dashboard-kpi-card__value">{{ metrics.employees }}</div>
+                <div class="dashboard-kpi-card__meta">Miembros activos</div>
+              </div>
+              <div class="dashboard-kpi-card" *ngIf="capabilities.vouchers">
+                <div class="dashboard-kpi-card__label">Vouchers activos</div>
+                <div class="dashboard-kpi-card__value">{{ metrics.vouchersActive }}</div>
+                <div class="dashboard-kpi-card__meta">Beneficios vigentes</div>
+              </div>
+              <div class="dashboard-kpi-card">
+                <div class="dashboard-kpi-card__label">Onboarding</div>
+                <div class="dashboard-kpi-card__value">{{ metrics.onboardingDone }}</div>
+                <div class="dashboard-kpi-card__meta">Pasos listos</div>
+              </div>
+              <div class="dashboard-kpi-card" *ngIf="capabilities.metrics">
+                <div class="dashboard-kpi-card__label">Eventos ({{ metricsRange }})</div>
+                <div class="dashboard-kpi-card__value">{{ metrics.analytics30d }}</div>
+                <div class="dashboard-kpi-card__meta">Actividad reciente</div>
+              </div>
+            </div>
 
-                <article class="ca-company-alert">
-                  <div class="ca-company-alert__value">{{ metrics.vouchersExpiring }}</div>
-                  <div class="ca-company-alert__copy">
-                    <strong>Vouchers por vencer</strong>
-                    <span>Beneficios que expiran en los próximos 30 días.</span>
-                  </div>
-                </article>
+            <div class="dashboard-grid">
+              <div class="dashboard-card dashboard-card--col-span-2">
+                <div class="dashboard-card__header">
+                  <h3 class="dashboard-card__title">HubSpot</h3>
+                  <p class="dashboard-card__subtitle">Resumen de pipeline y estado de leads en los últimos {{ metricsRange }}.</p>
+                </div>
+                <div class="dashboard-card__body">
+                  <div *ngIf="hubspotLoading" class="ca-company-empty">Cargando métricas desde HubSpot…</div>
+                  <div *ngIf="hubspotError" class="ca-company-empty">{{ hubspotError }}</div>
 
-                <article class="ca-company-alert">
-                  <div class="ca-company-alert__value">{{ metrics.enquiries }}</div>
-                  <div class="ca-company-alert__copy">
-                    <strong>Solicitudes pendientes</strong>
-                    <span>Casos detectados dentro del rango seleccionado.</span>
+                  <div *ngIf="!hubspotLoading && !hubspotError">
+                    <div class="ca-hubspot-summary">
+                      <strong>{{ hubspotPipeline?.label || 'Pipeline HubSpot' }}</strong>
+                      <span>Total de leads: {{ hubspotTotalLeads }}</span>
+                    </div>
+                    <div class="dashboard-metrics-grid">
+                      <div class="ca-insight-tile" *ngFor="let item of hubspotStatusCards">
+                        <strong>{{ item.value }}</strong>
+                        <span>{{ item.label }}</span>
+                      </div>
+                    </div>
                   </div>
-                </article>
+                </div>
               </div>
 
-              <div class="ca-company-activity">
-                <section class="ca-company-panel ca-company-panel--wide">
-                  <div class="ca-company-panel__head">
-                    <div class="ca-company-panel__title">Solicitudes recientes</div>
-                    <div class="ca-company-panel__sub">Lo más accionable del período actual.</div>
+              <div class="dashboard-card">
+                <div class="dashboard-card__header">
+                  <h3 class="dashboard-card__title">Alertas y pendientes</h3>
+                  <p class="dashboard-card__subtitle">Resumen de acciones recomendadas.</p>
+                </div>
+                <div class="dashboard-card__body">
+                  <div class="dashboard-alerts">
+                    <div class="dashboard-alert">
+                      <div class="dashboard-alert__value">{{ onboardingPendingCount }}</div>
+                      <div class="dashboard-alert__copy">
+                        <strong>Onboarding pendiente</strong>
+                        <span>Pasos por completar para la activación.</span>
+                      </div>
+                    </div>
+                    <div class="dashboard-alert">
+                      <div class="dashboard-alert__value">{{ metrics.vouchersExpiring }}</div>
+                      <div class="dashboard-alert__copy">
+                        <strong>Vouchers por vencer</strong>
+                        <span>Beneficios que expiran en 30 días.</span>
+                      </div>
+                    </div>
+                    <div class="dashboard-alert">
+                      <div class="dashboard-alert__value">{{ metrics.enquiries }}</div>
+                      <div class="dashboard-alert__copy">
+                        <strong>Solicitudes</strong>
+                        <span>Casos detectados en el rango.</span>
+                      </div>
+                    </div>
                   </div>
+                </div>
+              </div>
 
-                  <div class="ca-company-requests" *ngIf="recentEnquiries.length; else noRecentEnquiries">
-                    <div class="ca-company-requests__head">
-                      <span>ID</span>
-                      <span>Solicitud</span>
-                      <span>Empleado</span>
-                      <span>Fecha</span>
-                    </div>
-                    <div class="ca-company-requests__row" *ngFor="let row of recentEnquiries">
-                      <span>{{ row.id }}</span>
-                      <span>{{ row.property }}</span>
-                      <span>{{ row.employee }}</span>
-                      <span>{{ row.date }}</span>
-                    </div>
+              <div class="dashboard-card dashboard-card--col-span-2">
+                <div class="dashboard-card__header">
+                  <h3 class="dashboard-card__title">Solicitudes recientes</h3>
+                  <p class="dashboard-card__subtitle">Lo más accionable del período actual.</p>
+                </div>
+                <div class="dashboard-card__body">
+                  <div class="dashboard-table-wrapper" *ngIf="recentEnquiries.length; else noRecentEnquiries">
+                    <table class="dashboard-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Solicitud</th>
+                          <th>Empleado</th>
+                          <th>Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let row of recentEnquiries">
+                          <td>{{ row.id }}</td>
+                          <td>{{ row.property }}</td>
+                          <td>{{ row.employee }}</td>
+                          <td>{{ row.date }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                   <ng-template #noRecentEnquiries>
                     <div class="ca-company-empty">Sin consultas recientes.</div>
                   </ng-template>
-                </section>
+                </div>
+              </div>
 
-                <section class="ca-company-panel">
-                  <div class="ca-company-panel__head">
-                    <div class="ca-company-panel__title">Últimos empleados agregados</div>
-                    <div class="ca-company-panel__sub">Ingresos más recientes a la empresa.</div>
-                  </div>
-
-                  <div class="ca-company-members" *ngIf="latestMembers.length; else noLatestMembers">
-                    <div class="ca-company-member" *ngFor="let member of latestMembers">
-                      <div class="ca-company-member__avatar">
+              <div class="dashboard-card">
+                <div class="dashboard-card__header">
+                  <h3 class="dashboard-card__title">Últimos empleados</h3>
+                  <p class="dashboard-card__subtitle">Ingresos más recientes a la empresa.</p>
+                </div>
+                <div class="dashboard-card__body">
+                  <div class="dashboard-member-list" *ngIf="latestMembers.length; else noLatestMembers">
+                    <div class="dashboard-member" *ngFor="let member of latestMembers">
+                      <div class="dashboard-member__avatar">
                         {{ (member.full_name || member.email || '?').slice(0, 1).toUpperCase() }}
                       </div>
-                      <div class="ca-company-member__body">
+                      <div class="dashboard-member__body">
                         <strong>{{ member.full_name || member.email || member.user_id }}</strong>
                         <span>{{ member.email || 'Sin email' }}</span>
-                      </div>
-                      <div class="ca-company-member__meta">
-                        <span>{{ member.member_role }}</span>
-                        <span>{{ member.created_at | date: 'dd MMM' }}</span>
                       </div>
                     </div>
                   </div>
                   <ng-template #noLatestMembers>
                     <div class="ca-company-empty">Aún no hay colaboradores agregados.</div>
                   </ng-template>
-                </section>
-              </div>
-            </section>
-
-            <div class="ca-metrics-layout">
-              <section class="ca-chart-card" *ngIf="hasMonthlyActivityData; else noMonthlyActivity">
-                <div class="ca-chart-card__head">
-                  <div>
-                    <div class="ca-chart-card__title">Actividad mensual</div>
-                    <div class="ca-chart-card__sub">Eventos registrados en la web corporativa</div>
-                  </div>
-                  <div class="ca-chart-card__pill">Promedio {{ analyticsAverage }}</div>
                 </div>
+              </div>
 
+              <div class="dashboard-card" *ngIf="hasMonthlyActivityData; else noMonthlyActivity">
+                <div class="dashboard-card__header">
+                  <h3 class="dashboard-card__title">Actividad mensual</h3>
+                  <p class="dashboard-card__subtitle">Eventos registrados en la web corporativa.</p>
+                </div>
                 <div class="ca-bar-chart" aria-label="Actividad mensual">
                   <div class="ca-bar-chart__item" *ngFor="let month of monthlyActivity">
                     <div class="ca-bar-chart__value">{{ month.value }}</div>
@@ -912,39 +951,18 @@
                     <div class="ca-bar-chart__label">{{ month.label }}</div>
                   </div>
                 </div>
-              </section>
+              </div>
               <ng-template #noMonthlyActivity>
-                <section class="ca-chart-card">
-                  <div class="ca-chart-card__head">
-                    <div>
-                      <div class="ca-chart-card__title">Actividad mensual</div>
-                      <div class="ca-chart-card__sub">Eventos registrados en la web corporativa</div>
-                    </div>
+                <div class="dashboard-card">
+                  <div class="dashboard-card__header">
+                    <h3 class="dashboard-card__title">Actividad mensual</h3>
+                    <p class="dashboard-card__subtitle">Eventos registrados en la web corporativa.</p>
                   </div>
                   <div class="ca-company-empty ca-company-empty--chart">Sin datos suficientes aún.</div>
-                </section>
+                </div>
               </ng-template>
 
-              <section class="ca-insights-card">
-                <div class="ca-insights-card__title">Métricas relevantes</div>
-                <div class="ca-insights-card__sub">Solo indicadores con datos reales del período.</div>
-
-                <div class="ca-insight-grid" *ngIf="meaningfulMetricCards.length; else noMetricsData">
-                  <div class="ca-insight-tile" *ngFor="let item of meaningfulMetricCards">
-                    <strong>{{ item.value }}</strong>
-                    <span>{{ item.label }}</span>
-                    <small>{{ item.detail }}</small>
-                  </div>
-                </div>
-
-                <ng-template #noMetricsData>
-                  <div class="ca-company-empty">Sin datos suficientes aún.</div>
-                </ng-template>
-
-                <div class="ca-insight-muted" *ngIf="emptyMetricCards.length">
-                  <span *ngFor="let item of emptyMetricCards">{{ item.label }}: {{ item.value }}</span>
-                </div>
-              </section>
+              
             </div>
           </div>
 
@@ -1031,10 +1049,3 @@
     </ion-content>
   </ng-template>
 </ion-modal>
-
-
-
-
-
-
-

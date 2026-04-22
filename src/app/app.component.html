@@ -1,6 +1,9 @@
 <ion-app>
   <ion-menu contentId="main-content" type="overlay" [swipeGesture]="false" class="app-menu">
     <ion-content class="menu-content">
+      <div class="menu-glow menu-glow--top"></div>
+      <div class="menu-glow menu-glow--bottom"></div>
+
       <div class="menu-top">
         <div class="menu-brand">
           <div class="brand-avatar">CC</div>
@@ -18,26 +21,49 @@
       </div>
 
       <div class="menu-search">
-        <ion-searchbar placeholder="Buscar..." animated="true"></ion-searchbar>
+        <ion-searchbar placeholder="Buscar..." animated="false"></ion-searchbar>
       </div>
 
-      <ion-list class="menu-list" lines="none">
-        <ion-menu-toggle autoHide="false" *ngFor="let p of visiblePages">
-          <ion-item
-            [routerLink]="p.url"
-            [queryParams]="p.queryParams || null"
-            routerDirection="root"
-            detail="false"
-            routerLinkActive="is-active"
-            [routerLinkActiveOptions]="{ exact: p.url === '/home' || p.url === '/dashboard' }"
-          >
-            <ion-icon [name]="p.icon" slot="start"></ion-icon>
-            <ion-label class="item-label">{{ p.title }}</ion-label>
-          </ion-item>
-        </ion-menu-toggle>
-      </ion-list>
+      <div class="menu-section">
+        <div class="menu-section__label">Navegación</div>
+        <ion-list class="menu-list" lines="none">
+          <ion-menu-toggle *ngFor="let p of primaryPages">
+            <ion-item
+              [routerLink]="p.url"
+              [queryParams]="p.queryParams || null"
+              routerDirection="root"
+              detail="false"
+              routerLinkActive="is-active"
+              [routerLinkActiveOptions]="{ exact: p.url === '/home' || p.url === '/dashboard' }"
+            >
+              <ion-icon [name]="p.icon" slot="start"></ion-icon>
+              <ion-label class="item-label">{{ p.title }}</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+        </ion-list>
+      </div>
+
+      <div class="menu-section" *ngIf="secondaryPages.length">
+        <div class="menu-section__label">Información</div>
+        <ion-list class="menu-list menu-list--secondary" lines="none">
+          <ion-menu-toggle *ngFor="let p of secondaryPages">
+            <ion-item
+              [routerLink]="p.url"
+              [queryParams]="p.queryParams || null"
+              routerDirection="root"
+              detail="false"
+              routerLinkActive="is-active"
+              [routerLinkActiveOptions]="{ exact: p.url === '/home' || p.url === '/dashboard' }"
+            >
+              <ion-icon [name]="p.icon" slot="start"></ion-icon>
+              <ion-label class="item-label">{{ p.title }}</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+        </ion-list>
+      </div>
 
       <div class="menu-bottom">
+        <div class="menu-section__label">Cuenta</div>
         <ion-button fill="clear" class="bottom-item" routerLink="/contact">
           <ion-icon name="help-circle-outline" slot="start"></ion-icon>
           <span class="item-label">Soporte</span>

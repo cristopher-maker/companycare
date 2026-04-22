@@ -41,6 +41,11 @@ type CollaboratorSummary = {
   memberRole: string | null;
   location: string | null;
   familyAge: string | null;
+  relation: string | null;
+  condition: string | null;
+  dependencyLevel: string | null;
+  preferredContact: string | null;
+  supportNetwork: string | null;
 };
 
 type QuickReply = {
@@ -71,6 +76,21 @@ type AppointmentRow = {
   meeting_space_name?: string | null;
 };
 
+type CareTaskStatus = 'pending' | 'in_progress' | 'done';
+
+type CareTaskRow = {
+  id: string;
+  request_id: string | null;
+  employee_id: string;
+  created_by: string;
+  title: string;
+  notes: string | null;
+  due_at: string | null;
+  priority: 'low' | 'medium' | 'high';
+  status: CareTaskStatus;
+  created_at: string;
+};
+
 @Component({
   selector: 'app-care-experts',
   templateUrl: './care-experts.page.html',
@@ -80,6 +100,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public channel: SupportChannel = 'Chat';
   public topic = 'Orientación general';
   public details = '';
+  public advisorStep = 1;
   public profileRole: ProfileRole | null = null;
   public expertMode = false;
 
@@ -103,11 +124,23 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public selectedHistory: ExpertRequest[] = [];
   public selectedTags: string[] = [];
   public employeeAppointments: AppointmentRow[] = [];
+  public employeeTasks: CareTaskRow[] = [];
   public selectedAppointments: AppointmentRow[] = [];
   public appointmentDate = '';
   public appointmentTime = '';
   public appointmentKind: 'Videollamada' | 'Llamada' = 'Videollamada';
   public appointmentNotes = '';
+  public taskDraftTitle = '';
+  public taskDraftDueDate = '';
+  public readonly minAppointmentDate = new Date().toISOString().slice(0, 10);
+  public readonly maxAppointmentDate = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth() + 2,
+    0
+  )
+    .toISOString()
+    .slice(0, 10);
+  public readonly appointmentCalendarValue = this.minAppointmentDate;
   public resolvedToday = 0;
   public averageResponseMinutes = 0;
   public readonly appointmentVideoSlots = [
@@ -201,6 +234,74 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     return !!this.activeRequestId && this.activeRequestChannel === 'Chat';
   }
 
+  public get totalAdvisorSteps(): number {
+    return 3;
+  }
+
+  public get advisorProgressPercent(): number {
+    return Math.round((this.advisorStep / this.totalAdvisorSteps) * 100);
+  }
+
+  public get advisorCurrentStepLabel(): string {
+    return `Paso ${this.advisorStep} de ${this.totalAdvisorSteps}`;
+  }
+
+  public get advisorPrimaryButtonLabel(): string {
+    if (this.advisorStep < this.totalAdvisorSteps) return 'Continuar';
+    if (this.channel === 'Chat') return this.loading ? 'Creando chat...' : 'Iniciar chat';
+    return this.loading ? 'Agendando...' : `Agendar ${this.channel === 'Videollamada' ? 'videollamada' : 'llamada'}`;
+  }
+
+  public get advisorVisualTitle(): string {
+    if (this.advisorStep === 1) {
+      return 'Cuéntanos qué tipo de apoyo necesitas';
+    }
+
+    if (this.channel === 'Chat') {
+      return 'Un Care Expert responderá por chat en la misma página';
+    }
+
+    if (this.channel === 'Videollamada') {
+      return 'Agenda una videollamada y revisa tu acceso desde próximas citas';
+    }
+
+    return 'Reserva una llamada y deja el contexto para aprovechar mejor el tiempo';
+  }
+
+  public get advisorVisualBody(): string {
+    if (this.advisorStep === 1) {
+      return 'Elige el canal, tema y tipo de acompañamiento. El flujo te guía paso a paso para que no tengas que resolver todo de una sola vez.';
+    }
+
+    if (this.channel === 'Chat') {
+      return 'Ideal para orientación inicial, dudas rápidas y seguimiento escrito con historial dentro de la plataforma.';
+    }
+
+    if (this.channel === 'Videollamada') {
+      return 'Perfecto para revisar opciones con más contexto, conversar cara a cara y avanzar con una recomendación guiada.';
+    }
+
+    return 'Útil cuando prefieres coordinación por voz o necesitas ordenar próximos pasos con una llamada breve.';
+  }
+
+  public get advisorVisualNote(): string {
+    if (this.advisorStep === 3 && this.channel === 'Chat') {
+      return 'Al confirmar, el chat quedará abierto debajo para continuar la conversación.';
+    }
+
+    if (this.advisorStep === 3 && this.canScheduleAppointment) {
+      return 'Al confirmar, la cita quedará en próximas citas y desde ahí verás el acceso cuando corresponda.';
+    }
+
+    return 'La información que compartes es confidencial y solo se usa para preparar la orientación adecuada.';
+  }
+
+  public get advisorVisualAccent(): 'chat' | 'video' | 'call' {
+    if (this.channel === 'Videollamada') return 'video';
+    if (this.channel === 'Llamada') return 'call';
+    return 'chat';
+  }
+
   private realtimeChannel: any | null = null;
   private readonly allowedRoles: ProfileRole[] = ['employee', 'care_expert', 'admin'];
 
@@ -284,12 +385,40 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
   }
 
+  public selectTopic(topic: string): void {
+    this.topic = topic;
+  }
+
+  public previousAdvisorStep(): void {
+    this.advisorStep = Math.max(1, this.advisorStep - 1);
+  }
+
+  public async advanceAdvisorStep(): Promise<void> {
+    if (this.advisorStep < this.totalAdvisorSteps) {
+      if (!this.canAdvanceFromCurrentStep()) return;
+      this.advisorStep += 1;
+      return;
+    }
+
+    if (this.channel === 'Chat') {
+      await this.submitRequest();
+      return;
+    }
+
+    await this.scheduleAppointment();
+  }
+
   public onAppointmentKindChange(kind: 'Videollamada' | 'Llamada'): void {
     this.appointmentKind = kind;
     this.channel = kind;
     if (this.appointmentTime && !this.appointmentTimeSlots.includes(this.appointmentTime)) {
       this.appointmentTime = '';
     }
+  }
+
+  public onAppointmentDateChange(value: string | null | undefined): void {
+    this.appointmentDate = value ? String(value).slice(0, 10) : '';
+    this.appointmentTime = '';
   }
 
   public appointmentStatusLabel(status: AppointmentStatus): string {
@@ -305,12 +434,104 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
   }
 
+  public taskStatusLabel(status: CareTaskStatus): string {
+    switch (status) {
+      case 'in_progress':
+        return 'En progreso';
+      case 'done':
+        return 'Hecha';
+      default:
+        return 'Pendiente';
+    }
+  }
+
+  public taskRequestLabel(task: CareTaskRow): string {
+    if (!task.request_id) return 'Tarea personal';
+    if (task.request_id === this.activeRequestId) return 'Asociada a este caso';
+    return 'Asociada a otra solicitud';
+  }
+
   public hasMeetingLink(appointment: AppointmentRow): boolean {
     return !!appointment.meeting_url && appointment.kind === 'Videollamada';
   }
 
   public get nextAppointment(): AppointmentRow | null {
     return this.employeeAppointments[0] ?? null;
+  }
+
+  public get visibleEmployeeTasks(): CareTaskRow[] {
+    const currentRequestId = this.activeRequestId;
+    return [...this.employeeTasks].sort((left, right) => {
+      const leftCurrent = left.request_id && left.request_id === currentRequestId ? 1 : 0;
+      const rightCurrent = right.request_id && right.request_id === currentRequestId ? 1 : 0;
+      if (leftCurrent !== rightCurrent) return rightCurrent - leftCurrent;
+      if (left.status !== right.status) {
+        const weight: Record<CareTaskStatus, number> = { pending: 0, in_progress: 1, done: 2 };
+        return weight[left.status] - weight[right.status];
+      }
+      return new Date(left.created_at).getTime() - new Date(right.created_at).getTime();
+    });
+  }
+
+  public get selectedPrimaryAppointment(): AppointmentRow | null {
+    return (
+      this.selectedAppointments.find(
+        (appointment) =>
+          (appointment.status === 'scheduled' || appointment.status === 'confirmed') && this.hasMeetingLink(appointment)
+      ) ??
+      this.selectedAppointments.find(
+        (appointment) => appointment.status === 'scheduled' || appointment.status === 'confirmed'
+      ) ??
+      this.selectedAppointments[0] ??
+      null
+    );
+  }
+
+  public async addTask(): Promise<void> {
+    const user = this.auth.user;
+    const title = this.taskDraftTitle.trim();
+    if (!user || !title) return;
+
+    this.loading = true;
+    try {
+      const dueAt = this.taskDraftDueDate ? new Date(`${this.taskDraftDueDate}T23:59:00`).toISOString() : null;
+      const { error } = await this.supabase.client.from('care_tasks').insert({
+        request_id: this.activeRequestId,
+        employee_id: user.id,
+        created_by: user.id,
+        title,
+        due_at: dueAt,
+        priority: 'medium',
+        status: 'pending',
+      } as any);
+      if (error) throw error;
+
+      this.taskDraftTitle = '';
+      this.taskDraftDueDate = '';
+      await this.loadEmployeeTasks();
+    } catch (err: any) {
+      alert(err?.message ?? 'No se pudo crear la tarea.');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  public async updateTaskStatus(task: CareTaskRow, status: CareTaskStatus): Promise<void> {
+    const { error } = await this.supabase.client.from('care_tasks').update({ status }).eq('id', task.id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await this.loadEmployeeTasks();
+  }
+
+  public async removeTask(task: CareTaskRow): Promise<void> {
+    const { error } = await this.supabase.client.from('care_tasks').delete().eq('id', task.id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await this.loadEmployeeTasks();
   }
 
   public async scheduleAppointment(): Promise<void> {
@@ -363,7 +584,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
           expert_id: null,
           kind: this.appointmentKind,
           scheduled_for: scheduledFor.toISOString(),
-          notes: this.appointmentNotes.trim() || null,
+          notes: this.appointmentNotes.trim() || this.details.trim() || null,
           created_by: user.id,
         })
         .select('id')
@@ -398,6 +619,23 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public openMeeting(appointment: AppointmentRow): void {
     if (!appointment.meeting_url) return;
     window.open(appointment.meeting_url, '_blank', 'noopener,noreferrer');
+  }
+
+  public advisorSummaryValue(field: 'channel' | 'topic' | 'details' | 'date' | 'time'): string {
+    switch (field) {
+      case 'channel':
+        return this.channel;
+      case 'topic':
+        return this.topic;
+      case 'details':
+        return this.details.trim() || 'Sin contexto adicional por ahora.';
+      case 'date':
+        return this.appointmentDate || 'No seleccionado';
+      case 'time':
+        return this.appointmentTime || 'No seleccionado';
+      default:
+        return '';
+    }
   }
 
   public async sendMessage(): Promise<void> {
@@ -640,7 +878,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
   public async selectExpertRequest(request: ExpertRequest): Promise<void> {
     this.selectedRequest = request;
-      this.activeRequestId = request.id;
+    this.activeRequestId = request.id;
     this.activeRequestChannel = request.channel;
     this.statusDraft = request.status;
     this.channel = request.channel;
@@ -651,6 +889,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     await this.loadMessages();
     await this.setupRealtime();
     await this.loadSelectedContext();
+    await this.loadSelectedAppointments();
   }
 
   public async claimSelectedRequest(): Promise<void> {
@@ -700,6 +939,24 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
   }
 
+  private canAdvanceFromCurrentStep(): boolean {
+    if (this.advisorStep === 1) {
+      return true;
+    }
+
+    if (this.advisorStep === 2 && this.channel === 'Chat' && !this.details.trim()) {
+      alert('Cuéntanos brevemente tu situación antes de continuar.');
+      return false;
+    }
+
+    if (this.advisorStep === 2 && this.canScheduleAppointment && (!this.appointmentDate || !this.appointmentTime)) {
+      alert('Selecciona día y hora para continuar con la reserva.');
+      return false;
+    }
+
+    return true;
+  }
+
   private async bootstrap(): Promise<void> {
 const { data: sessionData } = await this.supabase.client.auth.getSession();
 
@@ -729,6 +986,7 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
     });
 
     await this.loadEmployeeAppointments();
+    await this.loadEmployeeTasks();
   }
 
   private async openRequest(requestId: string): Promise<void> {
@@ -751,6 +1009,7 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
       await this.loadMessages();
       await this.setupRealtime();
       await this.loadEmployeeAppointments();
+      await this.loadEmployeeTasks();
     } catch (err: any) {
       console.error(err);
       alert(err?.message ?? 'No se pudo abrir el chat.');
@@ -843,6 +1102,27 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
     }
 
     this.employeeAppointments = (data ?? []) as AppointmentRow[];
+  }
+
+  private async loadEmployeeTasks(): Promise<void> {
+    const userId = this.auth.user?.id;
+    if (!userId) {
+      this.employeeTasks = [];
+      return;
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('care_tasks')
+      .select('id, request_id, employee_id, created_by, title, notes, due_at, priority, status, created_at')
+      .eq('employee_id', userId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      this.employeeTasks = [];
+      return;
+    }
+
+    this.employeeTasks = (data ?? []) as CareTaskRow[];
   }
 
   private async loadSelectedAppointments(): Promise<void> {
@@ -1092,6 +1372,11 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
     let memberRole: string | null = null;
     let location: string | null = null;
     let familyAge: string | null = null;
+    let relation: string | null = null;
+    let condition: string | null = null;
+    let dependencyLevel: string | null = null;
+    let preferredContact: string | null = null;
+    let supportNetwork: string | null = null;
 
     const { data: profile } = await this.supabase.client
       .from('profiles')
@@ -1140,6 +1425,11 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
         ['care_receiver', 'age'],
         ['dependent', 'age'],
       ]);
+      relation = this.readPayloadValue(payload, [['caregiver', 'relation'], ['family', 'relation']]);
+      condition = this.readPayloadValue(payload, [['care_receiver', 'primary_condition'], ['clinical_profile']]);
+      dependencyLevel = this.readPayloadValue(payload, [['care_receiver', 'dependency_level']]);
+      preferredContact = this.readPayloadValue(payload, [['preferences', 'preferred_contact']]);
+      supportNetwork = this.readPayloadValue(payload, [['family_context', 'support_network']]);
     } catch {
       // ignore
     }
@@ -1151,6 +1441,11 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
       memberRole,
       location,
       familyAge,
+      relation,
+      condition,
+      dependencyLevel,
+      preferredContact,
+      supportNetwork,
     };
   }
 

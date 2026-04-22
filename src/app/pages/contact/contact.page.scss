@@ -1,296 +1,415 @@
-:host {
-  --contact-bg: #edf3ff;
-  --contact-surface: #ffffff;
-  --contact-text: #111827;
-  --contact-muted: #6b7280;
-  --contact-border: rgba(15, 23, 42, 0.08);
-  --contact-primary: #365cff;
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap');
+
+// Forzar el fondo base de la página
+ion-content.contact-page {
+  --background: #1a0a2e;
+  --overflow: auto; // Forzar la visibilidad del scroll
 }
 
-.desktop-only {
-  display: none;
+// HEADER: Estilos para el header estándar de Ionic
+// Lo usamos como un contenedor transparente para nuestro navbar personalizado
+.contact-header ion-toolbar {
+  --background: linear-gradient(90deg, rgba(200, 75, 255, 0.15), rgba(255, 107, 186, 0.15));
+  --color: #ffffff;
+  --border-width: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+// NAVBAR: Restaurado y adaptado para incluir el botón de menú
+.cc-nav {
+  width: 100%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 1000;
+}
+
+.cc-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cc-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+
+  .cc-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #c84bff, #ff6bba);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .cc-brand-text {
+    .name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+    .sub {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+.cc-nav-links {
+  display: none; // Oculto en móvil por defecto
+  gap: 1.8rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  a {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-weight: 400;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #ffffff;
+    }
+  }
+}
+
+.cc-nav-actions {
+  display: flex;
+  gap: 12px;
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 12px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  .btn-glow {
+    background: linear-gradient(135deg, #c84bff, #ff6bba);
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 12px;
+    padding: 8px 18px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(200, 75, 255, 0.4);
+    cursor: pointer;
+  }
+}
+
+// CUERPO Y TARJETA
+.cc-page {
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.lava-canvas {
+  position: fixed;
+  inset: 0; 
+  width: 100%; 
+  height: 100%; 
+  z-index: 0;
+  pointer-events: none;
+}
+
+.cc-body {
+  position: relative; 
+  z-index: 10;
+  display: grid; 
+  grid-template-columns: 1fr 1fr;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4rem 2rem; // Da aire arriba (navbar) y abajo (footer)
+  align-items: center; // Centra el contenido verticalmente
+}
+
+.cc-left {
+  padding: 4rem; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center;
+
+  .cc-eyebrow { 
+    font-size: 11px; 
+    letter-spacing: 2.5px; 
+    color: #ff6bba; 
+    text-transform: uppercase; 
+    margin-bottom: 1rem; 
+    font-weight: 600;
+  }
+
+  .cc-headline { 
+    font-family: 'Fraunces', serif; 
+    font-size: 52px; 
+    color: #ffffff; 
+    font-weight: 300; 
+    line-height: 1.1;
+
+    em { 
+      font-style: italic; 
+      color: #e07bff; 
+    }
+  }
+
+  .cc-sub { 
+    font-size: 16px; 
+    color: rgba(255, 255, 255, 0.6); 
+    max-width: 440px; 
+    margin: 2.5rem 0; 
+    line-height: 1.6;
+  }
+
+  .cc-trust {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .cc-trust-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+
+      .cc-trust-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ff6bba;
+      }
+    }
+  }
+}
+
+.cc-form-card {
+  background: rgba(255, 255, 255, 0.05); // Glassmorphism refinado
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem 2rem;
+  width: 100%; 
+  max-width: 700px;
+  margin: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+
+  .cc-form-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 4px 0;
+  }
+
+  .cc-form-sub {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0 0 12px 0;
+  }
+
+  .cc-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin-bottom: 12px;
+  }
+
+  .cc-privacy {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    margin: 12px 0 0 0;
+  }
+}
+
+// HUBSPOT: Estilos forzados para integración visual
+:host ::ng-deep {
+  .hs-form-frame, .hbspt-form, .hs-form {
+
+    fieldset {
+      max-width: 100% !important;
+    }
+
+    .hs-form-field {
+      margin-bottom: 8px !important;
+    }
+
+    /* 1. ETIQUETAS DEL FORMULARIO (Alta especificidad, sin romper iframes) */
+    label,
+    .hs-form-field > label,
+    .hs-form-field > label > span,
+    .hs-form-field > label > span > span,
+    legend.hs-field-desc,
+    .hs-field-desc,
+    .hs-field-desc p {
+      color: #ffffff !important;
+      font-weight: 500 !important;
+    }
+
+    .hs-form-field > label {
+      font-size: 12px !important;
+      margin-bottom: 4px !important;
+      display: block !important;
+    }
+
+    /* 2. CAJAS DE TEXTO Y SELECTORES */
+    .hs-input, input:not([type="submit"]):not([type="checkbox"]):not([type="radio"]), select, textarea {
+      background: rgba(255, 255, 255, 0.06) !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      color: #ffffff !important;
+      border-radius: 8px !important;
+      padding: 8px 12px !important;
+      font-family: 'DM Sans', sans-serif !important;
+      font-size: 13px !important;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+
+      &:focus {
+        border-color: #c84bff !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        outline: none !important;
+      }
+    }
+
+    /* 3. EVITAR QUE CHROME PONGA FONDO BLANCO AL AUTOCOMPLETAR */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus, 
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px #1a0a2e inset !important;
+        -webkit-text-fill-color: #ffffff !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+
+    /* 4. SELECTOR DE PAÍS (Teléfono) */
+    .hs-dropdown-display,
+    .hs-dropdown-display * {
+      color: #ffffff !important;
+    }
+
+    .hs-dropdown-options,
+    .hs-dropdown-options * {
+      background: #1a0a2e !important;
+      color: #ffffff !important;
+    }
+
+    /* 5. TEXTOS LEGALES */
+    .legal-consent-container, .legal-consent-container *, .hs-richtext, .hs-richtext * {
+      color: rgba(255, 255, 255, 0.7) !important;
+      font-size: 11px !important;
+    }
+
+    .hs-error-msgs {
+      margin: 4px 0 0 0 !important;
+      padding: 0 !important;
+      label { font-size: 11px !important; margin: 0 !important; color: #ff6bba !important; }
+    }
+
+    .actions {
+      margin-top: 8px !important;
+      padding: 0 !important;
+    }
+
+    /* 6. BOTÓN DE ENVIAR */
+    .hs-button, input[type="submit"] {
+      background: linear-gradient(135deg, #c84bff, #ff6bba) !important;
+      box-shadow: 0 8px 20px rgba(200, 75, 255, 0.3) !important;
+      border: none !important;
+      border-radius: 8px !important;
+      width: 100% !important;
+      height: 38px !important;
+      font-weight: 600 !important;
+      color: #ffffff !important;
+      cursor: pointer;
+      margin-top: 0 !important;
+    }
+
+    /* 7. PROTECCIÓN DEL RECAPTCHA (Evita que desaparezca) */
+    .hs-recaptcha, .grecaptcha-badge, iframe {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+  }
+}
+
+// RESPONSIVE
+@media (max-width: 992px) {
+  .cc-body { 
+    grid-template-columns: 1fr; 
+    padding: 4rem 1.5rem; // Aire superior e inferior en móviles
+    gap: 2rem;
+  }
+
+  .cc-left {
+    padding: 0; // Evitamos padding doble en móviles
+    text-align: center;
+    align-items: center;
+    .cc-sub { margin-left: auto; margin-right: auto; }
+  }
+
+  .cc-headline {
+    font-size: 38px;
+  }
+}
+
+/* Scrollbar para tema oscuro (solo en esta página) */
+:host {
+  ion-content::part(scroll) {
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 999px;
+    }
+  }
 }
 
 @media (min-width: 992px) {
-  .desktop-only {
+  // Mostrar links y ocultar botón de menú en desktop
+  .cc-nav-links {
     display: flex;
   }
 }
 
-ion-content.contact-page {
-  --background: linear-gradient(180deg, #eef4ff 0%, #e8f0ff 100%);
-}
-
-.contact-header ion-toolbar {
-  --background: #f3f4f6;
-  --border-width: 0;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-.nav-bar {
-  --min-height: 72px;
-}
-
-.nav {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-}
-
-.mark {
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  background: rgba(27, 77, 255, 0.12);
-  color: rgb(27, 77, 255);
-  font-weight: 950;
-  letter-spacing: -0.02em;
-}
-
-.brand-text {
-  display: grid;
-  line-height: 1.1;
-}
-
-.brand-text .name {
-  font-weight: 950;
-  letter-spacing: -0.02em;
-  color: #0f172a;
-}
-
-.brand-text .sub {
-  font-size: 12px;
-  opacity: 0.65;
-}
-
-.navigation-menu {
-  margin: 0 auto;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  gap: 18px;
-  align-items: center;
-}
-
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 10px 10px;
-  border-radius: 12px;
-  text-decoration: none;
-  color: rgba(15, 23, 42, 0.72);
-  font-weight: 900;
-  font-size: 13px;
-  letter-spacing: 0.01em;
-}
-
-.nav-link:hover {
-  background: rgba(15, 23, 42, 0.05);
-  color: rgba(15, 23, 42, 0.92);
-}
-
-.contact-btn {
-  --border-radius: 12px;
-  --box-shadow: none;
-}
-
-.contact-shell {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 34px 18px 48px;
-}
-
-.contact-intro {
-  max-width: 720px;
-  margin: 0 auto 26px;
-  text-align: center;
-}
-
-.contact-intro p {
-  margin: 0;
-  color: var(--contact-text);
-  font-size: 18px;
-  line-height: 1.5;
-  font-weight: 500;
-}
-
-.contact-intro h1 {
-  margin: 8px 0 0;
-  color: var(--contact-text);
-  font-size: clamp(28px, 4vw, 44px);
-  line-height: 1.15;
-  letter-spacing: -0.03em;
-  font-weight: 500;
-}
-
-.contact-card {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 32px;
-  border-radius: 30px;
-  background: var(--contact-surface);
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-}
-
-.contact-form {
-  display: grid;
-  gap: 18px;
-}
-
-.contact-grid {
-  display: grid;
-  gap: 18px;
-}
-
-.contact-field {
-  display: grid;
-  gap: 10px;
-}
-
-.contact-field label {
-  color: #334155;
-  font-size: 15px;
-  font-weight: 500;
-  text-align: center;
-}
-
-.contact-field ion-input,
-.contact-field ion-select,
-.contact-field ion-textarea {
-  --background: #f4f7fb;
-  --border-color: transparent;
-  --highlight-color-focused: #d7dfea;
-  --highlight-color-valid: #d7dfea;
-  --highlight-color-invalid: #f59cb7;
-  --padding-start: 14px;
-  --padding-end: 14px;
-  border-radius: 12px;
-  color: var(--contact-text);
-  font-weight: 500;
-}
-
-.contact-field ion-textarea {
-  min-height: 150px;
-}
-
-.contact-legal {
-  margin: 0;
-  color: var(--contact-text);
-  font-size: 14px;
-  line-height: 1.6;
-  text-align: center;
-}
-
-.contact-actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 6px;
-}
-
-.contact-submit {
-  --background: var(--contact-primary);
-  --background-hover: #2f52ec;
-  --box-shadow: none;
-  --border-radius: 12px;
-  min-width: 110px;
-  min-height: 52px;
-  font-weight: 800;
-  text-transform: none;
-}
-
-.footer {
-  margin-top: 0;
-  padding: 20px 16px 0;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
-  background: #ffffff;
-}
-
-.footer-inner {
-  max-width: 1320px;
-  margin: 0 auto;
-  display: grid;
-  gap: 16px;
-  padding-bottom: 16px;
-}
-
-.footer-col {
-  display: grid;
-  gap: 8px;
-}
-
-.footer-title {
-  font-weight: 950;
-  letter-spacing: -0.01em;
-}
-
-.footer-col a {
-  text-decoration: none;
-  color: rgba(15, 23, 42, 0.72);
-  font-weight: 800;
-}
-
-.footer-col a:hover {
-  color: rgba(15, 23, 42, 0.92);
-}
-
-.footer-muted {
-  color: rgba(15, 23, 42, 0.62);
-  font-size: 12px;
-}
-
-.footer-bottom {
-  text-align: center;
-  padding: 14px 0;
-  color: rgba(15, 23, 42, 0.62);
-  font-size: 12px;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-@media (min-width: 768px) {
-  .contact-grid--two {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (min-width: 992px) {
-  .footer-inner {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 767px) {
-  .contact-shell {
-    padding: 20px 12px 32px;
-  }
-
-  .contact-intro p {
-    font-size: 16px;
-  }
-
-  .contact-card {
-    padding: 22px 18px;
-    border-radius: 22px;
-  }
-
-  .contact-field label {
-    text-align: left;
-  }
-
-  .contact-actions {
-    justify-content: stretch;
-  }
-
-  .contact-submit {
-    width: 100%;
-  }
+// Override Footer styles for dark theme
+app-footer {
+  --cc-footer-bg: transparent;
+  --cc-footer-border-color: rgba(255, 255, 255, 0.1);
+  --cc-footer-text-color: rgba(255, 255, 255, 0.6);
+  --cc-footer-title-color: #ffffff;
+  --cc-footer-link-hover-color: #ffffff;
+  --cc-footer-bottom-text-color: rgba(255, 255, 255, 0.5);
 }
