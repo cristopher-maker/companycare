@@ -1550,6 +1550,7 @@
 .about-band {
   position: relative;
   --about-bg: none;
+  --about-band-image: none;
   padding: 96px 16px;
   background-color: #1a0a2e; // Color de respaldo
   overflow: hidden;
@@ -1558,7 +1559,7 @@
 .about-band__bg {
   position: absolute;
   inset: 0;
-  background-image: url('/assets/img/about-us.jpg');
+  background-image: var(--about-band-image);
   background-size: cover;
   background-position: center;
   z-index: 0;
