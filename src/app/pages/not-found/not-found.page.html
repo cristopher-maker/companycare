@@ -1,21 +1,16 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Página no encontrada</ion-title>
-  </ion-toolbar>
-</ion-header>
+﻿<app-site-header></app-site-header>
 
-<ion-content class="ion-padding">
-  <ion-card>
-    <ion-card-header>
-      <ion-card-title>404</ion-card-title>
-      <ion-card-subtitle>La ruta no existe</ion-card-subtitle>
-    </ion-card-header>
-    <ion-card-content>
-      <ion-button routerLink="/home" expand="block">Volver al inicio</ion-button>
-    </ion-card-content>
-  </ion-card>
-</ion-content>
+<main class="flex items-center justify-center p-4 bg-white" style="min-height: calc(100vh - 4rem);">
+  <div class="text-center">
+    <div class="bg-white p-8 rounded-lg shadow-md border border-slate-200">
+      <h2 class="text-6xl font-bold text-indigo-600">404</h2>
+      <h3 class="text-2xl font-semibold text-slate-800 mt-2">Página no encontrada</h3>
+      <p class="text-slate-500 mt-2">La ruta que buscas no existe o fue movida.</p>
+      <a routerLink="/home" class="btn-primary mt-6">
+        Volver al inicio
+      </a>
+    </div>
+  </div>
+</main>
 
+<app-site-footer></app-site-footer>

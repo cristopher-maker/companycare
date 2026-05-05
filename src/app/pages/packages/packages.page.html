@@ -1,216 +1,178 @@
-﻿﻿<ion-header class="ion-no-border packages-header">
-  <ion-toolbar>
-    <div class="cc-nav">
-      <div class="cc-nav-left">
-        <ion-menu-button></ion-menu-button>
-        <div class="cc-brand" routerLink="/home">
-          <div class="cc-mark">CC</div>
-          <div class="cc-brand-text">
-            <div class="name">Company Care</div>
-            <div class="sub">by Senior Advisor</div>
+﻿<app-site-header></app-site-header>
+
+<div class="packages-page">
+    <h2 class="sr-only">Página de planes Company Care con colores cálidos y calculadora de impacto</h2>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="hero-kicker">Plataforma Company Care</div>
+        <h1>Planes que no solo se entienden: también se <span>sienten valiosos</span></h1>
+        <p>Una oferta clara para activar el beneficio, venderlo mejor y mostrar desde el primer vistazo que hay acompañamiento real detrás.</p>
+
+        <div class="hero-points">
+          <span>Portal co-brandeado</span>
+          <span>Experts y seguimiento</span>
+          <span>Métricas para RR.HH.</span>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="Programa de cuidado Company Care">
+        <div class="hero-dashboard-card">
+          <div class="hero-dashboard-card__top">
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
-        </div>
-      </div>
-
-      <ul class="cc-nav-links">
-        <li><a routerLink="/home">Inicio</a></li>
-        <li *ngIf="mode === 'public' || canStartCareFlow">
-          <a [routerLink]="mode === 'public' ? '/login' : '/care-experts'">Care Experts</a>
-        </li>
-        <li><a routerLink="/providers">Proveedores</a></li>
-        <li><a routerLink="/resources">Recursos</a></li>
-        <li><a routerLink="/training">Formación</a></li>
-        <li><a routerLink="/packages" routerLinkActive="active-link">Planes</a></li>
-        <li><a routerLink="/about">Nosotros</a></li>
-      </ul>
-
-      <div class="cc-nav-actions">
-        <button class="btn-ghost" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">
-          {{ mode === 'public' ? 'Ingresar' : 'Portal' }}
-        </button>
-        <button class="btn-glow" routerLink="/contact">Contáctanos</button>
-      </div>
-    </div>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content class="packages-page">
-  <canvas #lavaCanvas class="lava-canvas" aria-hidden="true"></canvas>
-
-  <section class="packages-hero">
-    <div class="packages-shell packages-shell--hero">
-      <div class="packages-hero__top">
-        <div class="packages-hero__copy">
-          <div class="packages-kicker">PLATAFORMA COMPANY CARE</div>
-          <h1>
-            Activa el beneficio con una oferta simple para la
-            <span>empresa</span>
-            que quieres vender
-          </h1>
-          <p>
-            Dejamos dos planes claros: una capa base para activar el beneficio y una capa completa para operar con Care Experts, seguimiento y soporte.
-          </p>
-        </div>
-      </div>
-
-      <div class="plans-grid plans-grid--hero" role="list" aria-label="Planes disponibles">
-        <article
-          *ngFor="let plan of packagePlans"
-          class="plans-card"
-          [ngClass]="plan.accentClass"
-          role="listitem"
-          [attr.aria-label]="plan.name"
-        >
-          <div class="plans-card__deco">
-            <svg class="plans-card__deco-img" enable-background="new 0 0 300 100" height="100px" id="Layer_1" preserveAspectRatio="none" version="1.1" viewBox="0 0 300 100" width="300px" x="0px" xml:space="preserve" y="0px">
-                <path class="deco-layer deco-layer--1" d="M30.913,43.944c0,0,42.911-34.464,87.51-14.191c77.31,35.14,113.304-1.952,146.638-4.729c48.654-4.056,69.94,16.218,69.94,16.218v54.396H30.913V43.944z" fill="#FFFFFF" opacity="0.6"></path>
-                <path class="deco-layer deco-layer--2" d="M-35.667,44.628c0,0,42.91-34.463,87.51-14.191c77.31,35.141,113.304-1.952,146.639-4.729c48.653-4.055,69.939,16.218,69.939,16.218v54.396H-35.667V44.628z" fill="#FFFFFF" opacity="0.6"></path>
-                <path class="deco-layer deco-layer--3" d="M43.415,98.342c0,0,48.283-68.927,109.133-68.927c65.886,0,97.983,67.914,97.983,67.914v3.716H42.401L43.415,98.342z" fill="#FFFFFF" opacity="0.7"></path>
-                <path class="deco-layer deco-layer--4" d="M-34.667,62.998c0,0,56-45.667,120.316-27.839C167.484,57.842,197,41.332,232.286,30.428c53.07-16.399,104.047,36.903,104.047,36.903l1.333,36.667l-372-2.954L-34.667,62.998z" fill="#FFFFFF"></path>
-            </svg>
-            <div class="plans-card__price">
-              <span class="plans-card__currency">$</span>{{ plan.price }}
-              <span class="plans-card__period">{{ plan.period }}</span>
+          <div class="hero-dashboard-card__body">
+            <div class="hero-dashboard-card__chart"></div>
+            <div class="hero-dashboard-card__lines">
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
-            <h3 class="plans-card__header-title">{{ plan.name }}</h3>
           </div>
-          <ul class="plans-card__features" aria-label="Incluye">
-            <li *ngFor="let feature of plan.features" class="plans-card__feature">{{ feature }}</li>
+        </div>
+        <div class="hero-dashboard-note">Planes diseñados para activar apoyo real, no solo comunicar un beneficio.</div>
+      </div>
+    </section>
+
+    <section class="plans-section">
+      <div class="plan-card">
+        <div class="plan-icon">🏛️</div>
+        <div>
+          <div class="plan-name">Plan Plataforma</div>
+          <div><span class="plan-price">$99</span><span class="plan-price-label"> /mes</span></div>
+          <div class="plan-desc">Activa el beneficio con un portal co-brandeado y una base clara de recursos para tu equipo.</div>
+        </div>
+        <div>
+          <div class="features-title">Incluye</div>
+          <ul class="features-list">
+            <li class="feat-item"><span class="feat-check">✓</span> Portal co-brandeado</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Biblioteca de recursos</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Red de proveedores sugeridos</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Onboarding para RR.HH.</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Métricas base del beneficio</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Seguimiento de casos</li>
           </ul>
-          <button class="plans-card__action" routerLink="/contact">
-            Solicitar propuesta
-          </button>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="plans" aria-label="Planes para empresas">
-    <div class="plans-shell">
-      <div class="plans-roi" style="display: contents;">
-        <div class="plans-roi__panel">
-          <div class="plans-roi__intro">
-            <div class="plans-roi__kicker">CALCULADORA DE IMPACTO</div>
-            <h3>El verdadero costo del cuidado en tu empresa</h3>
-            <p>
-              Ingresa la cantidad de empleados para estimar el impacto económico anual asociado a responsabilidades de cuidado en tu organización.
-            </p>
-          </div>
-
-          <div class="plans-roi__control">
-            <div class="plans-roi__display" aria-label="Cantidad de empleados">
-              <div class="plans-roi__display-value">{{ roiEmployees | number:'1.0-0' }}</div>
-              <div class="plans-roi__display-label">empleados</div>
-            </div>
-
-            <div class="plans-roi__bounds" aria-hidden="true">
-              <span>Mín: 50</span>
-              <span>Máx: 5.000</span>
-            </div>
-
-            <ion-range
-              class="plans-roi__range"
-              min="50"
-              max="5000"
-              step="10"
-              snaps="false"
-              [value]="roiEmployees"
-              (ionInput)="setRoiEmployees($any($event.detail).value)"
-            ></ion-range>
-
-            <div class="plans-roi__input">
-              <label for="roiEmployees">O escribe la dotación manualmente</label>
-              <ion-input
-                id="roiEmployees"
-                type="number"
-                inputmode="numeric"
-                min="50"
-                max="5000"
-                [value]="roiEmployees"
-                (ionInput)="setRoiEmployees($any($event.detail).value)"
-              ></ion-input>
-            </div>
-          </div>
         </div>
-
-        <div class="plans-roi__results" aria-label="Resultados estimados">
-          <div class="plans-roi__metric">
-            <div class="plans-roi__metric-value">{{ roiImpactedEmployees | number:'1.0-0' }}</div>
-            <div class="plans-roi__metric-title">Colaboradores con responsabilidades de cuidado</div>
-            <div class="plans-roi__metric-copy">
-              Estimación basada en que <strong>{{ roiCaregiverRateLabel }}</strong> de la dotación enfrenta tareas de cuidado.
-            </div>
-          </div>
-
-          <div class="plans-roi__metric plans-roi__metric--impact">
-            <div class="plans-roi__metric-value">{{ roiFormattedAnnualCost }}</div>
-            <div class="plans-roi__metric-title">Costo anual estimado para la empresa</div>
-            <div class="plans-roi__metric-copy">
-              Pérdida referencial en productividad, ausentismo y rotación, usando un costo de <strong>{{ roiFormattedCostPerCaregiver }}</strong> por cuidador al año.
-            </div>
-          </div>
-
-          <div class="plans-roi__metric plans-roi__metric--recovery">
-            <div class="plans-roi__metric-value">{{ roiMonthlyHoursRecovered | number:'1.0-0' }}</div>
-            <div class="plans-roi__metric-title">Horas recuperables por mes</div>
-            <div class="plans-roi__metric-copy">
-              Potencial mensual de recuperación si la empresa logra compensar el <strong>{{ roiRecoveryLabel }}</strong> de las horas hoy perdidas.
-            </div>
-          </div>
-        </div>
-
-        <div class="plans-roi__notes">
-          <span>* Supuestos referenciales para conversación comercial.</span>
-          <span>** Ajustamos la propuesta según dotación, operación y nivel de acompañamiento.</span>
-        </div>
+        <a class="btn-warm" href="/contact">Contactar comercial</a>
       </div>
 
-      <div class="plans-compare">
-        <div class="plans-compare__head">
+      <div class="plan-card plan-card--featured">
+        <div class="plan-badge">Más completo</div>
+        <div class="plan-icon">✦</div>
+        <div>
+          <div class="plan-name">Plan Acompañamiento</div>
+          <div><span class="plan-price">$249</span><span class="plan-price-label"> /mes</span></div>
+          <div class="plan-desc">Suma operación experta, seguimiento y soporte para asegurar adopción real en la empresa.</div>
+        </div>
+        <div>
+          <div class="features-title">Incluye</div>
+          <ul class="features-list">
+            <li class="feat-item"><span class="feat-check">✓</span> Todo lo de Plan Plataforma</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Fichas de cuidado y derivación</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Formación para managers</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Acceso completo a Care Experts</li>
+            <li class="feat-item"><span class="feat-check">✓</span> Seguimiento de casos y soporte prioritario</li>
+          </ul>
+        </div>
+        <a class="btn-warm" href="/contact">Contactar comercial</a>
+      </div>
+    </section>
+
+    <section class="roi-section">
+      <div class="roi-head">
+        <div class="kicker">Calculadora de Impacto</div>
+        <h2>El verdadero costo del cuidado en tu empresa</h2>
+        <p>Ingresa la cantidad de empleados para estimar el impacto económico anual asociado a responsabilidades de cuidado en tu organización.</p>
+      </div>
+      <div class="roi-calc">
+        <div class="roi-input-panel">
           <div>
-            <div class="plans-roi__kicker">COMPARATIVA</div>
-            <h3>Qué incluye cada plan</h3>
-            <p class="plans-compare__summary">
-              La diferencia está en cuánto acompañamiento operativo y experto necesita tu empresa para que el beneficio realmente se use.
-            </p>
+            <div class="roi-display-value">{{ fmt(employees) }}</div>
+            <div class="roi-display-label">empleados</div>
           </div>
-          
-        </div>
-
-        <div class="plans-compare__table-wrap">
-          <div class="plans-table" role="table" aria-label="Comparativa de planes">
-          <div class="plans-table__row plans-table__row--head" role="row">
-            <div class="plans-table__cell plans-table__cell--feature" role="columnheader">Capacidad</div>
-            <div class="plans-table__cell" role="columnheader">Plataforma</div>
-            <div class="plans-table__cell" role="columnheader">Acompañamiento</div>
-          </div>
-
-          <div class="plans-table__row" role="row" *ngFor="let row of planComparisonRows">
-            <div class="plans-table__cell plans-table__cell--feature" role="rowheader">{{ row.label }}</div>
-            <div class="plans-table__cell" role="cell">
-              <ion-icon [name]="row.values.plataforma ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
-            </div>
-            <div class="plans-table__cell" role="cell">
-              <ion-icon [name]="row.values.acompanamiento ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
+          <div class="roi-slider-wrap">
+            <input type="range" class="roi-range" min="10" max="5000" step="10" [value]="employees" (input)="updateRoi($any($event.target).value)">
+            <div class="roi-slider-meta">
+              <span>Mín. 10</span>
+              <input type="number" class="roi-input-num" min="10" max="5000" step="10" [value]="employees" (input)="updateRoi($any($event.target).value)">
+              <span>Máx. 5.000</span>
             </div>
           </div>
         </div>
+        <div class="roi-output-panel">
+          <div class="roi-metric">
+            <div class="roi-metric-label">Colaboradores con responsabilidades de cuidado</div>
+            <div class="roi-metric-value">{{ fmt(impacted) }}</div>
+            <div class="roi-metric-sub">Estimación basada en que 20% de la dotación enfrenta tareas de cuidado.</div>
+          </div>
+          <div class="roi-metric roi-metric--highlight">
+            <div class="roi-metric-label">Costo anual estimado para la empresa</div>
+            <div class="roi-metric-value">{{ fmtClp(savings) }}</div>
+            <div class="roi-metric-sub">Pérdida referencial en productividad y ausentismo asociada a la carga de cuidado.</div>
+          </div>
+          <div class="roi-metric">
+            <div class="roi-metric-label">Horas recuperables por mes</div>
+            <div class="roi-metric-value">{{ fmt(hours) }}</div>
+            <div class="roi-metric-sub">Potencial mensual de recuperación si la empresa logra aliviar parte de la carga hoy perdida.</div>
+          </div>
         </div>
       </div>
+    </section>
 
-      <div class="plans-cta">
-        <div class="plans-cta__copy">
-          <div class="plans-roi__kicker">COTIZACIÓN</div>
-          <h3>Solicita una propuesta ajustada a tu dotación y objetivos</h3>
-          <p>Definimos plan, alcance, onboarding y métricas de adopción según tu realidad.</p>
-        </div>
-        <div class="plans-cta__actions">
-          <ion-button routerLink="/contact">Contactar comercial</ion-button>
-          <ion-button fill="outline" routerLink="/about">Ver más sobre Company Care</ion-button>
-        </div>
+    <section class="compare-section">
+      <div class="compare-head">
+        <div class="kicker">Comparativa</div>
+        <h2>Qué incluye cada plan</h2>
+        <p>La diferencia está en cuánto acompañamiento operativo y experto necesita tu empresa para que el beneficio realmente se use.</p>
       </div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Capacidad</th>
+            <th>Plataforma</th>
+            <th>Acompañamiento</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Portal co-brandeado</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Recursos y guías</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Onboarding RR.HH.</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Fichas de cuidado RR.HH.</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Métricas del beneficio</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Formación para managers</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Vouchers y beneficios</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Acceso completo a Care Experts</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Seguimiento de casos</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
+          <tr><td>Soporte prioritario</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="custom-section">
+      <div class="custom-section__icon-block">
+        <div class="kicker custom-kicker">Plan a medida</div>
+        <div class="custom-section__icon">⚙</div>
+      </div>
+      <div class="custom-content">
+        <h3>¿Necesitas una propuesta especial?</h3>
+        <p>Ajustamos alcance, onboarding, co-branding, métricas y soporte para compañías con más dotación o una operación más compleja.</p>
+      </div>
+      <a class="btn-outline-warm" href="/contact">Hablar con ventas</a>
     </div>
-  </section>
 
-  <app-footer></app-footer>
-</ion-content>
+    <section class="final-cta">
+      <div>
+        <div class="kicker final-cta-kicker">Cotización</div>
+        <h2>Solicita una propuesta ajustada a tu dotación y objetivos</h2>
+        <p>Definimos plan, alcance, onboarding y métricas de adopción según tu realidad.</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn-warm-solid" href="/contact">Contactar comercial</a>
+        <a class="btn-warm-ghost" href="/about">Ver más sobre Company Care</a>
+      </div>
+    </section>
+  </div>
+
+<app-site-footer></app-site-footer>

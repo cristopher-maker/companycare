@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+.cc-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 990;
+}
+
+:host ::ng-deep .cc-mark {
+  background: linear-gradient(135deg, #f8dfd6 0%, #f27a5e 100%);
+  color: #682a20;
+  box-shadow: 0 8px 18px rgba(242, 122, 94, 0.24);
+}

@@ -1,14 +1,14 @@
-<ion-content fullscreen class="register">
+<main class="register w-full h-screen flex items-center justify-center p-4">
   <div class="bg" aria-hidden="true"></div>
   <div class="overlay" aria-hidden="true"></div>
 
-  <div class="topbar">
-    <ion-button fill="clear" class="back" routerLink="/login" aria-label="Volver al login">
-      <ion-icon name="arrow-back-outline" slot="icon-only"></ion-icon>
-    </ion-button>
+  <div class="topbar absolute top-4 left-4">
+    <a routerLink="/login" aria-label="Volver al login" class="back inline-flex items-center justify-center w-10 h-10 rounded-full text-white hover:bg-white/10 transition-colors">
+      <mat-icon>arrow_back</mat-icon>
+    </a>
   </div>
 
-  <div class="shell">
+  <div class="shell w-full max-w-md">
     <div class="card" role="region" aria-label="Registro">
       <div class="brand">
         <div class="mark">CC</div>
@@ -54,7 +54,7 @@
             placeholder="Nombre y apellido"
             required
           />
-          <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
+          <mat-icon>person_outline</mat-icon>
         </label>
 
         <label class="pill" *ngIf="role === 'company_admin'" aria-label="RUT empresa">
@@ -67,7 +67,7 @@
             placeholder="RUT empresa (ej: 12.345.678-9)"
             required
           />
-          <ion-icon name="id-card"></ion-icon>
+          <mat-icon>badge</mat-icon>
         </label>
 
         <label class="pill" *ngIf="role === 'company_admin'" aria-label="Empresa">
@@ -79,7 +79,7 @@
             placeholder="Nombre de la empresa"
             required
           />
-          <ion-icon name="business-outline" aria-hidden="true"></ion-icon>
+          <mat-icon>business</mat-icon>
         </label>
 
         <label class="pill" aria-label="Email">
@@ -91,7 +91,7 @@
             placeholder="Email"
             required
           />
-          <ion-icon name="mail-outline" aria-hidden="true"></ion-icon>
+          <mat-icon>mail_outline</mat-icon>
         </label>
 
         <label class="pill" aria-label="Contraseña">
@@ -109,7 +109,7 @@
             (click)="showPassword = !showPassword"
             [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           >
-            <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" aria-hidden="true"></ion-icon>
+            <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
         </label>
 
@@ -117,7 +117,10 @@
         <div class="msg success" *ngIf="success">{{ success }}</div>
 
         <button class="primary" type="submit" [disabled]="loading">
-          <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+          <svg *ngIf="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
           <span *ngIf="!loading">Crear cuenta</span>
         </button>
 
@@ -128,4 +131,4 @@
       </form>
     </div>
   </div>
-</ion-content>
+</main>

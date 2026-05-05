@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
+import { internalAdminGuard } from './core/guards/internal-admin.guard';
 
 const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -108,6 +109,11 @@ const routes: Routes = [
     path: 'profile',
     canMatch: [authGuard],
     loadChildren: () => import('./pages/profile/profile.module').then((m) => m.ProfilePageModule),
+  },
+  {
+    path: 'admin',
+    canMatch: [authGuard, internalAdminGuard],
+    loadChildren: () => import('./pages/admin-dashboard/admin-dashboard.module').then(m => m.AdminDashboardModule),
   },
   {
     path: '**',

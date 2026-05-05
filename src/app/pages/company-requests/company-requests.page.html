@@ -1,51 +1,91 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Casos empresa</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="refresh()" [disabled]="loading">Actualizar</ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+<app-site-header></app-site-header>
 
-<ion-content class="company-requests">
+<main class="company-requests">
   <div class="company-requests__wrap">
-    <div class="company-requests__head">
-      <div class="company-requests__kicker">Panel Empresa</div>
-      <h1>Casos recientes</h1>
-      <p *ngIf="companyName">Solicitudes vinculadas a colaboradores de {{ companyName }}.</p>
+    <section class="company-requests__hero">
+      <div class="company-requests__hero-icon" aria-hidden="true">
+        <mat-icon>business_center</mat-icon>
+      </div>
+
+      <div class="company-requests__hero-copy">
+        <p class="company-requests__eyebrow">Panel empresa</p>
+        <h1>Solicitudes de colaboradores</h1>
+        <p>
+          Revisa casos activos, responsables y estados de atencion para dar seguimiento desde RR.HH.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="company-requests__refresh"
+        (click)="refresh()"
+        [disabled]="loading"
+        aria-label="Actualizar solicitudes"
+      >
+        <mat-icon [class.is-spinning]="loading" aria-hidden="true">refresh</mat-icon>
+        <span>Actualizar</span>
+      </button>
+    </section>
+
+    <section class="company-requests__stats" aria-label="Resumen de solicitudes">
+      <article class="company-requests__stat">
+        <span>Total</span>
+        <strong>{{ totalRequests }}</strong>
+      </article>
+      <article class="company-requests__stat">
+        <span>En seguimiento</span>
+        <strong>{{ openRequests }}</strong>
+      </article>
+      <article class="company-requests__stat">
+        <span>Cerradas</span>
+        <strong>{{ resolvedRequests }}</strong>
+      </article>
+    </section>
+
+    <div *ngIf="error" class="company-requests__state company-requests__state--error" role="alert">
+      <mat-icon aria-hidden="true">error</mat-icon>
+      <div>
+        <strong>No se pudieron cargar las solicitudes</strong>
+        <p>{{ error }}</p>
+      </div>
     </div>
 
-    <ion-card *ngIf="error">
-      <ion-card-header>
-        <ion-card-title>Error</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>{{ error }}</ion-card-content>
-    </ion-card>
+    <div *ngIf="loading" class="company-requests__loading" aria-label="Cargando solicitudes">
+      <div class="company-requests__skeleton"></div>
+      <div class="company-requests__skeleton"></div>
+      <div class="company-requests__skeleton"></div>
+    </div>
 
-    <ion-skeleton-text *ngIf="loading" animated="true" style="width: 100%; height: 120px"></ion-skeleton-text>
+    <section class="company-requests__list" *ngIf="!loading && !error && items.length" aria-label="Listado de solicitudes">
+      <article class="company-request-card" *ngFor="let item of items">
+        <div class="company-request-card__icon" aria-hidden="true">
+          <mat-icon>{{ item.channel === 'Videollamada' ? 'videocam' : item.channel === 'Llamada' ? 'call' : 'chat_bubble' }}</mat-icon>
+        </div>
 
-    <div class="company-requests__list" *ngIf="!loading && !error && items.length">
-      <article class="company-requests__item" *ngFor="let item of items">
-        <div class="company-requests__main">
-          <div class="company-requests__title">{{ item.topic }}</div>
-          <div class="company-requests__meta">
-            {{ item.employee_name || 'Sin nombre' }}
+        <div class="company-request-card__main">
+          <div class="company-request-card__title">{{ item.topic }}</div>
+          <div class="company-request-card__meta">
+            <span>{{ item.channel }}</span>
+            <span class="company-request-card__dot" aria-hidden="true"></span>
+            <span>{{ item.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="company-request-card__person">
+            <mat-icon aria-hidden="true">person</mat-icon>
+            <span>{{ item.employee_name || 'Colaborador sin nombre' }}</span>
             <span *ngIf="item.employee_email">· {{ item.employee_email }}</span>
           </div>
         </div>
 
-        <div class="company-requests__side">
-          <div class="company-requests__status">{{ item.channel }} · {{ item.status }}</div>
-          <div class="company-requests__date">{{ item.created_at | date: 'dd/MM/yyyy HH:mm' }}</div>
-        </div>
+        <span class="company-request-card__status" [ngClass]="statusClass(item.status)">
+          {{ statusLabel(item.status) }}
+        </span>
       </article>
-    </div>
+    </section>
 
-    <ion-card *ngIf="!loading && !error && items.length === 0">
-      <ion-card-content>No hay casos recientes para esta empresa.</ion-card-content>
-    </ion-card>
+    <div *ngIf="!loading && !error && items.length === 0" class="company-requests__state">
+      <mat-icon aria-hidden="true">forum</mat-icon>
+      <h2>No hay solicitudes recientes</h2>
+      <p>Cuando un colaborador pida apoyo, el caso aparecera aqui para seguimiento.</p>
+    </div>
   </div>
-</ion-content>
+</main>

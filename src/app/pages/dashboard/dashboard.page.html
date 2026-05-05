@@ -1,373 +1,334 @@
-<ion-header class="dash-header">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Dashboard</ion-title>
-    <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="refresh()" [disabled]="loading" aria-label="Actualizar">
-        <ion-icon name="refresh-outline" slot="icon-only"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content class="dash">
-  <div class="dash-wrap">
-    <div class="dash-head">
-      <div class="kicker" *ngIf="mode === 'employee'">Portal de beneficios</div>
-      <div class="kicker" *ngIf="mode === 'company'">Panel Empresa</div>
-      <div class="kicker" *ngIf="mode === 'public'">Acceso</div>
-
-      <h1>Hola, {{ displayName }}</h1>
-      <p *ngIf="mode === 'employee'">
-        Tu portal de beneficios: apoyo experto, proveedores, recursos y formación.
-      </p>
-      <p *ngIf="mode === 'company'">
-        Métricas, co-branding y herramientas RR.HH.
-        <span *ngIf="companyName">· {{ companyName }}</span>
-      </p>
-      <p *ngIf="mode === 'public'">Inicia sesión para ver tu portal y seguimiento.</p>
-
-      <div class="head-actions" *ngIf="mode !== 'public'">
+<!-- ── Header ── -->
+<header class="dash-header">
+  <div class="dash-header__inner">
+    <div class="dash-header__left">
+      <button (click)="ui.toggleMenu()" type="button" class="dash-header__menu-btn" aria-label="Abrir menú">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="dash-header__wordmark">Cuidado&shy;Link</span>
+    </div>
+    <button
+      class="dash-header__refresh-btn"
+      (click)="refresh()"
+      [disabled]="loading"
+      aria-label="Actualizar"
+    >
+      <mat-icon [class.spin]="loading">refresh</mat-icon>
+    </button>
+  </div>
+</header>
+ 
+<!-- ── Page ── -->
+<main class="dash-page">
+  <div class="dash-page__container">
+ 
+    <!-- ── Hero ── -->
+    <section class="dash-hero">
+      <div class="dash-hero__left">
+        <p class="dash-hero__mode-label" *ngIf="mode === 'employee'">Portal de beneficios</p>
+        <p class="dash-hero__mode-label" *ngIf="mode === 'company'">Panel empresa<span *ngIf="companyName"> · {{ companyName }}</span></p>
+        <p class="dash-hero__mode-label" *ngIf="mode === 'public'">Acceso</p>
+        <h1 class="dash-hero__title">Hola, <em>{{ displayName }}</em></h1>
+        <p class="dash-hero__subtitle" *ngIf="mode === 'employee'">Tu portal de beneficios: apoyo experto, proveedores, recursos y formación.</p>
+        <p class="dash-hero__subtitle" *ngIf="mode === 'company'">Métricas, co-branding y herramientas de RR.HH.</p>
+        <p class="dash-hero__subtitle" *ngIf="mode === 'public'">Inicia sesión para ver tu portal y seguimiento.</p>
+      </div>
+ 
+      <div class="dash-hero__actions" *ngIf="mode !== 'public'">
         <ng-container *ngIf="mode === 'employee'">
-          <ion-button routerLink="/care-experts">Solicitar asesoría</ion-button>
-          <ion-button fill="outline" routerLink="/requests">Ver solicitudes</ion-button>
+          <a class="btn-primary" routerLink="/care-experts">Solicitar asesoría</a>
+          <a class="btn-ghost" routerLink="/requests">Ver solicitudes</a>
         </ng-container>
         <ng-container *ngIf="mode === 'company'">
-          <ion-button routerLink="/company">Administrar empresa</ion-button>
-          <ion-button fill="outline" routerLink="/vouchers">Vouchers</ion-button>
+          <a class="btn-primary" routerLink="/company">Administrar empresa</a>
+          <a class="btn-ghost" routerLink="/company">Vouchers</a>
         </ng-container>
       </div>
-
-      <div class="head-actions" *ngIf="mode === 'public' && !loading">
-        <ion-button routerLink="/login">Ingresar</ion-button>
-        <ion-button fill="outline" routerLink="/home">Volver al inicio</ion-button>
+ 
+      <div class="dash-hero__actions" *ngIf="mode === 'public' && !loading">
+        <a class="btn-primary" routerLink="/login">Ingresar</a>
+        <a class="btn-ghost" routerLink="/home">Volver al inicio</a>
       </div>
-    </div>
-
-    <div class="stats" *ngIf="stats.length">
-      <div class="stat" *ngFor="let s of stats">
-        <div class="stat-icon" aria-hidden="true">
-          <ion-icon [name]="s.icon"></ion-icon>
+    </section>
+ 
+    <!-- ── Stats ── -->
+    <div class="dash-stats" *ngIf="stats.length">
+      <div class="dash-stat" *ngFor="let s of stats">
+        <div class="dash-stat__icon">
+          <!-- NOTA: Asegúrate que 's.icon' contenga el nombre de un Material Icon (ej: 'analytics', 'group') -->
+          <mat-icon>{{ s.icon }}</mat-icon>
         </div>
-        <div class="stat-value">{{ s.value }}</div>
-        <div class="stat-label">{{ s.label }}</div>
+        <div class="dash-stat__value">{{ s.value }}</div>
+        <div class="dash-stat__label">{{ s.label }}</div>
       </div>
     </div>
-
-    <div class="grid" *ngIf="mode !== 'public'">
-      <section class="panel span-2" *ngIf="mode === 'employee'">
-        <div class="panel-head">
-          <div class="panel-title">Mi ficha de cuidado</div>
-          <button type="button" class="panel-link panel-link--button" (click)="openEmployeeCareIntake()">
+ 
+    <!-- ── Content grid ── -->
+    <div class="dash-grid" *ngIf="mode !== 'public'">
+ 
+      <!-- Care intake (employee only, spans 2 cols) -->
+      <section class="dash-card dash-card--wide" *ngIf="mode === 'employee'">
+        <div class="dash-card__head">
+          <h2 class="dash-card__title">Mi ficha de cuidado</h2>
+          <button type="button" class="dash-card__action" (click)="openEmployeeCareIntake()">
             {{ employeeCareIntakeId ? 'Editar ficha' : 'Completar ficha' }}
           </button>
         </div>
-
+ 
         <div class="intake-summary" *ngIf="employeeCareIntakeId; else noIntake">
           <div class="intake-summary__grid">
             <div class="intake-summary__item">
-              <span>Tipo de apoyo</span>
-              <strong>{{ careTypeLabel(employeeCareIntakeDraft.careType) }}</strong>
+              <span class="intake-summary__key">Tipo de apoyo</span>
+              <span class="intake-summary__val">{{ careTypeLabel(employeeCareIntakeDraft.careType) }}</span>
             </div>
             <div class="intake-summary__item">
-              <span>Relación</span>
-              <strong>{{ employeeCareIntakeDraft.caregiverRelation || 'Sin dato' }}</strong>
+              <span class="intake-summary__key">Relación</span>
+              <span class="intake-summary__val">{{ employeeCareIntakeDraft.caregiverRelation || 'Sin dato' }}</span>
             </div>
             <div class="intake-summary__item">
-              <span>Nivel de dependencia</span>
-              <strong>{{ dependencyLevelLabel(employeeCareIntakeDraft.dependencyLevel) }}</strong>
+              <span class="intake-summary__key">Nivel de dependencia</span>
+              <span class="intake-summary__val">{{ dependencyLevelLabel(employeeCareIntakeDraft.dependencyLevel) }}</span>
             </div>
             <div class="intake-summary__item">
-              <span>Contacto preferido</span>
-              <strong>{{ preferredContactLabel(employeeCareIntakeDraft.preferredContact) }}</strong>
+              <span class="intake-summary__key">Contacto preferido</span>
+              <span class="intake-summary__val">{{ preferredContactLabel(employeeCareIntakeDraft.preferredContact) }}</span>
             </div>
           </div>
-
-          <div class="intake-summary__meta" *ngIf="employeeCareIntakeUpdatedAt">
-            Última actualización: {{ employeeCareIntakeUpdatedAt | date: 'dd/MM/yyyy HH:mm' }}
-          </div>
+          <p class="intake-summary__date" *ngIf="employeeCareIntakeUpdatedAt">
+            Actualizado el {{ employeeCareIntakeUpdatedAt | date:'dd/MM/yyyy HH:mm' }}
+          </p>
         </div>
-
+ 
         <ng-template #noIntake>
-          <div class="empty">
-            Completa tu ficha una vez para que el experto vea tu contexto, preferencias y urgencia desde el primer contacto.
+          <div class="dash-card__empty">
+            <mat-icon>note_add</mat-icon>
+            <p>Completa tu ficha para que el experto vea tu contexto desde el primer contacto.</p>
+            <button type="button" class="btn-primary btn--sm" (click)="openEmployeeCareIntake()">Completar ahora</button>
           </div>
         </ng-template>
       </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <div class="panel-title">Solicitudes recientes</div>
-          <a class="panel-link" routerLink="/requests">Ver todo</a>
+ 
+      <!-- Recent requests -->
+      <section class="dash-card">
+        <div class="dash-card__head">
+          <h2 class="dash-card__title">Solicitudes recientes</h2>
+          <a class="dash-card__action" routerLink="/requests">Ver todo</a>
         </div>
-
-        <div class="empty" *ngIf="!recentRequests.length && !loading">Aún no hay solicitudes.</div>
-
-        <ion-list class="list" lines="none" *ngIf="recentRequests.length">
-          <ion-item button detail="false" *ngFor="let r of recentRequests" routerLink="/requests">
-            <ion-label>
-              <h3>{{ r.topic }}</h3>
-              <p>{{ r.channel }} · {{ r.status }}</p>
-            </ion-label>
-            <ion-note slot="end">{{ r.created_at | date: 'dd/MM' }}</ion-note>
-          </ion-item>
-        </ion-list>
+ 
+        <div class="dash-card__empty" *ngIf="!recentRequests.length && !loading">
+          <mat-icon>forum</mat-icon>
+          <p>Aún no hay solicitudes.</p>
+        </div>
+ 
+        <ul class="request-list" *ngIf="recentRequests.length">
+          <li class="request-list__item" *ngFor="let r of recentRequests">
+            <a routerLink="/requests">
+              <div class="request-list__main">
+                <span class="request-list__topic">{{ r.topic }}</span>
+                <span class="request-list__meta">{{ r.channel }} · {{ r.status }}</span>
+              </div>
+              <span class="request-list__date">{{ r.created_at | date:'dd/MM' }}</span>
+            </a>
+          </li>
+        </ul>
       </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <div class="panel-title">Recursos destacados</div>
-          <a class="panel-link" routerLink="/resources">Biblioteca</a>
+ 
+      <!-- Featured resources -->
+      <section class="dash-card">
+        <div class="dash-card__head">
+          <h2 class="dash-card__title">Recursos destacados</h2>
+          <a class="dash-card__action" routerLink="/resources">Biblioteca</a>
         </div>
-
-        <div class="resource-grid" *ngIf="featuredResources.length">
-          <a class="res-card" *ngFor="let r of featuredResources" routerLink="/resources">
-            <div class="res-top">
-              <span class="pill">{{ r.category }}</span>
-            </div>
-            <div class="res-title">{{ r.title }}</div>
-            <div class="res-text">
-              {{ r.summary || 'Ver detalles en la biblioteca de recursos.' }}
-            </div>
+ 
+        <div class="dash-card__empty" *ngIf="!featuredResources.length && !loading">
+          <mat-icon>library_books</mat-icon>
+          <p>No hay recursos para mostrar.</p>
+        </div>
+ 
+        <div class="resource-list" *ngIf="featuredResources.length">
+          <a class="resource-list__item" routerLink="/resources" *ngFor="let r of featuredResources">
+            <span class="resource-list__cat">{{ r.category }}</span>
+            <h3 class="resource-list__title">{{ r.title }}</h3>
+            <p class="resource-list__summary">{{ r.summary || 'Ver detalles en la biblioteca.' }}</p>
           </a>
         </div>
-
-        <div class="empty" *ngIf="!featuredResources.length && !loading">No hay recursos para mostrar.</div>
       </section>
-
-      <section class="panel span-2">
-        <div class="panel-head">
-          <div class="panel-title">Próximos eventos</div>
-          <a class="panel-link" routerLink="/training">Formación</a>
+ 
+      <!-- Upcoming events (spans 2 cols) -->
+      <section class="dash-card dash-card--wide">
+        <div class="dash-card__head">
+          <h2 class="dash-card__title">Próximos eventos</h2>
+          <a class="dash-card__action" routerLink="/training">Formación</a>
         </div>
-
-        <div class="empty" *ngIf="!upcomingEvents.length && !loading">No hay eventos próximos.</div>
-
-        <div class="event-grid" *ngIf="upcomingEvents.length">
-          <div class="event" *ngFor="let e of upcomingEvents">
-            <div class="event-date">
-              <div class="d">{{ e.starts_at ? (e.starts_at | date: 'dd') : '--' }}</div>
-              <div class="m">{{ e.starts_at ? (e.starts_at | date: 'MMM') : '' }}</div>
+ 
+        <div class="dash-card__empty" *ngIf="!upcomingEvents.length && !loading">
+          <mat-icon>event</mat-icon>
+          <p>No hay eventos próximos.</p>
+        </div>
+ 
+        <div class="event-list" *ngIf="upcomingEvents.length">
+          <div class="event-list__item" *ngFor="let e of upcomingEvents">
+            <div class="event-list__date">
+              <span class="event-list__day">{{ e.starts_at ? (e.starts_at | date:'dd') : '--' }}</span>
+              <span class="event-list__month">{{ e.starts_at ? (e.starts_at | date:'MMM') : '' }}</span>
             </div>
-            <div class="event-body">
-              <div class="event-title">{{ e.title }}</div>
-              <div class="event-meta">
-                {{ e.format }}<span *ngIf="e.location"> · {{ e.location }}</span>
-              </div>
+            <div class="event-list__info">
+              <h3 class="event-list__title">{{ e.title }}</h3>
+              <p class="event-list__meta">{{ e.format }}<span *ngIf="e.location"> · {{ e.location }}</span></p>
             </div>
           </div>
         </div>
       </section>
+ 
+    </div><!-- /dash-grid -->
+ 
+    <!-- Public mode fallback -->
+    <div class="dash-public" *ngIf="mode === 'public' && !loading">
+      <h2>Acceso al portal</h2>
+      <p>Inicia sesión con tu cuenta para ver tu dashboard como empleado o empresa.</p>
+      <a class="btn-primary" routerLink="/login">Ingresar</a>
     </div>
-
-    <ion-card *ngIf="mode === 'public' && !loading" class="public-card">
-      <ion-card-header>
-        <ion-card-title>Acceso</ion-card-title>
-        <ion-card-subtitle>Para ver tu portal</ion-card-subtitle>
-      </ion-card-header>
-      <ion-card-content>
-        Inicia sesión con Supabase para ver tu dashboard como empleado o como empresa.
-      </ion-card-content>
-    </ion-card>
-
-    <ion-modal [isOpen]="employeeCareIntakeOpen" (didDismiss)="closeEmployeeCareIntake()">
-      <ng-template>
-        <ion-header>
-          <ion-toolbar>
-            <ion-title>Mi ficha de cuidado</ion-title>
-            <ion-buttons slot="end">
-              <ion-button (click)="closeEmployeeCareIntake()">Cerrar</ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-header>
-
-        <ion-content>
-          <div class="intake-modal">
-            <div class="intake-modal__intro">
-              <h2>Completa tu contexto una sola vez</h2>
-              <p>Esto ayuda a que la asesoría, el chat y las citas partan con información útil sobre tu situación.</p>
+ 
+  </div>
+</main>
+ 
+<!-- ── Care Intake Modal ── -->
+<div
+  class="modal-backdrop"
+  *ngIf="employeeCareIntakeOpen"
+  (click)="closeEmployeeCareIntake()"
+>
+  <div class="modal" (click)="$event.stopPropagation()">
+    <header class="modal__head">
+      <h2 class="modal__title">Mi ficha de cuidado</h2>
+      <button class="modal__close" (click)="closeEmployeeCareIntake()" aria-label="Cerrar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
+ 
+    <div class="modal__body">
+      <div class="modal__intro">
+        <h3>Completa tu contexto una sola vez</h3>
+        <p>Esto ayuda a que la asesoría, el chat y las citas partan con información útil sobre tu situación.</p>
+      </div>
+ 
+      <form class="intake-form" (ngSubmit)="saveEmployeeCareIntake()">
+        <div class="intake-form__section">
+          <span class="intake-form__section-label">Sobre la persona cuidada</span>
+          <div class="intake-form__row">
+            <div class="form-field">
+              <label for="careType">Tipo de apoyo</label>
+              <select id="careType" [(ngModel)]="employeeCareIntakeDraft.careType" name="careType">
+                <option value="guidance">Orientación general</option>
+                <option value="home_care">Cuidados a domicilio</option>
+                <option value="residential">Residencia</option>
+                <option value="nursing">Enfermería</option>
+                <option value="dementia">Demencia / Alzheimer</option>
+                <option value="respite">Cuidado de respiro</option>
+              </select>
             </div>
-
-            <div class="intake-form">
-              <div class="intake-form__row">
-                <ion-item class="intake-item" lines="none">
-                  <ion-select
-                    label="Tipo de apoyo"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.careType"
-                    name="employeeCareType"
-                    interface="popover"
-                  >
-                    <ion-select-option value="guidance">Orientación general</ion-select-option>
-                    <ion-select-option value="home_care">Cuidados a domicilio</ion-select-option>
-                    <ion-select-option value="residential">Residencia</ion-select-option>
-                    <ion-select-option value="nursing">Enfermería</ion-select-option>
-                    <ion-select-option value="dementia">Demencia / Alzheimer</ion-select-option>
-                    <ion-select-option value="respite">Cuidado de respiro</ion-select-option>
-                  </ion-select>
-                </ion-item>
-
-                <ion-item class="intake-item" lines="none">
-                  <ion-input
-                    label="Edad de la persona cuidada"
-                    labelPlacement="stacked"
-                    type="number"
-                    [(ngModel)]="employeeCareIntakeDraft.careReceiverAge"
-                    name="employeeCareReceiverAge"
-                  ></ion-input>
-                </ion-item>
-              </div>
-
-              <div class="intake-form__row">
-                <ion-item class="intake-item" lines="none">
-                  <ion-input
-                    label="Condición principal"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.primaryCondition"
-                    name="employeePrimaryCondition"
-                  ></ion-input>
-                </ion-item>
-
-                <ion-item class="intake-item" lines="none">
-                  <ion-select
-                    label="Nivel de dependencia"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.dependencyLevel"
-                    name="employeeDependencyLevel"
-                    interface="popover"
-                  >
-                    <ion-select-option value="low">Baja</ion-select-option>
-                    <ion-select-option value="medium">Media</ion-select-option>
-                    <ion-select-option value="high">Alta</ion-select-option>
-                    <ion-select-option value="full">Dependencia total</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </div>
-
-              <div class="intake-form__row">
-                <ion-item class="intake-item" lines="none">
-                  <ion-input
-                    label="Ciudad o comuna"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.city"
-                    name="employeeCity"
-                  ></ion-input>
-                </ion-item>
-
-                <ion-item class="intake-item" lines="none">
-                  <ion-input
-                    label="Código postal"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.postalCode"
-                    name="employeePostalCode"
-                  ></ion-input>
-                </ion-item>
-              </div>
-
-              <ion-item class="intake-item" lines="none">
-                <ion-input
-                  label="Red de apoyo actual"
-                  labelPlacement="stacked"
-                  [(ngModel)]="employeeCareIntakeDraft.supportNetwork"
-                  name="employeeSupportNetwork"
-                ></ion-input>
-              </ion-item>
-
-              <div class="intake-form__row">
-                <ion-item class="intake-item" lines="none">
-                  <ion-input
-                    label="Presupuesto mensual máximo"
-                    labelPlacement="stacked"
-                    type="number"
-                    [(ngModel)]="employeeCareIntakeDraft.budgetMonthlyMax"
-                    name="employeeBudgetMonthlyMax"
-                  ></ion-input>
-                </ion-item>
-
-                <ion-item class="intake-item" lines="none">
-                  <ion-select
-                    label="Financiamiento"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.funding"
-                    name="employeeFunding"
-                    interface="popover"
-                  >
-                    <ion-select-option value="self_funder">Pago privado</ion-select-option>
-                    <ion-select-option value="local_authority">Ayuda pública</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </div>
-
-              <div class="intake-form__row">
-                <ion-item class="intake-item" lines="none">
-                  <ion-select
-                    label="Contacto preferido"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.preferredContact"
-                    name="employeePreferredContact"
-                    interface="popover"
-                  >
-                    <ion-select-option value="chat">Chat</ion-select-option>
-                    <ion-select-option value="phone">Llamada</ion-select-option>
-                    <ion-select-option value="video">Videollamada</ion-select-option>
-                  </ion-select>
-                </ion-item>
-
-                <ion-item class="intake-item" lines="none">
-                  <ion-select
-                    label="Urgencia"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.urgency"
-                    name="employeeUrgency"
-                    interface="popover"
-                  >
-                    <ion-select-option value="immediate">Inmediata</ion-select-option>
-                    <ion-select-option value="3m">En 3 meses</ion-select-option>
-                    <ion-select-option value="6m">En 6 meses</ion-select-option>
-                    <ion-select-option value="exploring">Explorando opciones</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </div>
-
-              <div class="intake-form__row">
-                <ion-item class="intake-item" lines="none">
-                  <ion-input
-                    label="Tu nombre"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.caregiverName"
-                    name="employeeCaregiverName"
-                  ></ion-input>
-                </ion-item>
-
-                <ion-item class="intake-item" lines="none">
-                  <ion-input
-                    label="Relación con la persona cuidada"
-                    labelPlacement="stacked"
-                    [(ngModel)]="employeeCareIntakeDraft.caregiverRelation"
-                    name="employeeCaregiverRelation"
-                  ></ion-input>
-                </ion-item>
-              </div>
-
-              <ion-item class="intake-item" lines="none">
-                <ion-textarea
-                  label="Notas relevantes"
-                  labelPlacement="stacked"
-                  autoGrow="true"
-                  [(ngModel)]="employeeCareIntakeDraft.notes"
-                  name="employeeIntakeNotes"
-                ></ion-textarea>
-              </ion-item>
-
-              <ion-button expand="block" (click)="saveEmployeeCareIntake()" [disabled]="loading">
-                Guardar mi ficha
-              </ion-button>
+            <div class="form-field">
+              <label for="careReceiverAge">Edad de la persona cuidada</label>
+              <input id="careReceiverAge" type="number" [(ngModel)]="employeeCareIntakeDraft.careReceiverAge" name="careReceiverAge" placeholder="Ej. 78" />
             </div>
           </div>
-        </ion-content>
-      </ng-template>
-    </ion-modal>
+          <div class="intake-form__row">
+            <div class="form-field">
+              <label for="primaryCondition">Condición principal</label>
+              <input id="primaryCondition" type="text" [(ngModel)]="employeeCareIntakeDraft.primaryCondition" name="primaryCondition" placeholder="Ej. Parkinson, Alzheimer…" />
+            </div>
+            <div class="form-field">
+              <label for="dependencyLevel">Nivel de dependencia</label>
+              <select id="dependencyLevel" [(ngModel)]="employeeCareIntakeDraft.dependencyLevel" name="dependencyLevel">
+                <option value="low">Baja</option>
+                <option value="medium">Media</option>
+                <option value="high">Alta</option>
+                <option value="full">Dependencia total</option>
+              </select>
+            </div>
+          </div>
+        </div>
+ 
+        <div class="intake-form__section">
+          <span class="intake-form__section-label">Ubicación y contexto</span>
+          <div class="intake-form__row">
+            <div class="form-field">
+              <label for="city">Ciudad o comuna</label>
+              <input id="city" type="text" [(ngModel)]="employeeCareIntakeDraft.city" name="city" placeholder="Ej. Santiago, Providencia…" />
+            </div>
+            <div class="form-field">
+              <label for="postalCode">Código postal</label>
+              <input id="postalCode" type="text" [(ngModel)]="employeeCareIntakeDraft.postalCode" name="postalCode" />
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="supportNetwork">Red de apoyo actual</label>
+            <input id="supportNetwork" type="text" [(ngModel)]="employeeCareIntakeDraft.supportNetwork" name="supportNetwork" placeholder="Ej. Pareja, hijos, cuidadora contratada…" />
+          </div>
+        </div>
+ 
+        <div class="intake-form__section">
+          <span class="intake-form__section-label">Presupuesto y financiamiento</span>
+          <div class="intake-form__row">
+            <div class="form-field">
+              <label for="budgetMonthlyMax">Presupuesto mensual máximo</label>
+              <input id="budgetMonthlyMax" type="number" [(ngModel)]="employeeCareIntakeDraft.budgetMonthlyMax" name="budgetMonthlyMax" placeholder="CLP" />
+            </div>
+            <div class="form-field">
+              <label for="funding">Financiamiento</label>
+              <select id="funding" [(ngModel)]="employeeCareIntakeDraft.funding" name="funding">
+                <option value="self_funder">Pago privado</option>
+                <option value="local_authority">Ayuda pública</option>
+              </select>
+            </div>
+          </div>
+        </div>
+ 
+        <div class="intake-form__section">
+          <span class="intake-form__section-label">Preferencias y urgencia</span>
+          <div class="intake-form__row">
+            <div class="form-field">
+              <label for="preferredContact">Contacto preferido</label>
+              <select id="preferredContact" [(ngModel)]="employeeCareIntakeDraft.preferredContact" name="preferredContact">
+                <option value="chat">Chat</option>
+                <option value="phone">Llamada</option>
+                <option value="video">Videollamada</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="urgency">Urgencia</label>
+              <select id="urgency" [(ngModel)]="employeeCareIntakeDraft.urgency" name="urgency">
+                <option value="immediate">Inmediata</option>
+                <option value="3m">En 3 meses</option>
+                <option value="6m">En 6 meses</option>
+                <option value="exploring">Explorando opciones</option>
+              </select>
+            </div>
+          </div>
+        </div>
+ 
+        <div class="intake-form__section">
+          <span class="intake-form__section-label">Tus datos</span>
+          <div class="intake-form__row">
+            <div class="form-field">
+              <label for="caregiverName">Tu nombre</label>
+              <input id="caregiverName" type="text" [(ngModel)]="employeeCareIntakeDraft.caregiverName" name="caregiverName" />
+            </div>
+            <div class="form-field">
+              <label for="caregiverRelation">Relación con la persona cuidada</label>
+              <input id="caregiverRelation" type="text" [(ngModel)]="employeeCareIntakeDraft.caregiverRelation" name="caregiverRelation" placeholder="Ej. Hijo/a, cónyuge…" />
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="notes">Notas relevantes</label>
+            <textarea id="notes" rows="3" [(ngModel)]="employeeCareIntakeDraft.notes" name="notes" placeholder="Cualquier detalle que ayude al experto…"></textarea>
+          </div>
+        </div>
+ 
+        <button type="button" class="btn-primary btn--full" (click)="saveEmployeeCareIntake()" [disabled]="loading">
+          {{ loading ? 'Guardando…' : 'Guardar mi ficha' }}
+        </button>
+      </form>
+    </div>
   </div>
-</ion-content>
+</div>

@@ -1,13 +1,40 @@
 import { Component } from '@angular/core';
+import { UiService } from '../../core/services/ui.service';
 
-type ResourceCategory = 'Opciones de cuidado' | 'Financiación' | 'Checklist' | 'Guías prácticas';
+export type ResourceCategory =
+  | 'Opciones de cuidado'
+  | 'Financiación'
+  | 'Checklist'
+  | 'Guías prácticas';
 
-type ResourceItem = {
+export type ResourceItem = {
   id: string;
   title: string;
   category: ResourceCategory;
   summary: string;
   isPriority?: boolean;
+};
+
+const CATEGORY_KEY: Record<ResourceCategory, string> = {
+  'Opciones de cuidado': 'care',
+  'Financiación': 'finance',
+  'Checklist': 'check',
+  'Guías prácticas': 'guide',
+};
+
+const CATEGORY_ICON: Record<ResourceCategory, string> = {
+  'Opciones de cuidado': `
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>`,
+  'Financiación': `
+    <rect x="1" y="4" width="22" height="16" rx="2"/>
+    <line x1="1" y1="10" x2="23" y2="10"/>`,
+  'Checklist': `
+    <polyline points="9 11 12 14 22 4"/>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,
+  'Guías prácticas': `
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>`,
 };
 
 @Component({
@@ -53,6 +80,8 @@ export class ResourcesPage {
     },
   ];
 
+  constructor(public readonly ui: UiService) {}
+
   public get filteredResources(): ResourceItem[] {
     if (this.selectedCategory === 'Todos') return this.resources;
     return this.resources.filter((r) => r.category === this.selectedCategory);
@@ -60,6 +89,14 @@ export class ResourcesPage {
 
   public setCategory(category: 'Todos' | ResourceCategory): void {
     this.selectedCategory = category;
+  }
+
+  public categoryKey(category: ResourceCategory): string {
+    return CATEGORY_KEY[category] ?? 'guide';
+  }
+
+  public categoryIconPath(category: ResourceCategory): string {
+    return CATEGORY_ICON[category] ?? '';
   }
 
   public trackById(_: number, r: ResourceItem): string {
@@ -70,35 +107,8 @@ export class ResourcesPage {
     return c;
   }
 
-  // El código permanece casi igual, solo asegúrate de que los iconos 
-// sean consistentes. Por ejemplo, quité el "-outline" para que 
-// los iconos tengan más peso visual dentro de las cards.
-
-public categoryIcon(category: ResourceCategory): string {
-  switch (category) {
-    case 'Opciones de cuidado': return 'home';
-    case 'Financiación': return 'wallet';
-    case 'Checklist': return 'checkbox';
-    case 'Guías prácticas': return 'library';
-    default: return 'document';
-  }
-}
-  public categoryClass(category: ResourceCategory): string {
-    switch (category) {
-      case 'Opciones de cuidado':
-        return 'is-care';
-      case 'Financiación':
-        return 'is-finance';
-      case 'Checklist':
-        return 'is-checklist';
-      case 'Guías prácticas':
-        return 'is-guides';
-    }
-  }
-
   public open(resource: ResourceItem): void {
-    // Placeholder: navegar a detalle / abrir link externo.
+    // TODO: navegar a detalle / abrir link externo
     alert(`Abrir (demo): ${resource.title}`);
   }
 }
-

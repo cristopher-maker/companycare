@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
+import { UiService } from '../../core/services/ui.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 type TrainingTab = 'Cursos' | 'Eventos';
@@ -46,7 +47,7 @@ type EventItem = {
   templateUrl: './training.page.html',
   styleUrls: ['./training.page.scss'],
 })
-export class TrainingPage {
+export class TrainingPage implements OnInit {
   public tab: TrainingTab = 'Cursos';
   public isStaff = false;
 
@@ -70,7 +71,8 @@ export class TrainingPage {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly supabase: SupabaseService
+    private readonly supabase: SupabaseService,
+    public readonly ui: UiService
   ) {}
 
   public get userId(): string | null {
@@ -85,6 +87,14 @@ export class TrainingPage {
     const total = this.courses.length;
     if (!total) return 0;
     return Math.round((this.completedCount / total) * 100);
+  }
+
+  public get inProgressCount(): number {
+    return this.courseCards.filter((c) => c.state === 'in_progress').length;
+  }
+
+  public get notStartedCount(): number {
+    return this.courseCards.filter((c) => c.state === 'not_started').length;
   }
 
   public get courseCards(): CourseCard[] {
@@ -134,7 +144,7 @@ export class TrainingPage {
     return inProgress?.id ?? null;
   }
 
-  public async ionViewWillEnter(): Promise<void> {
+  public async ngOnInit(): Promise<void> {
     await this.loadData();
   }
 
@@ -245,5 +255,14 @@ export class TrainingPage {
   public trackById(_: number, item: { id: string }): string {
     return item.id;
   }
-}
 
+  public courseStateIcon(state: CourseState): string {
+    if (state === 'completed') return 'task_alt';
+    if (state === 'in_progress') return 'play_circle';
+    return 'lock';
+  }
+
+  public courseStateClass(state: CourseState): string {
+    return state;
+  }
+}

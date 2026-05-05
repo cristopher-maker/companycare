@@ -1,202 +1,92 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Mis tareas</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="refresh()" [disabled]="loading || saving">
-        <ion-icon slot="start" name="refresh-outline"></ion-icon>
-        Actualizar
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
- 
-<ion-content class="tasks-page">
- 
-  <!-- Error -->
-  <div class="tk-error" *ngIf="error">
-    <ion-icon name="alert-circle-outline"></ion-icon>
-    {{ error }}
-  </div>
- 
-  <!-- Skeleton -->
-  <div class="tk-shell" *ngIf="loading">
-    <div class="tk-metrics">
-      <div class="tk-metric" *ngFor="let _ of [1,2,3]">
-        <ion-skeleton-text animated style="width:40px;height:28px;border-radius:8px"></ion-skeleton-text>
-        <ion-skeleton-text animated style="width:70px;height:14px;border-radius:6px;margin-top:6px"></ion-skeleton-text>
-      </div>
+<app-site-header></app-site-header>
+
+<main class="bg-slate-50 min-h-screen pt-20 pb-12">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-800">Tareas Asignadas</h1>
+      <p class="mt-1 text-lg text-slate-600">Gestiona las tareas operativas asignadas a ti.</p>
     </div>
-    <div class="tk-skeleton-card" *ngFor="let _ of [1,2,3]">
-      <ion-skeleton-text animated style="width:100%;height:72px;border-radius:16px"></ion-skeleton-text>
+
+    <div *ngIf="loading" class="text-center py-16">
+      <mat-icon class="animate-spin text-indigo-600 mx-auto" style="font-size: 32px; width: 32px; height: 32px;">refresh</mat-icon>
+      <p class="mt-4 text-slate-500 font-medium">Cargando tus tareas...</p>
     </div>
-  </div>
- 
-  <!-- Contenido principal -->
-  <div class="tk-shell" *ngIf="!loading && !error">
- 
-    <!-- Métricas -->
-    <section class="tk-metrics">
-      <div class="tk-metric tk-metric--accent">
-        <div class="tk-metric__value">{{ pendingCount }}</div>
-        <div class="tk-metric__label">Pendientes</div>
+
+    <div *ngIf="!loading && tasks.length === 0" class="text-center py-16 bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div class="bg-green-100 text-green-600 p-4 rounded-full inline-flex items-center justify-center mb-4">
+        <mat-icon style="font-size: 40px; width: 40px; height: 40px;">task_alt</mat-icon>
       </div>
-      <div class="tk-metric">
-        <div class="tk-metric__value">{{ inProgressCount }}</div>
-        <div class="tk-metric__label">En progreso</div>
-      </div>
-      <div class="tk-metric tk-metric--green">
-        <div class="tk-metric__value">{{ completedCount }}</div>
-        <div class="tk-metric__label">Completadas</div>
-      </div>
-    </section>
- 
-    <!-- Crear tarea -->
-    <section class="tk-create">
-      <ion-item class="tk-create__item" lines="none">
-        <ion-input
-          aria-label="Nueva tarea"
-          [(ngModel)]="draftTitle"
-          name="draftTitle"
-          placeholder="Ej.: subir receta, confirmar videollamada…"
-          enterkeyhint="done"
-          (keyup.enter)="addTask()"
-        ></ion-input>
-      </ion-item>
-      <ion-item class="tk-create__item tk-create__item--date" lines="none">
-        <ion-input
-          aria-label="Fecha límite"
-          type="date"
-          [(ngModel)]="draftDueDate"
-          name="draftDueDate"
-        ></ion-input>
-      </ion-item>
-      <ion-button
-        class="tk-create__btn"
-        (click)="addTask()"
-        [disabled]="!draftTitle.trim() || saving"
-      >
-        <ion-icon slot="start" name="add-outline"></ion-icon>
-        Agregar
-      </ion-button>
-    </section>
- 
-    <!-- Filtros -->
-    <div class="tk-filters">
-      <button
-        class="tk-filter-chip"
-        *ngFor="let f of filterOptions"
-        [class.is-active]="activeFilter === f.value"
-        (click)="setFilter(f.value)"
-      >
-        {{ f.label }}
-        <span class="tk-filter-chip__count">{{ countByFilter(f.value) }}</span>
-      </button>
+      <h3 class="text-xl font-bold text-slate-900">¡Todo al día!</h3>
+      <p class="mt-2 text-slate-500 max-w-sm mx-auto">No tienes tareas pendientes en este momento.</p>
     </div>
- 
-    <!-- Lista -->
-    <div class="tk-list" *ngIf="filteredItems.length; else emptyState">
-      <article
-        class="tk-card"
-        *ngFor="let task of filteredItems; trackBy: trackById"
-        [class.is-done]="task.status === 'done'"
-        [class.is-in-progress]="task.status === 'in_progress'"
-      >
- 
-        <!-- Indicador de prioridad -->
-        <div class="tk-card__priority-bar" [class]="'is-' + task.priority" aria-hidden="true"></div>
- 
-        <!-- Checkbox visual -->
-        <button
-          type="button"
-          class="tk-check"
-          [class.is-done]="task.status === 'done'"
-          [class.is-progress]="task.status === 'in_progress'"
-          (click)="cycleStatus(task)"
-          [attr.aria-label]="'Estado: ' + statusLabel(task.status)"
-        >
-          <ion-icon
-            [name]="task.status === 'done' ? 'checkmark' : task.status === 'in_progress' ? 'time-outline' : ''"
-          ></ion-icon>
-        </button>
- 
-        <!-- Contenido -->
-        <div class="tk-card__body">
-          <div class="tk-card__title">{{ task.title }}</div>
-          <div class="tk-card__meta">
-            <span class="tk-badge" [class]="'tk-badge--' + task.status">
-              {{ statusLabel(task.status) }}
+
+    <div *ngIf="!loading && tasks.length > 0" class="mb-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <label class="block">
+        <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Estado</span>
+        <select [(ngModel)]="filters.status" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+          <option value="all">Todos</option>
+          <option value="pending">Pendientes</option>
+          <option value="in_progress">En progreso</option>
+          <option value="done">Completadas</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Vinculo</span>
+        <select [(ngModel)]="filters.entity" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+          <option value="all">Todos</option>
+          <option value="lead">Admision</option>
+          <option value="sede">Sede</option>
+          <option value="cama">Cama</option>
+          <option value="paciente">Paciente</option>
+          <option value="none">Sin vinculo</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="space-y-4" *ngIf="!loading && tasks.length > 0">
+      <article *ngFor="let task of filteredTasks" class="bg-white p-5 rounded-xl shadow-sm border flex flex-col sm:flex-row sm:items-center gap-4 justify-between transition-all" [ngClass]="{
+        'border-slate-200 opacity-60 bg-slate-50': task.status === 'done',
+        'border-indigo-100 hover:shadow-md hover:-translate-y-0.5': task.status !== 'done' && task.priority !== 'high',
+        'border-red-400 hover:shadow-md hover:-translate-y-0.5': task.status !== 'done' && task.priority === 'high'
+      }">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" [ngClass]="{'bg-amber-100 text-amber-800': task.status === 'pending', 'bg-blue-100 text-blue-800': task.status === 'in_progress', 'bg-green-100 text-green-800': task.status === 'done'}">
+              {{ task.status === 'pending' ? 'Pendiente' : (task.status === 'in_progress' ? 'En Progreso' : 'Completada') }}
             </span>
-            <span class="tk-badge tk-badge--date" *ngIf="task.due_at">
-              <ion-icon name="calendar-outline"></ion-icon>
-              {{ task.due_at | date: 'dd/MM/yyyy' }}
+            <span *ngIf="task.priority === 'high'" class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 flex items-center gap-1">
+              <mat-icon style="font-size: 12px; width: 12px; height: 12px;">priority_high</mat-icon> Alta prioridad
             </span>
-            <span class="tk-badge tk-badge--case" *ngIf="task.request_topic">
-              <ion-icon name="briefcase-outline"></ion-icon>
-              {{ task.request_topic }}
-            </span>
-            <span class="tk-badge tk-badge--personal" *ngIf="!task.request_topic">
-              Personal
+            <span *ngIf="task.due_at" class="text-xs font-medium flex items-center gap-1" [ngClass]="isOverdue(task.due_at) && task.status !== 'done' ? 'text-red-600' : 'text-slate-500'">
+              <mat-icon style="font-size: 14px; width: 14px; height: 14px;">calendar_today</mat-icon>
+              Vence: {{ task.due_at | date:'dd/MM/yyyy' }}
             </span>
           </div>
+          <p class="text-slate-800 font-medium text-lg leading-snug">{{ task.title }}</p>
+          <button *ngIf="task.entity_label" type="button" (click)="openLinkedEntity(task)" class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-colors">
+            <mat-icon style="font-size: 14px; width: 14px; height: 14px;">link</mat-icon>
+            {{ task.entity_label }}
+          </button>
         </div>
- 
-        <!-- Acciones -->
-        <div class="tk-card__actions">
-          <button
-            type="button"
-            class="tk-action-btn"
-            *ngIf="task.status === 'pending'"
-            (click)="updateTaskStatus(task, 'in_progress')"
-          >
+        
+        <div class="flex items-center gap-2 mt-2 sm:mt-0 border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100" *ngIf="task.status !== 'done'">
+          <button (click)="updateStatus(task, 'in_progress')" *ngIf="task.status === 'pending'" class="px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors w-full sm:w-auto text-center">
             Iniciar
           </button>
-          <button
-            type="button"
-            class="tk-action-btn"
-            *ngIf="task.status !== 'done'"
-            (click)="updateTaskStatus(task, 'done')"
-          >
-            Hecha
-          </button>
-          <button
-            type="button"
-            class="tk-action-btn"
-            *ngIf="task.status === 'done'"
-            (click)="updateTaskStatus(task, 'pending')"
-          >
-            Reabrir
-          </button>
-          <button
-            type="button"
-            class="tk-action-btn tk-action-btn--case"
-            *ngIf="task.request_id"
-            [routerLink]="['/care-experts']"
-            [queryParams]="{ request: task.request_id }"
-          >
-            <ion-icon name="open-outline"></ion-icon>
-            Ver caso
-          </button>
-          <button
-            type="button"
-            class="tk-action-btn tk-action-btn--danger"
-            (click)="removeTask(task)"
-          >
-            <ion-icon name="trash-outline"></ion-icon>
+          <button (click)="updateStatus(task, 'done')" class="px-4 py-2 text-sm font-bold text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 shadow-sm transition-colors flex items-center justify-center gap-2 w-full sm:w-auto">
+            <mat-icon style="font-size: 18px; width: 18px; height: 18px;">check</mat-icon> Completar
           </button>
         </div>
+        <div *ngIf="task.status === 'done'" class="text-green-600 flex items-center gap-1 font-bold text-sm px-4">
+          <mat-icon style="font-size: 20px; width: 20px; height: 20px;">done_all</mat-icon> Hecha
+        </div>
       </article>
-    </div>
- 
-    <ng-template #emptyState>
-      <div class="tk-empty">
-        <ion-icon name="checkmark-done-circle-outline"></ion-icon>
-        <p *ngIf="activeFilter === 'all'">Aún no tienes tareas. Agrégalas para organizar mejor tu caso.</p>
-        <p *ngIf="activeFilter !== 'all'">No hay tareas en este estado.</p>
+
+      <div *ngIf="filteredTasks.length === 0" class="text-center py-12 bg-white border border-slate-200 rounded-xl shadow-sm">
+        <p class="text-slate-500 font-medium">No hay tareas que coincidan con los filtros actuales.</p>
       </div>
-    </ng-template>
- 
+    </div>
   </div>
-</ion-content>
+</main>
+
+<app-site-footer></app-site-footer>

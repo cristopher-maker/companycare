@@ -1,5 +1,5 @@
 :host {
-  --dir-bg: #f4f7f9;
+  --dir-bg: #ffffff;
   --dir-surface: #ffffff;
   --dir-border: #e2e8f0;
   --dir-text-main: #0f172a;
@@ -1055,6 +1055,61 @@ ion-content.providers-page, .modal-bg {
     font-size: 13px;
     color: var(--dir-text-muted);
   }
+}
+
+.providers-pagination {
+  margin: 40px 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.providers-pagination__nav,
+.providers-pagination__page {
+  min-height: 32px;
+  border: 1px solid #d7dee8;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.providers-pagination__nav {
+  padding: 0 14px;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.providers-pagination__page {
+  width: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.providers-pagination__page.is-active {
+  background: #57d8ff;
+  border-color: #57d8ff;
+  color: #ffffff;
+}
+
+.providers-pagination__nav:hover:not(:disabled),
+.providers-pagination__page:hover:not(.is-active):not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.providers-pagination__nav:disabled,
+.providers-pagination__page:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 @media (max-width: 900px) {

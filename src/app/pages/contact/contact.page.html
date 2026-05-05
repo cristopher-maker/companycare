@@ -1,80 +1,117 @@
-<ion-header class="ion-no-border contact-header">
-  <ion-toolbar>
-    <div class="cc-nav">
-      <div class="cc-nav-left">
-        <ion-menu-button></ion-menu-button>
-        <div class="cc-brand" routerLink="/home">
-          <div class="cc-mark">CC</div>
-          <div class="cc-brand-text">
-            <div class="name">Company Care</div>
-            <div class="sub">by Senior Advisor</div>
-          </div>
-        </div>
-      </div>
+<app-site-header></app-site-header>
 
-      <ul class="cc-nav-links">
-        <li><a routerLink="/home">Inicio</a></li>
-        <li><a routerLink="/providers">Proveedores</a></li>
-        <li><a routerLink="/resources">Recursos</a></li>
-        <li><a routerLink="/training">Formación</a></li>
-        <li><a routerLink="/packages">Planes</a></li>
-        <li><a routerLink="/about">Nosotros</a></li>
-      </ul>
-
-      <div class="cc-nav-actions">
-        <button class="btn-ghost" [routerLink]="mode === 'public' ? '/login' : '/dashboard'">Portal</button>
-        <button class="btn-glow" routerLink="/contact">Contáctanos</button>
-      </div>
-    </div>
-  </ion-toolbar>
-</ion-header>
-<ion-content class="contact-page">
-  <div class="cc-page">
-    <canvas #lavaCanvas class="lava-canvas" aria-hidden="true"></canvas>
-
-    <div class="cc-body">
-      <section class="cc-left">
-        <div class="cc-eyebrow">Hablemos</div>
-        <h1 class="cc-headline">Apoyemos mejor<br />a tus <em>colaboradores.</em></h1>
-        <p class="cc-sub">
-          Diseñamos soluciones de bienestar para empresas que valoran a su gente. Cuéntanos sobre tu
-          organización y encontremos el plan ideal juntos.
+<main class="contact-page">
+  <div class="contact-shell">
+    <section class="contact-hero">
+      <div class="contact-hero__copy">
+        <span class="contact-hero__eyebrow">Contacto</span>
+        <h1>Hablemos con contexto, no con un formulario frío</h1>
+        <p>
+          Completa el formulario y te ayudaremos a coordinar el siguiente paso para tu empresa
+          o colaborador.
         </p>
-        <div class="cc-trust">
-          <div class="cc-trust-item">
-            <div class="cc-trust-dot"></div>
-            <span class="cc-trust-text">+200 empresas confían en Company Care</span>
-          </div>
-          <div class="cc-trust-item">
-            <div class="cc-trust-dot"></div>
-            <span class="cc-trust-text">Atención personalizada en menos de 24 hrs</span>
-          </div>
-          <div class="cc-trust-item">
-            <div class="cc-trust-dot"></div>
-            <span class="cc-trust-text">Planes flexibles para equipos de cualquier tamaño</span>
+
+        <div class="contact-hero__chips">
+          <span>Beneficios corporativos</span>
+          <span>Care Experts</span>
+          <span>Residencias y apoyo</span>
+        </div>
+      </div>
+
+      <div class="contact-hero__visual" aria-label="Atención y acompañamiento">
+        <div class="contact-visual-card contact-visual-card--main">
+          <img src="assets/img/carousel-4.jpeg" alt="Profesional acompañando a una persona mayor" />
+        </div>
+        <div class="contact-visual-card contact-visual-card--floating">
+          <strong>Respuesta inicial</strong>
+          <p>Te orientamos según urgencia, tamaño de empresa y tipo de necesidad.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact-layout">
+      <aside class="contact-info">
+        <div class="contact-info__card">
+          <h2>Qué puedes esperar</h2>
+          <div class="contact-info__list">
+            <article class="contact-info__item">
+              <strong>Respuesta clara</strong>
+              <p>Revisamos tu mensaje y te orientamos con una propuesta concreta según la necesidad.</p>
+            </article>
+            <article class="contact-info__item">
+              <strong>Coordinación simple</strong>
+              <p>Si corresponde, agendamos una llamada o reunión para revisar detalles y próximos pasos.</p>
+            </article>
+            <article class="contact-info__item">
+              <strong>Contexto protegido</strong>
+              <p>La información que compartes se usa solo para preparar una mejor orientación.</p>
+            </article>
           </div>
         </div>
-      </section>
 
-      <section class="cc-right">
-        <div class="cc-form-card">
-          <p class="cc-form-title">Conversemos</p>
-          <p class="cc-form-sub">Completa el formulario y te contactamos pronto.</p>
-          <div class="cc-divider"></div>
-
-          <div
-            class="hs-form-frame"
-            data-region="na1"
-            data-form-id="404f6186-0c33-44a0-a0e4-669fd3286be9"
-            data-portal-id="51191982"
-          ></div>
-          
-          <p class="cc-privacy">Tu información está segura. No enviamos spam.</p>
+        <div class="contact-info__meta">
+          <div>
+            <span>Empresas</span>
+            <p>Programas de acompañamiento y beneficios de cuidado.</p>
+          </div>
+          <div>
+            <span>Colaboradores</span>
+            <p>Orientación inicial para cuidado, residencia y coordinación.</p>
+          </div>
         </div>
-      </section>
-    </div>
+      </aside>
 
-    <!-- Componente Footer Reutilizable -->
-    <app-footer></app-footer>
+      <div class="contact-card">
+        <div class="contact-card__head">
+          <h2>Escríbenos</h2>
+          <p>Te contactaremos para continuar la conversación y definir el mejor siguiente paso.</p>
+        </div>
+
+        <form class="contact-form" [formGroup]="form" (ngSubmit)="submit()">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="name">Nombre</label>
+              <input id="name" type="text" formControlName="name" placeholder="Tu nombre completo" />
+            </div>
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input id="email" type="email" formControlName="email" placeholder="nombre@empresa.com" />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="company">Empresa <span>(opcional)</span></label>
+            <input id="company" type="text" formControlName="company" placeholder="Nombre de tu empresa" />
+          </div>
+
+          <div class="form-field">
+            <label for="message">¿En qué podemos ayudarte?</label>
+            <textarea
+              id="message"
+              rows="5"
+              formControlName="message"
+              placeholder="Ej.: Queremos conocer cómo apoyar a colaboradores que cuidan a un familiar mayor y qué tipo de acompañamiento ofrece Company Care."
+            ></textarea>
+          </div>
+
+          <div class="form-feedback" *ngIf="error">
+            <p class="error">{{ error }}</p>
+          </div>
+          <div class="form-feedback" *ngIf="success">
+            <p class="success">{{ success }}</p>
+          </div>
+
+          <div class="contact-form__actions">
+            <p class="contact-form__note">Respuesta prioritaria para orientación inicial y casos corporativos.</p>
+            <button type="submit" class="contact-form__submit" [disabled]="loading">
+              <span *ngIf="!loading">Enviar mensaje</span>
+              <span *ngIf="loading">Enviando...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
   </div>
-</ion-content>
+
+  <app-site-footer></app-site-footer>
+</main>

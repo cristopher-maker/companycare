@@ -1,905 +1,616 @@
-﻿// ==========================================
-// VARIABLES DE TEMA (Dark Dashboard)
-// ==========================================
-$bg-main: #0f111a;
-$bg-panel: #161923;
-$bg-surface: #1b1e2b;
-$border-light: #232733;
-$border-strong: #2a2e3f;
-
-$text-title: #ffffff;
-$text-normal: #cbd5e1;
-$text-muted: #64748b;
-
-$accent-primary: #6366f1; // Morado/Azul
-$color-success: #10b981;  // Verde
-$color-warning: #f59e0b;  // Naranja
-$color-danger: #ef4444;   // Rojo
-$color-info: #0ea5e9;     // Celeste
-
-// ==========================================
-// ESTRUCTURA PRINCIPAL
-// ==========================================
-.ca-page {
-  background-color: $bg-main;
-  color: $text-normal;
+.company-erp-host {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  font-family: 'Inter', system-ui, sans-serif;
-  
-  * { box-sizing: border-box; }
+  background: #f6f8fb;
 }
 
-.ca-workspace {
-  display: flex;
-  flex: 1;
-  height: calc(100vh - 56px); // Asumiendo header de Ionic
-}
-
-// ==========================================
-// SIDEBAR (Panel Izquierdo)
-// ==========================================
-.ca-sidebar {
-  width: 240px;
-  min-width: 240px;
-  background-color: $bg-main;
-  border-right: 1px solid $border-light;
-  padding: 24px 12px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 12px 24px;
-    border-bottom: 1px solid $border-light;
-    margin-bottom: 24px;
-  }
-
-  &__logo {
-    width: 32px;
-    height: 32px;
-    background: $accent-primary;
-    color: white;
-    border-radius: 6px;
-    display: grid;
-    place-items: center;
-    font-weight: 600;
-  }
-
-  &__name { color: $text-title; font-size: 0.9rem; font-weight: 600; }
-  &__sub { color: $text-muted; font-size: 0.75rem; }
-
-  &__label {
-    font-size: 0.7rem;
-    color: $text-muted;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 0 12px;
-    margin: 16px 0 8px;
-  }
-
-  &__item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 10px 12px;
-    background: transparent;
-    border: none;
-    color: $text-muted;
-    font-size: 0.9rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: left;
-
-    ion-icon { font-size: 1.2rem; }
-
-    &:hover { color: $text-title; }
-
-    &.is-active {
-      background-color: rgba($accent-primary, 0.1);
-      color: $accent-primary;
-      font-weight: 500;
-    }
-  }
-
-  &__badge {
-    margin-left: auto;
-    background: $accent-primary;
-    color: white;
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 12px;
-  }
-}
-
-// ==========================================
-// ÁREA PRINCIPAL (Main Content)
-// ==========================================
-.ca-main {
-  flex: 1;
-  padding: 24px 32px;
-  overflow-y: auto;
-  background-color: $bg-main;
-}
-
-// Ocultar elementos Hero/Plan si no se necesitan en esta vista
-.ca-hero, .ca-plan-card {
-  display: none; // Puedes quitar esto si necesitas ver esa info superior
-}
-
-// Cabecera del Panel (Métricas Generales)
-.ca-panel__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-
-  .ca-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: $text-title;
-  }
-  .ca-sub { display: none; } // Oculto para coincidir con tu diseño
-
-  .ca-range {
-    display: flex;
-    background: $bg-surface;
-    border-radius: 8px;
-    padding: 4px;
-    border: 1px solid $border-light;
-
-    button {
-      background: transparent;
-      border: none;
-      color: $text-muted;
-      padding: 4px 12px;
-      font-size: 0.8rem;
-      border-radius: 4px;
-      cursor: pointer;
-
-      &.is-active {
-        background: $border-strong;
-        color: $text-title;
-      }
-    }
-  }
-}
-
-// ==========================================
-// CUADRÍCULA DE KPIs (Fila superior)
-// ==========================================
-.dashboard-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.dashboard-kpi-card {
-  background: $bg-panel;
-  border: 1px solid $border-light;
-  border-radius: 8px;
-  padding: 16px 20px;
-  position: relative;
-  overflow: hidden;
-
-  // Línea de color en la parte inferior
-  border-bottom-width: 2px;
-  &:nth-child(1) { border-bottom-color: $accent-primary; }
-  &:nth-child(2) { border-bottom-color: $color-success; }
-  &:nth-child(3) { border-bottom-color: $color-info; }
-  &:nth-child(4) { border-bottom-color: $color-warning; }
-
-  &__label {
-    font-size: 0.75rem;
-    color: $text-muted;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-  }
-
-  &__value {
-    font-size: 2rem;
-    font-weight: 600;
-    color: $text-title;
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-
-  &__meta {
-    font-size: 0.8rem;
-    color: $color-success;
-  }
-}
-
-// ==========================================
-// CUADRÍCULA PRINCIPAL (Tarjetas)
-// ==========================================
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  grid-auto-rows: minmax(min-content, max-content);
-}
-
-.dashboard-card {
-  background: $bg-panel;
-  border: 1px solid $border-light;
-  border-radius: 8px;
+.company-panel {
+  display: block;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-
-  &--col-span-2 { grid-column: span 2; }
-
-  &__header {
-    margin-bottom: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-
-  &__title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: $text-title;
-    margin: 0 0 4px 0;
-  }
-
-  &__subtitle {
-    font-size: 0.8rem;
-    color: $text-muted;
-    margin: 0;
-  }
+  border: 1px solid #d8e4e8;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
-// ==========================================
-// COMPONENTES INTERNOS DE LAS TARJETAS
-// ==========================================
-
-// Pipeline HubSpot
-.ca-hubspot-summary {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  font-size: 0.85rem;
-  strong { color: $text-title; }
-  span { color: $text-muted; }
+.company-panel--embedded {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
 }
 
-.dashboard-metrics-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-
-  .ca-insight-tile {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    position: relative;
-    padding-left: 16px;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: $accent-primary;
-    }
-
-    &:nth-child(2)::before { background-color: $color-info; }
-    &:nth-child(3)::before { background-color: $color-warning; }
-    &:nth-child(4)::before { background-color: $color-success; }
-    &:nth-child(5)::before { background-color: $color-danger; }
-
-    strong { color: $text-title; font-size: 0.95rem; }
-    span { color: $text-muted; font-size: 0.85rem; }
-  }
-}
-
-// Alertas y Pendientes
-.dashboard-alerts {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.dashboard-alert {
+.company-panel__header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
-  background: $bg-surface;
-  border: 1px solid $border-strong;
+  margin-bottom: 16px;
+}
+
+.company-panel h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.company-panel p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.company-primary,
+.company-table__actions button {
+  min-height: 34px;
+  padding: 0 12px;
   border-radius: 6px;
-  padding: 12px;
-
-  // Asignación de colores por orden (como en la foto: amarillo, rojo, verde)
-  &:nth-child(1) { --alert-color: #{$color-warning}; --alert-bg: rgba(245, 158, 11, 0.1); }
-  &:nth-child(2) { --alert-color: #{$color-danger}; --alert-bg: rgba(239, 68, 68, 0.1); }
-  &:nth-child(3) { --alert-color: #{$color-success}; --alert-bg: rgba(16, 185, 129, 0.1); }
-
-  &__value {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    background: var(--alert-bg);
-    color: var(--alert-color);
-    display: grid;
-    place-items: center;
-    font-weight: bold;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-
-  &__copy {
-    display: flex;
-    flex-direction: column;
-    strong { color: $text-title; font-size: 0.9rem; }
-    span { color: $text-muted; font-size: 0.75rem; }
-  }
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
-// Últimos Empleados
-.dashboard-member-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.company-primary {
+  border: 0;
+  background: #123c4a;
+  color: #ffffff;
 }
 
-.dashboard-member {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid $border-strong;
-  &:last-child { border-bottom: none; }
-
-  &__avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: $accent-primary;
-    color: white;
-    display: grid;
-    place-items: center;
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    strong { color: $text-title; font-size: 0.9rem; }
-    span { color: $text-muted; font-size: 0.75rem; }
-  }
-}
-
-// Gráfico de Barras
-.ca-bar-chart {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 120px;
-  padding-top: 16px;
-
-  &__item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    width: 12%;
-  }
-
-  &__track {
-    width: 100%;
-    height: 80px;
-    position: relative;
-    background: transparent;
-  }
-
-  &__bar {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    background-color: $accent-primary;
-    border-radius: 4px 4px 0 0;
-  }
-
-  &__label { font-size: 0.7rem; color: $text-muted; }
-  &__value { display: none; } // Oculto para que parezca el diseño
-}
-
-// Tablas
-.dashboard-table-wrapper {
+.company-table-wrap {
   overflow-x: auto;
 }
 
-.dashboard-table {
+.company-table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.company-table th {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
   text-align: left;
-  font-size: 0.85rem;
-
-  th {
-    color: $text-muted;
-    font-weight: 500;
-    padding: 12px 8px;
-    border-bottom: 1px solid $border-strong;
-  }
-
-  td {
-    color: $text-normal;
-    padding: 12px 8px;
-    border-bottom: 1px solid $border-strong;
-  }
-
-  tr:last-child td { border-bottom: none; }
+  text-transform: uppercase;
 }
 
-
-// ==========================================
-// PESTAÑAS: MIEMBROS Y FICHAS DE CUIDADO
-// ==========================================
-
-// Contenedor tipo Grid para los formularios y listas
-.ca-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-  align-items: start;
+.company-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #eef2f7;
+  color: #334155;
+  font-size: 13px;
+  vertical-align: middle;
 }
 
-// Cajas principales (Reemplazo de dashboard-card para esta vista)
-.ca-box {
-  background: $bg-panel;
-  border: 1px solid $border-light;
-  border-radius: 8px;
-  padding: 24px;
-
-  &__title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: $text-title;
-    margin-bottom: 6px;
-  }
-
-  &__hint {
-    font-size: 0.85rem;
-    color: $text-muted;
-    margin-bottom: 20px;
-    line-height: 1.4;
-  }
+.company-table strong {
+  display: block;
+  color: #0f172a;
+  font-size: 13px;
 }
 
-// ==========================================
-// FORMULARIOS E INPUTS IONIC (Dark Theme)
-// ==========================================
-.ca-form {
+.company-table small {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.company-person {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-// Sobrescribir las variables de Ionic para que no se vean blancos gigantes
-.ca-item {
-  --background: #1b1e2b; // Fondo oscuro para el input
-  --color: #ffffff;
-  --padding-start: 12px;
-  --inner-padding-end: 12px;
-  --border-radius: 6px;
-  --border-color: #2a2e3f;
-  --border-width: 1px;
-  --border-style: solid;
-  --highlight-color-focused: #6366f1; // Color primario al hacer focus
-  
-  border-radius: 6px;
-  margin-bottom: 8px;
-
-  ion-input, ion-select, ion-textarea {
-    color: $text-title;
-    font-size: 0.9rem;
-    --placeholder-color: #64748b;
-  }
-
-  ion-label.label-stacked {
-    color: $text-muted;
-    font-size: 0.85rem;
-    margin-bottom: 4px;
-  }
-
-  &--search {
-    --background: transparent;
-    border: 1px solid $border-strong;
-    margin-bottom: 16px;
-    ion-icon {
-      color: $text-muted;
-      margin-right: 8px;
-    }
-  }
-}
-
-// Botones principales de la vista
-.ca-primary {
-  --background: #{$accent-primary};
-  --background-hover: #4f46e5;
-  --color: white;
-  --border-radius: 6px;
-  --box-shadow: none;
-  font-weight: 500;
-  margin-top: 8px;
-}
-
-// ==========================================
-// LISTA DE MIEMBROS
-// ==========================================
-.ca-list {
-  display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
-.ca-member {
-  display: flex;
-  justify-content: space-between;
+.company-avatar {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #e0f2f1;
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.company-table__actions {
+  white-space: nowrap;
+}
+
+.company-table__actions button {
+  margin-right: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.company-status {
+  display: inline-flex;
+  min-height: 24px;
   align-items: center;
-  padding: 16px;
-  background: $bg-surface;
-  border: 1px solid $border-strong;
-  border-radius: 8px;
-
-  &__main {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  &__name { 
-    color: $text-title; 
-    font-size: 0.95rem; 
-    font-weight: 500; 
-  }
-  
-  &__email { 
-    color: $text-muted; 
-    font-size: 0.8rem; 
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    // Mini select para el Rol en la lista
-    .ca-mini-select {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid $border-light;
-      border-radius: 4px;
-      color: $text-normal;
-      font-size: 0.8rem;
-      min-width: 100px;
-      --padding-start: 8px;
-      --padding-end: 8px;
-      --padding-top: 6px;
-      --padding-bottom: 6px;
-    }
-
-    ion-button {
-      --padding-start: 8px;
-      --padding-end: 8px;
-    }
-  }
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
 }
 
-// ==========================================
-// FICHAS DE CUIDADO (Acordeón y Lista)
-// ==========================================
-.ca-accordion {
-  background: transparent;
-  border: 1px solid $border-strong;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  overflow: hidden;
-
-  ion-accordion {
-    background: transparent;
-  }
-
-  // Cabecera del acordeón
-  ion-item[slot="header"] {
-    --background: #1b1e2b;
-    --color: $text-title;
-    font-weight: 500;
-    
-    ion-note {
-      color: $text-muted;
-      font-size: 0.8rem;
-    }
-  }
-
-  // Contenido interior del acordeón
-  &__content {
-    padding: 20px;
-    background: $bg-panel;
-    border-top: 1px solid $border-strong;
-  }
+.company-status.is-active {
+  background: #dcfce7;
+  color: #047857;
 }
 
-// Secciones dentro del formulario de la ficha
-.ca-section {
-  margin-bottom: 24px;
-
-  &__title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: $accent-primary;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-}
-
-// Fichas de cuidado recientes (Tarjetas clickeables)
-.ca-intake {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  background: $bg-surface;
-  border: 1px solid $border-strong;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba($accent-primary, 0.05);
-    border-color: $accent-primary;
-    transform: translateY(-1px);
-  }
-
-  &__title { 
-    color: $text-title; 
-    font-weight: 500; 
-    margin-bottom: 6px; 
-    font-size: 0.95rem;
-  }
-  
-  &__meta { 
-    color: $text-muted; 
-    font-size: 0.8rem; 
-  }
-}
-
-// Elementos vacíos
-.ca-empty {
-  color: $text-muted;
-  font-size: 0.9rem;
-  text-align: center;
-  padding: 32px 0;
-  background: $bg-surface;
-  border-radius: 8px;
-  border: 1px dashed $border-strong;
-}
-
-
-// ==========================================
-// PESTAÑA: BRANDING (Co-branding)
-// ==========================================
-
-// Contenedor de la Vista Previa del Portal
-.ca-brand-preview {
-  background: $bg-surface; // Fondo interno oscuro
-  border: 1px solid $border-strong;
-  border-radius: 8px;
-  padding: 24px;
-  margin-top: 16px;
-  
-  // Usamos variables de respaldo por si el usuario aún no escoge color
-  --local-primary: var(--preview-primary, #{$accent-primary});
-  --local-secondary: var(--preview-secondary, #{$accent-primary});
-
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 32px;
-  }
-
-  &__brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  &__logo {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: var(--local-primary);
-    color: white;
-    display: grid;
-    place-items: center;
-    font-weight: 600;
-    overflow: hidden;
-    font-size: 1.1rem;
-
-    img { 
-      width: 100%; 
-      height: 100%; 
-      object-fit: cover; 
-    }
-  }
-
-  &__name { 
-    font-weight: 600; 
-    color: $text-title; 
-    font-size: 0.95rem;
-  }
-  
-  &__sub { 
-    font-size: 0.75rem; 
-    color: $text-muted; 
-  }
-
-  &__badge {
-    background: rgba(255, 255, 255, 0.1);
-    color: $text-normal;
-    font-size: 0.7rem;
-    padding: 4px 10px;
-    border-radius: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  &__hero {
-    margin-bottom: 32px;
-    
-    h3 {
-      font-size: 1.15rem;
-      color: $text-title;
-      margin: 8px 0;
-      font-weight: 600;
-    }
-    
-    p {
-      font-size: 0.85rem;
-      color: $text-muted;
-      margin-bottom: 16px;
-      line-height: 1.5;
-    }
-  }
-
-  &__eyebrow {
-    color: var(--local-primary);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  &__cta {
-    background: var(--local-primary);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: default; // Es una preview, no hace nada
-  }
-
-  &__cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  &__card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid $border-strong;
-    padding: 16px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    strong { color: $text-title; font-size: 0.9rem; }
-    span { color: $text-muted; font-size: 0.75rem; line-height: 1.4; }
-
-    &--accent {
-      border-color: rgba(255, 255, 255, 0.1);
-      // Un toque sutil del color secundario
-      box-shadow: inset 2px 0 0 var(--local-secondary);
-    }
-  }
-}
-
-// ==========================================
-// FORMULARIOS DE COLOR (Selectores nativos)
-// ==========================================
-.ca-row {
-  display: flex;
+.company-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  margin-bottom: 16px;
-  flex-wrap: wrap; // Por si la pantalla se achica
 }
 
-.ca-color {
-  flex: 1;
-  min-width: 120px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  span {
-    font-size: 0.85rem;
-    color: $text-muted;
-  }
-
-  // Estilizar el input type="color" feo del navegador
-  input[type="color"] {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    border: none;
-    width: 100%;
-    height: 48px;
-    border-radius: 6px;
-    cursor: pointer;
-    padding: 0;
-    background: transparent;
-
-    &::-webkit-color-swatch-wrapper { 
-      padding: 0; 
-    }
-    
-    &::-webkit-color-swatch { 
-      border: 1px solid $border-strong; 
-      border-radius: 6px; 
-    }
-    
-    &::-moz-color-swatch {
-      border: 1px solid $border-strong; 
-      border-radius: 6px; 
-    }
-  }
+.company-form__wide,
+.company-form__footer {
+  grid-column: 1 / -1;
 }
 
-// Resumen de colores elegidos (Hexadecimales)
-.ca-brand-preview__tokens {
+.company-form--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.company-form small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.company-form__footer {
   display: flex;
-  gap: 24px;
-  margin: 24px 0;
-  padding: 16px;
-  background: $bg-surface;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #eef2f7;
+}
+
+.company-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.company-profile-card,
+.company-subpanel,
+.company-contract-card,
+.company-billing-card {
+  border: 1px solid #dbe7eb;
   border-radius: 8px;
-  border: 1px solid $border-strong;
+  background: #ffffff;
 }
 
-.ca-token {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.company-profile-card {
+  display: grid;
+  gap: 6px;
+  min-height: 96px;
+  padding: 16px;
+}
 
-  span { 
-    font-size: 0.75rem; 
-    color: $text-muted; 
-    text-transform: uppercase;
+.company-profile-card span,
+.company-kicker {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.company-profile-card strong {
+  color: #123c4a;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.company-profile-card small {
+  color: #64748b;
+}
+
+.company-operational-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.company-subpanel {
+  padding: 18px;
+}
+
+.company-list {
+  display: grid;
+  gap: 10px;
+}
+
+.company-list-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.company-list-item strong,
+.company-contract-card h3 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.company-list-item small,
+.company-contract-card small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.company-contract-card,
+.company-billing-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 16px;
+}
+
+.company-billing-card {
+  margin-bottom: 12px;
+  background: #f8fafc;
+}
+
+.company-contract-card .company-table__actions {
+  grid-column: 1 / -1;
+}
+
+.company-contract-card p,
+.company-billing-card p {
+  margin: 6px 0 0;
+}
+
+.company-contract-card strong,
+.company-billing-card strong {
+  display: block;
+  color: #123c4a;
+  font-size: 20px;
+  text-align: right;
+}
+
+.company-billing-card h3 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.company-plan-picker {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.company-plan-option {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #dbe7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  text-align: left;
+  cursor: pointer;
+}
+
+.company-plan-option.is-selected {
+  border-color: #123c4a;
+  box-shadow: inset 0 0 0 1px #123c4a;
+}
+
+.company-plan-option strong,
+.company-plan-option small {
+  display: block;
+}
+
+.company-plan-option small {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.company-plan-option b {
+  flex: 0 0 auto;
+  color: #123c4a;
+  font-size: 13px;
+}
+
+.company-plan-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.company-payment-link {
+  grid-column: 1 / -1;
+  width: fit-content;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: #123c4a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.company-payment-link--button {
+  border: 0;
+  cursor: pointer;
+}
+
+.company-payment-link--button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.company-check {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center;
+  gap: 9px !important;
+}
+
+.company-check input {
+  width: 16px !important;
+  min-height: 16px !important;
+}
+
+.company-form label,
+.company-modal label {
+  display: grid;
+  gap: 7px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.company-form input,
+.company-form select,
+.company-form textarea,
+.company-modal input,
+.company-modal select,
+.company-modal textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 13px;
+  outline: 0;
+}
+
+.company-form textarea,
+.company-modal textarea {
+  resize: vertical;
+}
+
+.company-empty {
+  padding: 18px;
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+}
+
+.company-state {
+  min-height: 360px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  color: #64748b;
+  text-align: center;
+}
+
+.company-state mat-icon {
+  width: 48px;
+  height: 48px;
+  color: #94a3b8;
+  font-size: 48px;
+}
+
+.company-spinner {
+  width: 34px;
+  height: 34px;
+  color: #123c4a;
+  animation: company-spin 0.8s linear infinite;
+}
+
+@keyframes company-spin {
+  to { transform: rotate(360deg); }
+}
+
+.company-alert {
+  max-width: 960px;
+  margin: 24px auto;
+  padding: 14px 16px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.company-payment-return {
+  max-width: 1180px;
+  margin: 0 auto 16px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.company-payment-return mat-icon {
+  color: #2563eb;
+}
+
+.company-payment-return strong,
+.company-payment-return span {
+  display: block;
+}
+
+.company-payment-return strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.company-payment-return span {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.company-payment-return button {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+}
+
+.company-payment-return button:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.company-payment-return.is-success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.company-payment-return.is-success mat-icon {
+  color: #16a34a;
+}
+
+.company-payment-return.is-pending {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.company-payment-return.is-pending mat-icon {
+  color: #d97706;
+}
+
+.company-payment-return.is-failure {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.company-payment-return.is-failure mat-icon {
+  color: #dc2626;
+}
+
+.company-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.company-modal {
+  width: min(460px, 100%);
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.24);
+}
+
+.company-modal--wide {
+  width: min(620px, 100%);
+}
+
+.company-modal header,
+.company-modal footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.company-modal footer {
+  justify-content: flex-end;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 0;
+  background: #f8fafc;
+}
+
+.company-modal h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.company-modal header button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  cursor: pointer;
+}
+
+.company-modal__body {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+@media (max-width: 960px) {
+  .company-panel__header {
+    flex-direction: column;
+    align-items: stretch;
   }
-  
-  strong { 
-    font-size: 0.95rem; 
-    color: $text-title; 
-    font-family: monospace; // Para que el Hex se vea técnico
-    letter-spacing: 0.5px;
+
+  .company-form,
+  .company-form--compact,
+  .company-profile-grid,
+  .company-operational-grid,
+  .company-contract-card,
+  .company-billing-card,
+  .company-plan-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .company-list-item {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 }

@@ -1,440 +1,251 @@
-﻿<ion-header class="ion-no-border providers-header">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button *ngIf="!selectedProvider"></ion-menu-button>
-      <ion-button *ngIf="selectedProvider" fill="clear" (click)="closeProvider($event)" aria-label="Volver">
-        <ion-icon name="arrow-back-outline" slot="icon-only"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-    <ion-title>{{ selectedProvider ? 'Perfil del Proveedor' : 'Directorio de Proveedores' }}</ion-title>
-    <ion-buttons slot="end">
-      <ion-button
-        *ngIf="!selectedProvider"
-        fill="clear"
-        (click)="refresh()"
-        [disabled]="loading"
-        aria-label="Actualizar"
-        class="btn-refresh"
-      >
-        <ion-icon name="sync-outline" slot="icon-only" [class.spin]="loading"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+﻿<app-site-header></app-site-header>
 
-<ion-content class="providers-page">
-  <ng-container *ngIf="!selectedProvider; else providerDetailView">
-    <div class="providers-shell">
-      <section class="providers-summary">
-        <div class="summary-head">
-          <h1>Red de proveedores Company Care</h1>
-          <p>Encuentra y gestiona servicios verificados con filtros de ubicación, precio y calidad.</p>
+<main class="bg-slate-50 min-h-screen block pt-20 pb-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <section class="flex items-start justify-between gap-4 mb-8">
+      <div class="flex items-start gap-4">
+        <div class="bg-green-100 text-green-600 p-4 rounded-xl flex-shrink-0 flex items-center justify-center" aria-hidden="true">
+          <mat-icon style="font-size: 40px; width: 40px; height: 40px;">verified_user</mat-icon>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold text-slate-800">Proveedores Verificados</h1>
+          <p class="mt-1 text-lg text-slate-600">Encuentra residencias, cuidadores y servicios de confianza.</p>
+        </div>
+      </div>
+      <button (click)="refresh()" [disabled]="loading" class="p-2 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors flex items-center justify-center" title="Actualizar proveedores">
+        <mat-icon [class.animate-spin]="loading">refresh</mat-icon>
+      </button>
+    </section>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
+      <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+        <mat-icon class="text-indigo-500 mb-1">business</mat-icon>
+        <div class="text-2xl font-bold text-slate-800">{{ totalProviders }}</div>
+        <div class="text-xs text-slate-500">Total Proveedores</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+        <mat-icon class="text-green-500 mb-1">verified_user</mat-icon>
+        <div class="text-2xl font-bold text-slate-800">{{ verifiedCount }}</div>
+        <div class="text-xs text-slate-500">Verificados</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+        <mat-icon class="text-amber-400 mb-1">star</mat-icon>
+        <div class="text-2xl font-bold text-slate-800">{{ averageRating }}</div>
+        <div class="text-xs text-slate-500">Rating Promedio</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+        <mat-icon class="text-blue-500 mb-1">reviews</mat-icon>
+        <div class="text-2xl font-bold text-slate-800">{{ totalReviews | number }}</div>
+        <div class="text-xs text-slate-500">Reseñas</div>
+      </div>
+    </div>
+
+    <div class="lg:grid lg:grid-cols-4 lg:gap-8">
+      <aside class="lg:col-span-1 mb-8 lg:mb-0">
+        <div class="sticky top-24 bg-white p-6 rounded-lg shadow-sm border border-slate-200 space-y-6">
+          <h2 class="text-lg font-semibold text-slate-800 -mt-1">Filtros</h2>
+          <div class="mb-4">
+            <label for="search" class="block text-sm font-medium text-slate-700 mb-1">Buscar por nombre</label>
+            <input id="search" type="text" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border outline-none" [(ngModel)]="q" (ngModelChange)="applyFilters()" placeholder="Ej: Residencia Los Álamos" />
+          </div>
+          <div class="mb-4">
+            <label for="type" class="block text-sm font-medium text-slate-700 mb-1">Tipo de proveedor</label>
+            <select id="type" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border outline-none" [(ngModel)]="type" (ngModelChange)="applyFilters()">
+              <option value="Todos">Todos los tipos</option>
+              <option *ngFor="let t of types" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label for="sortBy" class="block text-sm font-medium text-slate-700 mb-1">Ordenar por</label>
+            <select id="sortBy" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border outline-none" [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
+              <option *ngFor="let opt of sortOptions" [value]="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label for="maxPrice" class="block text-sm font-medium text-slate-700 mb-1">Precio máximo: <span class="font-semibold">{{ priceLabel(maxPrice) }}</span></label>
+            <input id="maxPrice" type="range" class="w-full accent-indigo-600" min="500000" max="5000000" step="100000" [ngModel]="maxPrice" (ngModelChange)="maxPrice = $event; applyFilters()" />
+          </div>
+          <div class="mb-4">
+            <label class="flex items-center">
+              <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded" [(ngModel)]="verifiedOnly" (ngModelChange)="applyFilters()" />
+              <span class="ml-2 text-sm text-slate-600">Mostrar solo verificados</span>
+            </label>
+          </div>
+        </div>
+      </aside>
+
+      <div class="lg:col-span-3">
+        <div *ngIf="loading" class="text-center py-16">
+          <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
         </div>
 
-        <div class="summary-kpis">
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--blue">
-              <ion-icon name="business-outline"></ion-icon>
-            </div>
-            <div class="kpi-card__info">
-              <div class="kpi-card__value">{{ totalProviders }}</div>
-              <div class="kpi-card__label">Activos</div>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--green">
-              <ion-icon name="checkmark-circle-outline"></ion-icon>
-            </div>
-            <div class="kpi-card__info">
-              <div class="kpi-card__value">{{ verifiedCount }}</div>
-              <div class="kpi-card__label">Verificados</div>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--yellow">
-              <ion-icon name="star-outline"></ion-icon>
-            </div>
-            <div class="kpi-card__info">
-              <div class="kpi-card__value">{{ averageRating }}</div>
-              <div class="kpi-card__label">Rating General</div>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--purple">
-              <ion-icon name="chatbubbles-outline"></ion-icon>
-            </div>
-            <div class="kpi-card__info">
-              <div class="kpi-card__value">{{ totalReviews | number }}</div>
-              <div class="kpi-card__label">Reseñas</div>
-            </div>
-          </div>
+        <div *ngIf="!loading && error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+          <strong class="font-bold">Error:</strong>
+          <span class="block sm:inline">{{ error }}</span>
         </div>
-      </section>
 
-      <div class="providers-layout">
-        <aside class="filters-sidebar">
-          <div class="filters-card">
-            <div class="filters-card__header">
-              <ion-icon name="options-outline"></ion-icon>
-              <h2>Filtros</h2>
-            </div>
-
-            <div class="filter-group">
-              <ion-searchbar mode="ios" [(ngModel)]="q" (ngModelChange)="applyFilters()" placeholder="Buscar proveedor, comuna..."></ion-searchbar>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label">Tipo de servicio</label>
-              <ion-item class="filter-item" lines="none">
-                <ion-select [(ngModel)]="type" (ngModelChange)="applyFilters()" interface="popover" toggleIcon="chevron-down-outline">
-                  <ion-select-option value="Todos">Todos los servicios</ion-select-option>
-                  <ion-select-option *ngFor="let item of types" [value]="item">{{ item }}</ion-select-option>
-                </ion-select>
-              </ion-item>
-            </div>
-
-            <div class="filter-group">
-              <ion-item class="filter-item filter-item--toggle" lines="none">
-                <ion-label>Solo verificados</ion-label>
-                <ion-toggle [(ngModel)]="verifiedOnly" (ngModelChange)="applyFilters()" color="success"></ion-toggle>
-              </ion-item>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label">Presupuesto máximo</label>
-              <div class="range-display">{{ maxPrice | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
-              <ion-range [(ngModel)]="maxPrice" (ngModelChange)="applyFilters()" min="10000" max="3000000" step="10000" color="primary"></ion-range>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label">Ordenar por</label>
-              <ion-item class="filter-item" lines="none">
-                <ion-select [(ngModel)]="sortBy" (ngModelChange)="applyFilters()" interface="popover" toggleIcon="chevron-down-outline">
-                  <ion-select-option *ngFor="let item of sortOptions" [value]="item.value">
-                    {{ item.label }}
-                  </ion-select-option>
-                </ion-select>
-              </ion-item>
-            </div>
+        <div *ngIf="!loading && !error">
+          <div class="text-sm text-slate-500 mb-4" *ngIf="filteredProviders.length > 0">
+            Mostrando {{ visibleProviders.length }} de {{ filteredProviders.length }} proveedores.
           </div>
-        </aside>
-
-        <section class="providers-results">
-          <div class="results-head">
-            <h2>Mostrando {{ visibleProviders.length }} de {{ filteredProviders.length }} resultados</h2>
+          <div *ngIf="filteredProviders.length === 0" class="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg">
+            <mat-icon style="font-size: 48px; width: 48px; height: 48px;" class="mx-auto text-slate-400">search</mat-icon>
+            <h3 class="mt-2 text-lg font-medium text-slate-900">No se encontraron proveedores</h3>
+            <p class="mt-1 text-sm text-slate-500">Intenta ajustar los filtros o el término de búsqueda.</p>
           </div>
 
-          <div class="state-box state-box--loading" *ngIf="loading">
-            <ion-spinner name="crescent" color="primary"></ion-spinner>
-            <span>Cargando directorio...</span>
-          </div>
-
-          <div class="state-box state-box--error" *ngIf="!loading && error">
-            <ion-icon name="warning-outline"></ion-icon>
-            <span>{{ error }}</span>
-          </div>
-
-          <div class="state-box state-box--empty" *ngIf="!loading && !error && filteredProviders.length === 0">
-            <ion-icon name="search-outline"></ion-icon>
-            <h3>No hay resultados</h3>
-            <p>Intenta ajustar tus filtros de búsqueda.</p>
-          </div>
-
-          <div class="provider-grid" *ngIf="!loading && !error && filteredProviders.length > 0">
-            <article
-              class="provider-card"
-              *ngFor="let provider of visibleProviders; trackBy: trackById"
-              (click)="openProvider(provider)"
-              tabindex="0"
-              role="button"
-              (keydown.enter)="openProvider(provider)"
-            >
-              <div class="provider-card__image" [class.is-placeholder]="!provider.imageUrl">
-                <img *ngIf="provider.imageUrl" [src]="provider.imageUrl" [alt]="provider.name" loading="lazy" />
-                <span *ngIf="!provider.imageUrl">{{ provider.name.slice(0, 1).toUpperCase() }}</span>
-                <div class="provider-card__badge-overlay" *ngIf="provider.verified">
-                  <ion-icon name="shield-checkmark"></ion-icon> Verificado
-                </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <article *ngFor="let p of visibleProviders; trackBy: trackById" (click)="openProvider(p)" class="bg-white rounded-lg shadow-sm border border-slate-200 group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col">
+              <div class="relative">
+                <img [src]="p.imageUrl || 'assets/placeholder-provider.png'" alt="{{ p.name }}" class="w-full h-40 object-cover rounded-t-lg" />
+                <span *ngIf="p.verified" class="absolute top-3 right-3 bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                  <mat-icon style="font-size: 16px; width: 16px; height: 16px;">verified_user</mat-icon>
+                  Verificado
+                </span>
               </div>
-
-              <div class="provider-card__content">
-                <div class="provider-card__header">
-                  <h3>{{ provider.name }}</h3>
-                  <div class="provider-card__rating">
-                    <ion-icon name="star"></ion-icon>
-                    <span><strong>{{ provider.rating | number: '1.1-1' }}</strong> ({{ provider.reviews }})</span>
+              <div class="p-5 flex-grow flex flex-col">
+                <div class="flex-grow">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600 mb-1">{{ p.type }}</p>
+                  <h3 class="text-lg font-bold text-slate-800 group-hover:text-indigo-700 line-clamp-2" [title]="p.name">{{ p.name }}</h3>
+                  <p class="text-sm text-slate-500 mb-2">{{ p.area }}</p>
+                  <div class="flex items-center gap-1 text-sm">
+                    <mat-icon style="font-size: 16px; width: 16px; height: 16px;" class="text-amber-400">star</mat-icon>
+                    <span class="font-bold text-slate-700">{{ p.rating }}</span>
+                    <span class="text-slate-500">({{ p.reviews }} reseñas)</span>
                   </div>
                 </div>
-
-                <div class="provider-card__tags">
-                  <span class="tag">{{ provider.type }}</span>
-                  <span class="tag"><ion-icon name="location-outline"></ion-icon> {{ provider.area }}</span>
-                </div>
-
-                <p class="provider-card__desc">
-                  {{ provider.description || 'Proveedor validado para apoyo y gestión de cuidado.' }}
-                </p>
-
-                <div class="provider-card__footer">
-                  <div class="price-block">
-                    <span class="price-label">Tarifa desde</span>
-                    <span class="price-value">{{ priceLabel(provider.priceFrom).replace('Desde ', '') }}</span>
-                  </div>
-
-                  <div class="fake-btn-view">
-                    Ver perfil <ion-icon name="arrow-forward-outline"></ion-icon>
-                  </div>
+                <div class="mt-4 pt-4 border-t border-slate-200 text-right">
+                  <span class="text-lg font-bold text-slate-800">{{ priceLabel(p.priceFrom) }}</span>
                 </div>
               </div>
             </article>
           </div>
 
-          <div class="results-load-more" *ngIf="!loading && !error && canLoadMore">
-            <ion-button fill="outline" (click)="loadMore()">Cargar 24 más</ion-button>
-            <span>{{ filteredProviders.length - visibleProviders.length }} pendientes</span>
-          </div>
-
-          <ion-infinite-scroll
-            *ngIf="!loading && !error"
-            threshold="140px"
-            [disabled]="!canLoadMore"
-            (ionInfinite)="loadMore($event)"
-          >
-            <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más proveedores..."></ion-infinite-scroll-content>
-          </ion-infinite-scroll>
-        </section>
-      </div>
-    </div>
-  </ng-container>
-
-  <ng-template #providerDetailView>
-    <div class="provider-detail-page" *ngIf="selectedProvider" (click)="$event.stopPropagation()">
-      <div class="detail-panel-content">
-        <div class="detail-panel-main">
-          <section class="detail-overview">
-            <div class="detail-provider-header">
-              <div class="detail-provider-header__main">
-                <h2>{{ selectedProvider.name }}</h2>
-
-                <div class="detail-provider-header__tags">
-                  <span class="tag tag--verified" *ngIf="selectedProvider.verified">
-                    <ion-icon name="shield-checkmark"></ion-icon> Verificado
-                  </span>
-                  <span class="tag">{{ selectedProvider.type }}</span>
-                  <span class="tag"><ion-icon name="location-outline"></ion-icon> {{ selectedProvider.area }}</span>
-                </div>
-
-                <div class="detail-provider-header__meta" *ngIf="selectedProvider.reviews > 0">
-                  <span class="detail-provider-header__rating">
-                    <ion-icon name="star"></ion-icon>
-                    {{ selectedProvider.rating | number: '1.1-1' }}
-                  </span>
-                  <button
-                    *ngIf="selectedProvider.placeId"
-                    type="button"
-                    class="detail-provider-header__link"
-                    (click)="openMap(selectedProvider); $event.stopPropagation()"
-                  >
-                    {{ selectedProvider.reviews | number }} opiniones
-                  </button>
-                  <span *ngIf="!selectedProvider.placeId">{{ selectedProvider.reviews | number }} opiniones</span>
-                </div>
-              </div>
-
-              <div class="detail-provider-header__actions">
-                <button
-                  *ngIf="selectedProvider.website"
-                  type="button"
-                  class="detail-provider-header__action"
-                  (click)="openExternal(selectedProvider.website); $event.stopPropagation()"
-                >
-                  <ion-icon name="globe-outline"></ion-icon>
-                  Sitio web
-                </button>
-                <button
-                  *ngIf="selectedProvider.placeId || selectedProvider.address"
-                  type="button"
-                  class="detail-provider-header__action"
-                  (click)="openMap(selectedProvider); $event.stopPropagation()"
-                >
-                  <ion-icon name="navigate-outline"></ion-icon>
-                  Ubicación
-                </button>
-              </div>
-            </div>
-
-            <div class="detail-gallery-empty" *ngIf="selectedProviderImages.length === 0">
-              {{ selectedProvider.name.slice(0,1).toUpperCase() }}
-            </div>
-
-            <div
-              class="detail-gallery-mosaic"
-              *ngIf="selectedProviderImages.length > 0"
-              [class.detail-gallery-mosaic--single]="selectedProviderImages.length === 1"
-              [class.detail-gallery-mosaic--double]="selectedProviderImages.length === 2"
+          <!-- Paginación -->
+          <div *ngIf="totalPages > 1" class="providers-pagination">
+            <button
+              type="button"
+              (click)="prevPage()"
+              [disabled]="currentPage === 1"
+              class="providers-pagination__nav"
             >
-              <button
-                type="button"
-                class="detail-gallery-mosaic__main"
-                (click)="openExternal(selectedProviderImages[0]); $event.stopPropagation()"
-                [attr.aria-label]="'Abrir imagen principal de ' + selectedProvider.name"
-              >
-                <img
-                  [src]="selectedProviderImages[0]"
-                  [alt]="selectedProvider.name"
-                  (error)="removeSelectedImage(0)"
-                />
-              </button>
+              Anterior
+            </button>
 
-              <div class="detail-gallery-mosaic__side" *ngIf="selectedProviderImages.length > 1">
-                <button
-                  type="button"
-                  class="detail-gallery-mosaic__secondary"
-                  *ngFor="let image of selectedProviderImages.slice(1, 3); let index = index"
-                  (click)="openExternal(image); $event.stopPropagation()"
-                  [attr.aria-label]="'Abrir imagen ' + (index + 2) + ' de ' + selectedProvider.name"
-                >
-                  <img
-                    [src]="image"
-                    [alt]="selectedProvider.name + ' imagen ' + (index + 2)"
-                    (error)="removeSelectedImage(index + 1)"
-                  />
-                </button>
-              </div>
-            </div>
+            <button
+              *ngFor="let p of pages"
+              type="button"
+              (click)="goToPage(p)"
+              class="providers-pagination__page"
+              [class.is-active]="currentPage === p"
+            >
+              {{ p }}
+            </button>
 
-            <div class="detail-gallery-strip" *ngIf="selectedProviderImages.length > 3">
-              <button
-                type="button"
-                class="detail-gallery-strip__item"
-                *ngFor="let image of selectedProviderImages.slice(3, 7); let index = index"
-                (click)="openExternal(image); $event.stopPropagation()"
-                [attr.aria-label]="'Abrir imagen adicional de ' + selectedProvider.name"
-              >
-                <img
-                  [src]="image"
-                  [alt]="selectedProvider.name + ' imagen adicional'"
-                  (error)="removeSelectedImage(index + 3)"
-                />
-              </button>
-            </div>
-          </section>
-
-          <div class="detail-section-card">
-            <h3>Acerca de</h3>
-            <p>{{ selectedProvider.description || 'Proveedor verificado por Company Care con foco en calidad y seguimiento.' }}</p>
-          </div>
-
-          <div class="detail-section-card" *ngIf="selectedProvider.placeId || selectedProvider.reviews > 0">
-            <h3>Reseñas</h3>
-            <p *ngIf="selectedProvider.placeId; else noReviewsCopy">
-              Las reseñas completas no están almacenadas en Company Care. Si existen, puedes revisarlas directamente en Google Maps.
-            </p>
-            <ng-template #noReviewsCopy>
-              <p>No hay reseñas detalladas disponibles para este proveedor.</p>
-            </ng-template>
-
-            <div class="detail-review-summary" *ngIf="selectedProvider.reviews > 0">
-              <div class="detail-review-summary__score">
-                <strong>{{ selectedProvider.rating | number: '1.1-1' }}</strong>
-                <span>{{ selectedProvider.reviews | number }} valoraciones registradas</span>
-              </div>
-              <ion-button
-                *ngIf="selectedProvider.placeId"
-                fill="outline"
-                shape="round"
-                (click)="openMap(selectedProvider); $event.stopPropagation()"
-              >
-                <ion-icon name="logo-google" slot="start"></ion-icon>
-                Ver en Google Maps
-              </ion-button>
-            </div>
+            <button
+              type="button"
+              (click)="nextPage()"
+              [disabled]="currentPage === totalPages"
+              class="providers-pagination__nav"
+            >
+              Siguiente
+            </button>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div class="detail-panel-side">
-          <div class="detail-action-card">
-            <div class="price-big">{{ priceLabel(selectedProvider.priceFrom) }}</div>
-            <div class="availability">
-              <ion-icon name="calendar-outline"></ion-icon>
-              Disponibilidad: <strong>{{ selectedProvider.availability }}</strong>
-            </div>
+    <!-- Modal de detalles del proveedor -->
+    <div *ngIf="selectedProvider" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" (click)="closeProvider()">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
+        <header class="p-4 border-b flex justify-between items-center flex-shrink-0">
+          <h2 class="text-lg font-semibold text-slate-800">{{ selectedProvider.name }}</h2>
+          <button (click)="closeProvider()" class="p-1 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
 
-          <div class="provider-contact-list">
-
-  <button
-    type="button"
-    class="contact-row"
-    (click)="openMap(selectedProvider); $event.stopPropagation()"
-    [disabled]="!selectedProvider.address && !selectedProvider.placeId"
-  >
-    <ion-icon name="location-outline"></ion-icon>
-    <span>{{ selectedProvider.address || 'Dirección no informada' }}</span>
-  </button>
-
-  <button
-    type="button"
-    class="contact-row"
-    (click)="openPhone(selectedProvider.phone); $event.stopPropagation()"
-    [disabled]="!selectedProvider.phone"
-  >
-    <ion-icon name="call-outline"></ion-icon>
-    <span>{{ selectedProvider.phone || 'Teléfono no informado' }}</span>
-  </button>
-
-  <button
-    type="button"
-    class="contact-row"
-    (click)="openEmail(selectedProvider.email); $event.stopPropagation()"
-    [disabled]="!selectedProvider.email"
-  >
-    <ion-icon name="mail-outline"></ion-icon>
-    <span>{{ selectedProvider.email || 'Email no informado' }}</span>
-  </button>
-
-</div>
-
-            <ion-button expand="block" shape="round" color="primary" class="ion-margin-top"
-              (click)="openExternal(selectedProvider.website)"
-              [disabled]="!selectedProvider.website">
-              Visitar sitio web
-            </ion-button>
-            <ion-button expand="block" shape="round" fill="outline" class="ion-margin-top"
-              (click)="openMap(selectedProvider)"
-              [disabled]="!selectedProvider.address && !selectedProvider.placeId">
-              <ion-icon name="navigate-outline" slot="start"></ion-icon>
-              Ver ubicación
-            </ion-button>
-          </div>
-
-          <div class="detail-score-card">
-            <div class="score-header">
-              <div class="score-big">{{ selectedProvider.rating | number: '1.1-1' }}</div>
-              <div class="score-meta">
-                <div class="stars-static">
-                  <ion-icon name="star"></ion-icon>
-                  <ion-icon name="star"></ion-icon>
-                  <ion-icon name="star"></ion-icon>
-                  <ion-icon name="star"></ion-icon>
-                  <ion-icon name="star-half"></ion-icon>
+        <div class="overflow-y-auto">
+          <div class="grid grid-cols-1 md:grid-cols-3">
+            <div class="md:col-span-2">
+              <img [src]="selectedProvider.imageUrl || 'assets/placeholder-provider.png'" alt="{{ selectedProvider.name }}" class="w-full h-64 object-cover" />
+              <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                  <div>
+                    <p class="text-sm font-semibold uppercase tracking-wider text-indigo-600">{{ selectedProvider.type }}</p>
+                    <h1 class="text-2xl font-bold text-slate-800">{{ selectedProvider.name }}</h1>
+                    <p class="text-base text-slate-500">{{ selectedProvider.area }}</p>
+                  </div>
+                  <span *ngIf="selectedProvider.verified" class="bg-green-100 text-green-800 text-sm font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                    <mat-icon style="font-size: 16px; width: 16px; height: 16px;">verified_user</mat-icon>
+                    Verificado
+                  </span>
                 </div>
-                <span>{{ selectedProvider.reviews | number }} valoraciones</span>
+                <p class="text-slate-600 leading-relaxed">{{ selectedProvider.description || 'No hay descripción disponible.' }}</p>
               </div>
             </div>
-            <div class="detail-bars">
-              <div class="detail-bars__row" *ngFor="let item of selectedProviderDistribution">
-                <span>{{ item.stars }}</span>
-                <ion-progress-bar color="warning"
-                  [value]="selectedProvider.reviews ? item.value / selectedProvider.reviews : 0">
-                </ion-progress-bar>
+
+            <div class="md:col-span-1 bg-slate-50 border-l border-slate-200 p-6 space-y-6">
+              <div>
+                <h3 class="font-semibold text-slate-800 mb-2">Rating y Reseñas</h3>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="text-4xl font-bold">{{ selectedProvider.rating }}</div>
+                  <div>
+                    <div class="flex">
+                      <mat-icon *ngFor="let i of [1,2,3,4,5]" style="font-size: 20px; width: 20px; height: 20px;" class="text-amber-400">
+                        {{ i <= selectedProvider.rating ? 'star' : 'star_border' }}
+                      </mat-icon>
+                    </div>
+                    <div class="text-xs text-slate-500">{{ selectedProvider.reviews }} reseñas</div>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <div *ngFor="let item of selectedProviderDistribution" class="flex items-center gap-2 text-xs">
+                    <span class="w-8 text-slate-500">{{ item.stars }} est.</span>
+                    <div class="w-full bg-slate-200 rounded-full h-2">
+                      <div class="bg-amber-400 h-2 rounded-full" [style.width.%]="(item.value / (selectedProvider.reviews || 1)) * 100"></div>
+                    </div>
+                    <span class="w-8 text-right text-slate-500">{{ item.value }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="font-semibold text-slate-800 mb-2">Contacto</h3>
+                <div class="space-y-3 text-sm">
+                  <button *ngIf="selectedProvider.phone" (click)="openPhone(selectedProvider.phone)" class="flex items-center gap-3 hover:text-indigo-600 w-full text-left">
+                    <mat-icon style="font-size: 20px; width: 20px; height: 20px;" class="text-slate-400">call</mat-icon>
+                    <span>{{ selectedProvider.phone }}</span>
+                  </button>
+                  <button *ngIf="selectedProvider.email" (click)="openEmail(selectedProvider.email)" class="flex items-center gap-3 hover:text-indigo-600 w-full text-left">
+                    <mat-icon style="font-size: 20px; width: 20px; height: 20px;" class="text-slate-400">mail</mat-icon>
+                    <span>{{ selectedProvider.email }}</span>
+                  </button>
+                  <button *ngIf="selectedProvider.website" (click)="openExternal(selectedProvider.website)" class="flex items-center gap-3 hover:text-indigo-600 w-full text-left">
+                    <mat-icon style="font-size: 20px; width: 20px; height: 20px;" class="text-slate-400">language</mat-icon>
+                    <span>Sitio web</span>
+                  </button>
+                  <button *ngIf="selectedProvider.address" (click)="openMap(selectedProvider)" class="flex items-center gap-3 hover:text-indigo-600 w-full text-left">
+                    <mat-icon style="font-size: 20px; width: 20px; height: 20px;" class="text-slate-400">location_on</mat-icon>
+                    <span>{{ selectedProvider.address }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div *ngIf="selectedProvider.images.length > 1">
+                <h3 class="font-semibold text-slate-800 mb-2">Galería</h3>
+                <div class="grid grid-cols-3 gap-2">
+                  <img *ngFor="let img of selectedProvider.images" [src]="img" class="w-full h-16 object-cover rounded-md" alt="Galería de {{ selectedProvider.name }}" />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </ng-template>
-</ion-content>
+  </div>
+</main>
+<app-site-footer></app-site-footer>

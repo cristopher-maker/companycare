@@ -3,21 +3,18 @@ import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 import { registerLocaleData } from '@angular/common';
 import localeEsCl from '@angular/common/locales/es-CL';
-
-import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
+import { MatIconModule } from '@angular/material/icon';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 registerLocaleData(localeEsCl);
 
 @NgModule({
   declarations: [AppComponent],
-  imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule],
-  providers: [
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    { provide: LOCALE_ID, useValue: 'es-CL' },
-  ],
+  imports: [BrowserModule, AppRoutingModule, MatIconModule],
+  providers: [{ provide: LOCALE_ID, useValue: 'es-CL' }, provideAnimationsAsync()],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

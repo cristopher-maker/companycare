@@ -1,38 +1,33 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { UiService } from '../../core/services/ui.service';
 
 type CareRequestRow = {
   id: string;
-  channel: string;
   topic: string;
-  status: string;
+  channel: string;
+  status: 'open' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
   created_at: string;
-  details: string | null;
-  appointment?: {
-    kind: string;
-    scheduled_for: string;
-    meeting_code: string | null;
-    status: string;
-  } | null;
 };
 
 @Component({
   selector: 'app-requests',
   templateUrl: './requests.page.html',
   styleUrls: ['./requests.page.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class RequestsPage implements OnInit, OnDestroy {
   public loading = true;
   public error: string | null = null;
   public items: CareRequestRow[] = [];
+  public currentPage = 1;
+  public readonly pageSize = 6;
 
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
   constructor(
     private readonly supabase: SupabaseService,
-    private readonly router: Router
+    public readonly ui: UiService
   ) {}
 
   public ngOnInit(): void {
@@ -48,127 +43,94 @@ export class RequestsPage implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    const { data: sessionData, error: sessionError } = await this.supabase.client.auth.getSession();
-    if (sessionError) {
-      this.loading = false;
-      this.error = sessionError.message;
-      return;
-    }
-
+    const { data: sessionData } = await this.supabase.client.auth.getSession();
     const userId = sessionData.session?.user?.id;
     if (!userId) {
-      this.loading = false;
       this.items = [];
+      this.loading = false;
       return;
     }
 
     try {
-      const { data: profile, error: profileError } = await this.supabase.client
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
+      const { data, error } = await this.supabase.client
+        .from('care_requests')
+        .select('id, topic, channel, status, created_at')
+        .eq('employee_id', userId)
+        .order('created_at', { ascending: false });
 
-      if (profileError) throw profileError;
-
-      const role = profile?.role as string | undefined;
-      if (role === 'company_admin' || role === 'manager') {
-        await this.router.navigateByUrl('/company');
-        this.loading = false;
-        this.items = [];
-        return;
-      }
-    } catch {
+      if (error) throw error;
+      this.items = (data ?? []) as CareRequestRow[];
+      const totalPages = this.totalPages;
+      if (this.currentPage > totalPages) this.currentPage = totalPages;
+    } catch (err: any) {
+      this.error = err.message;
+    } finally {
       this.loading = false;
-      this.error = 'No se pudo validar el acceso.';
-      return;
-    }
-
-    const { data, error } = await this.supabase.client
-      .from('care_requests')
-      .select('id, channel, topic, status, created_at, details')
-      .eq('employee_id', userId)
-      .order('created_at', { ascending: false });
-
-    this.loading = false;
-    if (error) {
-      this.error = error.message;
-      return;
-    }
-
-    const requests = (data ?? []) as CareRequestRow[];
-    const requestIds = requests.map((item) => item.id);
-
-    if (!requestIds.length) {
-      this.items = [];
-      return;
-    }
-
-    const { data: appointments } = await this.supabase.client
-      .from('appointments')
-      .select('request_id, kind, scheduled_for, meeting_code, status')
-      .in('request_id', requestIds)
-      .order('scheduled_for', { ascending: true });
-
-    const appointmentByRequestId = new Map<string, CareRequestRow['appointment']>();
-    for (const appointment of appointments ?? []) {
-      const requestId = appointment.request_id as string | null;
-      if (!requestId || appointmentByRequestId.has(requestId)) {
-        continue;
-      }
-
-      appointmentByRequestId.set(requestId, {
-        kind: (appointment.kind as string) ?? 'Sesión',
-        scheduled_for: appointment.scheduled_for as string,
-        meeting_code: (appointment.meeting_code as string | null | undefined) ?? null,
-        status: (appointment.status as string) ?? 'scheduled',
-      });
-    }
-
-    this.items = requests.map((item) => ({
-      ...item,
-      appointment: appointmentByRequestId.get(item.id) ?? null,
-    }));
-  }
-
-  public statusLabel(status: string): string {
-    switch (status) {
-      case 'open':
-        return 'Abierta';
-      case 'assigned':
-        return 'Asignada';
-      case 'in_progress':
-        return 'En progreso';
-      case 'resolved':
-        return 'Resuelta';
-      case 'closed':
-        return 'Cerrada';
-      default:
-        return status;
     }
   }
 
-  public appointmentStatusLabel(status: string): string {
-    switch (status) {
-      case 'scheduled':
-        return 'Agendada';
-      case 'confirmed':
-        return 'Confirmada';
-      case 'completed':
-        return 'Completada';
-      case 'cancelled':
-        return 'Cancelada';
-      default:
-        return status;
-    }
+  public statusLabel(status: CareRequestRow['status']): string {
+    const labels: Record<CareRequestRow['status'], string> = {
+      open: 'Abierto', assigned: 'Asignado', in_progress: 'En Progreso', resolved: 'Resuelto', closed: 'Cerrado',
+    };
+    return labels[status] ?? status;
   }
 
-  public detailPreview(details: string | null): string {
-    const value = details?.trim();
-    if (!value) {
-      return 'Sin contexto adicional informado.';
+  public statusClass(status: CareRequestRow['status']): string {
+    const classes: Record<CareRequestRow['status'], string> = {
+      open: 'request-card__status--open',
+      assigned: 'request-card__status--assigned',
+      in_progress: 'request-card__status--in-progress',
+      resolved: 'request-card__status--resolved',
+      closed: 'request-card__status--closed',
+    };
+    return classes[status] ?? 'request-card__status--closed';
+  }
+
+  public get openRequestsCount(): number {
+    return this.items.filter((item) => item.status === 'open' || item.status === 'assigned' || item.status === 'in_progress').length;
+  }
+
+  public get closedRequestsCount(): number {
+    return this.items.filter((item) => item.status === 'resolved' || item.status === 'closed').length;
+  }
+
+  public get totalPages(): number {
+    return Math.max(1, Math.ceil(this.items.length / this.pageSize));
+  }
+
+  public get pages(): number[] {
+    const maxPagesToShow = 7;
+    let start = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let end = Math.min(this.totalPages, start + maxPagesToShow - 1);
+
+    if (end - start + 1 < maxPagesToShow) {
+      start = Math.max(1, end - maxPagesToShow + 1);
     }
 
-    return value.length > 180 ? `${value.slice(0, 180)}...` : value;
+    const result: number[] = [];
+    for (let i = start; i <= end; i += 1) {
+      result.push(i);
+    }
+    return result;
+  }
+
+  public get visibleItems(): CareRequestRow[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.items.slice(start, start + this.pageSize);
+  }
+
+  public goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  public prevPage(): void {
+    this.goToPage(this.currentPage - 1);
+  }
+
+  public nextPage(): void {
+    this.goToPage(this.currentPage + 1);
   }
 }

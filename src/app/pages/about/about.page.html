@@ -1,35 +1,136 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Nosotros</ion-title>
-  </ion-toolbar>
-</ion-header>
+﻿<app-site-header></app-site-header>
 
-<ion-content class="ion-padding">
-  <ion-card>
-    <ion-card-header>
-      <ion-card-title>Quiénes somos</ion-card-title>
-    </ion-card-header>
-    <ion-card-content>
-      Escribir propuesta de Misión y Visión.
-    </ion-card-content>
-  </ion-card>
+<main class="pg about-page">
+  
+  <!-- HERO SECTION -->
+  <section class="about-hero" (mousemove)="onHeroPointerMove($event)" (mouseleave)="resetHeroParallax()">
+    <div class="about-hero-inner">
+      <div class="about-hero-copy">
+        <div class="section-kicker kicker-light">Nosotros</div>
+        <h1 class="about-h1">Cuidado senior con criterio humano, clínico y corporativo</h1>
+        <p class="about-desc">Reducimos el estrés de quienes cuidan a un ser querido y ayudamos a las empresas a convertir ese desafío en un beneficio real, visible y útil.</p>
 
-  <ion-list>
-    <ion-item>
-      <ion-label>
-        <h2>Misión</h2>
-        <p>Texto de misión.</p>
-      </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>
-        <h2>Visión</h2>
-        <p>Texto de visión.</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
-</ion-content>
+        <div class="about-hero-actions">
+          <a class="about-hero-cta" routerLink="/services">Ver servicios</a>
+          <a class="about-hero-link" routerLink="/contact">Hablar con el equipo</a>
+        </div>
 
+        <div class="about-hero-metrics">
+          <div class="about-hero-metric">
+            <span class="about-hero-metric__icon" aria-hidden="true">
+              <mat-icon>business</mat-icon>
+            </span>
+            <span class="about-hero-metric__copy">
+              <strong>200+</strong>
+              <span>empresas con foco en bienestar</span>
+            </span>
+          </div>
+          <div class="about-hero-metric">
+            <span class="about-hero-metric__icon" aria-hidden="true">
+              <mat-icon>hub</mat-icon>
+            </span>
+            <span class="about-hero-metric__copy">
+              <strong>1 red</strong>
+              <span>de expertos, recursos y proveedores</span>
+            </span>
+          </div>
+          <div class="about-hero-metric">
+            <span class="about-hero-metric__icon" aria-hidden="true">
+              <mat-icon>favorite</mat-icon>
+            </span>
+            <span class="about-hero-metric__copy">
+              <strong>1 misión</strong>
+              <span>hacer el cuidado menos abrumador</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="about-hero-visual"
+        aria-label="Acompañamiento de cuidado senior"
+        [style.--photo-x]="photoOffsetX"
+        [style.--photo-y]="photoOffsetY"
+      >
+        <div class="about-photo-card about-photo-card--main">
+          <img src="assets/img/about-us.jpg" alt="Profesional de salud orientando a una familia" />
+        </div>
+        <div class="about-hero-note">
+          <strong>Modelo de cuidado</strong>
+          <p>Orientación humana, criterio experto y seguimiento para cada caso.</p>
+        </div>
+        <div class="about-floating-quote" aria-label="Testimonio breve">
+          <span>Escuchados y apoyados</span>
+        
+        </div>
+        <div class="about-network-pill" aria-hidden="true">
+          <span class="about-network-pill__nodes">
+            <i></i>
+          </span>
+          <strong>Red activa</strong>
+          <small>expertos coordinados</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY SECTION -->
+  <section class="section about-story">
+    <div class="story-layout">
+      <div class="story-content">
+        <h2 class="section-h2">De una experiencia personal a una plataforma útil para miles de familias</h2>
+        <p>Company Care nació de la necesidad real de sus fundadores al enfrentar el desafío de cuidar a sus padres. La búsqueda de información confiable, proveedores de calidad y apoyo emocional era un verdadero laberinto.</p>
+        <p>Decidimos transformar esa dificultad en una oportunidad: crear una plataforma que centralice todo lo que un empleado cuidador necesita, respaldada por la experiencia clínica y la tecnología, devolviéndole la tranquilidad a las familias.</p>
+      </div>
+
+      <div class="story-aside">
+        <div class="story-quote">
+          <span class="story-quote__mark">“</span>
+          <p>Queremos que pedir orientación no se sienta como empezar desde cero cada vez.</p>
+        </div>
+        <div class="story-media-placeholder" aria-label="Acompañamiento cotidiano"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUES SECTION -->
+  <section class="section about-values">
+    <div class="text-center">
+      <div class="section-kicker">Pilares</div>
+      <h2 class="section-h2">Nuestros Valores</h2>
+    </div>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="value-icon coral"><mat-icon>favorite</mat-icon></div>
+        <h3 class="value-title">Empatía</h3>
+        <p class="value-desc">Entendemos el viaje del cuidador porque lo hemos vivido en primera persona.</p>
+      </div>
+      <div class="value-card">
+        <div class="value-icon teal"><mat-icon>verified_user</mat-icon></div>
+        <h3 class="value-title">Confianza</h3>
+        <p class="value-desc">Verificamos cada proveedor y recurso para tu absoluta tranquilidad.</p>
+      </div>
+      <div class="value-card">
+        <div class="value-icon amber"><mat-icon>lightbulb</mat-icon></div>
+        <h3 class="value-title">Claridad</h3>
+        <p class="value-desc">Simplificamos información compleja para que tomes decisiones informadas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM SECTION -->
+  <section class="section about-team">
+    <h2 class="section-h2 text-center">El Equipo</h2>
+    <div class="team-grid">
+      <div class="team-member">
+        <div class="team-avatar">CV</div>
+        <h4 class="team-name">Cristóbal Valenzuela</h4>
+        <p class="team-role">Co-Fundador & CEO</p>
+        <div class="team-photo-slot">Dirección y desarrollo de la plataforma</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<app-site-footer></app-site-footer>

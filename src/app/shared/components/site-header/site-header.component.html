@@ -1,0 +1,29 @@
+<header class="cc-nav" [class.cc-nav--scrolled]="isScrolled || (!isTransparentPage && !isLightPage)" [class.cc-nav--light]="isLightPage">
+  <div class="cc-nav-left">
+    <button *ngIf="auth.user" (click)="ui.toggleMenu()" class="cc-menu-btn" aria-label="Abrir menú">
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <div class="cc-brand" [routerLink]="auth.user ? '/dashboard' : '/home'">
+      <div class="cc-mark">CC</div>
+      <div class="cc-brand-text">
+        <div class="name">Company Care</div>
+        <div class="sub">by Senior Advisor</div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="cc-nav-links">
+    <li><a routerLink="/home" routerLinkActive="active-link">Inicio</a></li>
+    <li><a routerLink="/services" routerLinkActive="active-link">Servicios</a></li>
+    <li><a routerLink="/packages" routerLinkActive="active-link">Planes</a></li>
+    <li><a routerLink="/about" routerLinkActive="active-link">Nosotros</a></li>
+    <li><a routerLink="/contact" routerLinkActive="active-link">Contacto</a></li>
+  </ul>
+
+  <div class="cc-nav-actions">
+    <button *ngIf="!auth.user" class="btn-ghost" routerLink="/login">Ingresar</button>
+    <button *ngIf="!auth.user" class="btn-glow" routerLink="/register">Solicitar demo</button>
+    <button *ngIf="auth.user" class="btn-ghost" (click)="auth.signOut()">Cerrar sesión</button>
+  </div>
+</header>

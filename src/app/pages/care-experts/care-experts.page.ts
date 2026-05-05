@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService, ProfileRole } from '../../core/services/auth.service';
+import { UiService } from '../../core/services/ui.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 type SupportChannel = 'Chat' | 'Videollamada' | 'Llamada';
@@ -103,8 +104,10 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public advisorStep = 1;
   public profileRole: ProfileRole | null = null;
   public expertMode = false;
+  public hasBenefitAccess = false;
 
   public loading = false;
+  public error: string | null = null;
   public activeRequestId: string | null = null;
   public activeRequestChannel: SupportChannel | null = null;
   public messages: CareMessage[] = [];
@@ -114,6 +117,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public statusDraft: CareRequestStatus = 'open';
   public searchTerm = '';
   public requestFilter: ExpertFilter = 'all';
+  public expertActiveFilter: ExpertFilter = 'all';
   public availability: ExpertAvailability = 'online';
   public showExpertMenu = false;
   public showHistory = false;
@@ -125,6 +129,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public selectedTags: string[] = [];
   public employeeAppointments: AppointmentRow[] = [];
   public employeeTasks: CareTaskRow[] = [];
+  public saving = false;
   public selectedAppointments: AppointmentRow[] = [];
   public appointmentDate = '';
   public appointmentTime = '';
@@ -143,6 +148,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public readonly appointmentCalendarValue = this.minAppointmentDate;
   public resolvedToday = 0;
   public averageResponseMinutes = 0;
+  public overdueAppointmentsByRequestId: Record<string, number> = {};
+  public overdueTasksByRequestId: Record<string, number> = {};
   public readonly appointmentVideoSlots = [
     '09:00',
     '09:30',
@@ -192,6 +199,12 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     'Apoyo emocional y estrés',
     'Beneficios y financiación',
   ] as const;
+
+  public readonly expertFilterOptions: { value: ExpertFilter; label: string }[] = [
+    { value: 'all', label: 'Todos' },
+    { value: 'mine', label: 'Mis Casos' },
+    { value: 'open', label: 'Abiertos' },
+  ];
 
   public readonly expertStatuses: CareRequestStatus[] = [
     'open',
@@ -309,7 +322,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     public readonly auth: AuthService,
     private readonly supabase: SupabaseService,
     private readonly route: ActivatedRoute,
-    private readonly router: Router
+    private readonly router: Router,
+    public readonly ui: UiService
   ) {}
 
   public ngOnInit(): void {
@@ -320,8 +334,9 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     void this.teardownRealtime();
   }
 
-  public async submitRequest(): Promise<void> {
+  public async startRequest(): Promise<void> {
     if (this.expertMode) return;
+    if (!this.ensureBenefitAccess()) return;
     if (this.channel !== 'Chat') {
       alert('Por ahora solo está disponible el canal Chat (demo).');
       return;
@@ -339,7 +354,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       return;
     }
 
-    this.loading = true;
+    this.saving = true;
     try {
       const { data: requestRow, error: requestError } = await this.supabase.client
         .from('care_requests')
@@ -371,7 +386,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       console.error(err);
       alert(err?.message ?? 'No se pudo crear la solicitud.');
     } finally {
-      this.loading = false;
+      this.saving = false;
     }
   }
 
@@ -401,7 +416,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
 
     if (this.channel === 'Chat') {
-      await this.submitRequest();
+      await this.startRequest();
       return;
     }
 
@@ -434,6 +449,52 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
   }
 
+  public isAppointmentOverdue(appointment: AppointmentRow): boolean {
+    const activeStatus = appointment.status === 'scheduled' || appointment.status === 'confirmed';
+    return activeStatus && new Date(appointment.scheduled_for).getTime() < Date.now();
+  }
+
+  public hasOverdueAppointments(requestId: string | null | undefined): boolean {
+    if (!requestId) return false;
+    return (this.overdueAppointmentsByRequestId[requestId] ?? 0) > 0;
+  }
+
+  public hasOverdueTasks(requestId: string | null | undefined): boolean {
+    if (!requestId) return false;
+    return (this.overdueTasksByRequestId[requestId] ?? 0) > 0;
+  }
+
+  public isRequestStale(request: ExpertRequest | null | undefined): boolean {
+    if (!request) return false;
+    if (request.status === 'resolved' || request.status === 'closed') return false;
+
+    const lastActivityAt = new Date(request.updated_at || request.created_at).getTime();
+    const staleAfterHours = 24;
+    return Date.now() - lastActivityAt >= staleAfterHours * 60 * 60 * 1000;
+  }
+
+  public requestNeedsAttention(request: ExpertRequest | null | undefined): boolean {
+    if (!request?.id) return false;
+    return this.hasOverdueAppointments(request.id) || this.hasOverdueTasks(request.id) || this.isRequestStale(request);
+  }
+
+  public requestAttentionLabel(request: ExpertRequest | null | undefined): string {
+    if (!request?.id) return '';
+    const overdueAppointments = this.overdueAppointmentsByRequestId[request.id] ?? 0;
+    const overdueTasks = this.overdueTasksByRequestId[request.id] ?? 0;
+    const stale = this.isRequestStale(request);
+
+    if (overdueAppointments && overdueTasks) return 'Seguimiento vencido';
+    if (overdueAppointments) return overdueAppointments === 1 ? 'Cita vencida' : `${overdueAppointments} citas vencidas`;
+    if (overdueTasks) return overdueTasks === 1 ? 'Tarea vencida' : `${overdueTasks} tareas vencidas`;
+    if (stale) {
+      const lastActivityAt = new Date(request.updated_at || request.created_at).getTime();
+      const elapsedDays = Math.max(1, Math.floor((Date.now() - lastActivityAt) / (24 * 60 * 60 * 1000)));
+      return elapsedDays === 1 ? 'Sin seguimiento desde ayer' : `Sin seguimiento hace ${elapsedDays} días`;
+    }
+    return '';
+  }
+
   public taskStatusLabel(status: CareTaskStatus): string {
     switch (status) {
       case 'in_progress':
@@ -456,7 +517,17 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   }
 
   public get nextAppointment(): AppointmentRow | null {
-    return this.employeeAppointments[0] ?? null;
+    const now = Date.now();
+    return (
+      this.employeeAppointments
+        .filter(
+          (appointment) =>
+            (appointment.status === 'scheduled' || appointment.status === 'confirmed') &&
+            new Date(appointment.scheduled_for).getTime() >= now
+        )
+        .sort((left, right) => new Date(left.scheduled_for).getTime() - new Date(right.scheduled_for).getTime())[0] ??
+      null
+    );
   }
 
   public get visibleEmployeeTasks(): CareTaskRow[] {
@@ -536,6 +607,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
   public async scheduleAppointment(): Promise<void> {
     if (this.expertMode) return;
+    if (!this.ensureBenefitAccess()) return;
 
     const user = this.auth.user;
     if (!user) {
@@ -641,6 +713,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public async sendMessage(): Promise<void> {
     const requestId = this.activeRequestId;
     if (!requestId) return;
+    if (!this.expertMode && !this.ensureBenefitAccess()) return;
 
     const user = this.auth.user;
     if (!user) {
@@ -742,8 +815,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
   }
 
-  public setRequestFilter(filter: ExpertFilter): void {
-    this.requestFilter = filter;
+  public setExpertFilter(filter: ExpertFilter): void {
+    this.expertActiveFilter = filter;
   }
 
   public toggleExpertMenu(): void {
@@ -852,31 +925,39 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.showAttachmentMenu = false;
   }
 
-  public get filteredExpertRequests(): ExpertRequest[] {
+  public get expertFilteredItems(): ExpertRequest[] {
     const term = this.searchTerm.trim().toLowerCase();
-    return this.expertRequests.filter((request) => {
-      const matchesTerm =
-        !term ||
-        request.topic.toLowerCase().includes(term) ||
-        (request.employee_name ?? '').toLowerCase().includes(term) ||
-        (request.employee_email ?? '').toLowerCase().includes(term);
+    return this.expertRequests
+      .filter((request) => {
+        const matchesTerm =
+          !term ||
+          request.topic.toLowerCase().includes(term) ||
+          (request.employee_name ?? '').toLowerCase().includes(term) ||
+          (request.employee_email ?? '').toLowerCase().includes(term);
 
-      if (!matchesTerm) return false;
+        if (!matchesTerm) return false;
 
-      switch (this.requestFilter) {
-        case 'mine':
-          return request.assigned_expert_id === this.auth.user?.id;
-        case 'open':
-          return request.status === 'open';
-        case 'unread':
-          return request.status === 'open' && request.assigned_expert_id !== this.auth.user?.id;
-        default:
-          return true;
-      }
-    });
+        switch (this.expertActiveFilter) {
+          case 'mine':
+            return request.assigned_expert_id === this.auth.user?.id;
+          case 'open':
+            return request.status === 'open';
+          case 'unread':
+            return request.status === 'open' && request.assigned_expert_id !== this.auth.user?.id;
+          default:
+            return true;
+        }
+      })
+      .sort((left, right) => {
+        const leftAttention = this.requestNeedsAttention(left) ? 1 : 0;
+        const rightAttention = this.requestNeedsAttention(right) ? 1 : 0;
+        if (leftAttention !== rightAttention) return rightAttention - leftAttention;
+
+        return new Date(right.updated_at || right.created_at).getTime() - new Date(left.updated_at || left.created_at).getTime();
+      });
   }
 
-  public async selectExpertRequest(request: ExpertRequest): Promise<void> {
+  public async selectRequest(request: ExpertRequest): Promise<void> {
     this.selectedRequest = request;
     this.activeRequestId = request.id;
     this.activeRequestChannel = request.channel;
@@ -958,7 +1039,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   }
 
   private async bootstrap(): Promise<void> {
-const { data: sessionData } = await this.supabase.client.auth.getSession();
+    this.loading = true;
+    const { data: sessionData } = await this.supabase.client.auth.getSession();
 
     try {
       const role = await this.auth.getCurrentProfileRole();
@@ -970,8 +1052,17 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
 
       this.expertMode = role === 'care_expert' || role === 'admin';
       if (this.expertMode) {
+        this.hasBenefitAccess = true;
         await this.loadExpertPresence();
         await this.loadExpertRequests();
+        this.loading = false;
+        return;
+      }
+
+      this.hasBenefitAccess = await this.loadCurrentUserBenefitAccess(sessionData?.session?.user?.id ?? null);
+      if (!this.hasBenefitAccess) {
+        alert('Tu empresa necesita una suscripcion activa para solicitar Care Experts.');
+        await this.router.navigateByUrl('/dashboard');
         return;
       }
     } catch {
@@ -979,17 +1070,51 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
       return;
     }
 
-    this.route.queryParamMap.subscribe((params) => {
-      const requestId = params.get('request');
-      if (!requestId || requestId === this.activeRequestId) return;
-      void this.openRequest(requestId);
-    });
-
     await this.loadEmployeeAppointments();
     await this.loadEmployeeTasks();
+
+    let isInitialRender = true;
+    this.route.queryParamMap.subscribe((params) => {
+      const requestId = params.get('request');
+      if (!requestId || requestId === this.activeRequestId) {
+        if (isInitialRender) {
+          this.loading = false;
+          isInitialRender = false;
+        }
+        return;
+      }
+      isInitialRender = false;
+      void this.openRequest(requestId);
+    });
+  }
+
+  private ensureBenefitAccess(): boolean {
+    if (this.hasBenefitAccess) return true;
+    alert('Tu empresa necesita una suscripcion activa para usar Care Experts.');
+    return false;
+  }
+
+  private async loadCurrentUserBenefitAccess(userId: string | null): Promise<boolean> {
+    if (!userId) return false;
+
+    const { data: membership, error: membershipError } = await this.supabase.client
+      .from('company_members')
+      .select('company_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (membershipError || !membership?.company_id) return false;
+
+    const { data, error } = await this.supabase.client.rpc('can_company_use_benefits', {
+      target_company_id: membership.company_id,
+    });
+
+    if (error) return false;
+    return data === true;
   }
 
   private async openRequest(requestId: string): Promise<void> {
+    if (!this.expertMode && !this.ensureBenefitAccess()) return;
     this.loading = true;
     try {
       const { data, error } = await this.supabase.client
@@ -1158,6 +1283,8 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
 
     if (error) throw error;
 
+    const requestIds = (requests ?? []).map((request: any) => request.id as string).filter(Boolean);
+
     const employeeIds = Array.from(
       new Set((requests ?? []).map((request: any) => request.employee_id as string).filter(Boolean))
     );
@@ -1180,6 +1307,55 @@ const { data: sessionData } = await this.supabase.client.auth.getSession();
         ])
       );
     }
+
+    let overdueAppointmentsByRequestId: Record<string, number> = {};
+    let overdueTasksByRequestId: Record<string, number> = {};
+
+    if (requestIds.length) {
+      const [appointmentsResult, tasksResult] = await Promise.all([
+        this.supabase.client
+          .from('appointments')
+          .select('request_id, scheduled_for, status')
+          .in('request_id', requestIds),
+        this.supabase.client
+          .from('care_tasks')
+          .select('request_id, due_at, status')
+          .in('request_id', requestIds),
+      ]);
+
+      if (appointmentsResult.error) throw appointmentsResult.error;
+      if (tasksResult.error) throw tasksResult.error;
+
+      overdueAppointmentsByRequestId = ((appointmentsResult.data ?? []) as Array<{
+        request_id: string | null;
+        scheduled_for: string;
+        status: AppointmentStatus;
+      }>).reduce<Record<string, number>>((acc, appointment) => {
+        if (!appointment.request_id) return acc;
+        const isActive = appointment.status === 'scheduled' || appointment.status === 'confirmed';
+        const isOverdue = new Date(appointment.scheduled_for).getTime() < Date.now();
+        if (isActive && isOverdue) {
+          acc[appointment.request_id] = (acc[appointment.request_id] ?? 0) + 1;
+        }
+        return acc;
+      }, {});
+
+      overdueTasksByRequestId = ((tasksResult.data ?? []) as Array<{
+        request_id: string | null;
+        due_at: string | null;
+        status: CareTaskStatus;
+      }>).reduce<Record<string, number>>((acc, task) => {
+        if (!task.request_id || !task.due_at || task.status === 'done') return acc;
+        const isOverdue = new Date(task.due_at).getTime() < Date.now();
+        if (isOverdue) {
+          acc[task.request_id] = (acc[task.request_id] ?? 0) + 1;
+        }
+        return acc;
+      }, {});
+    }
+
+    this.overdueAppointmentsByRequestId = overdueAppointmentsByRequestId;
+    this.overdueTasksByRequestId = overdueTasksByRequestId;
 
     this.expertRequests = (requests ?? []).map((request: any) => {
       const profile = profilesById.get(request.employee_id as string);

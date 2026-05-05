@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 
+import { UiService } from '../../core/services/ui.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 type VoucherRow = {
@@ -25,7 +26,10 @@ export class VouchersPage implements OnInit, OnDestroy {
 
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    public readonly ui: UiService
+  ) {}
 
   public ngOnInit(): void {
     void this.refresh();
@@ -61,5 +65,27 @@ export class VouchersPage implements OnInit, OnDestroy {
 
     this.items = (data ?? []) as VoucherRow[];
   }
-}
 
+  public get percentageCount(): number {
+    return this.items.filter((item) => item.discount_type === 'percentage').length;
+  }
+
+  public get fixedAmountCount(): number {
+    return this.items.filter((item) => item.discount_type === 'fixed_amount').length;
+  }
+
+  public discountLabel(item: VoucherRow): string {
+    if (item.discount_type === 'percentage') {
+      return `${item.discount_value ?? 0}% OFF`;
+    }
+
+    const currency = item.currency || 'CLP';
+    const amount = new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(item.discount_value ?? 0);
+
+    return `${amount} OFF`;
+  }
+}

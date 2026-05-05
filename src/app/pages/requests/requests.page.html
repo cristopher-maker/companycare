@@ -1,63 +1,111 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Mis solicitudes</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="refresh()" [disabled]="loading">Actualizar</ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+<app-site-header></app-site-header>
 
-<ion-content class="requests-page">
-  <ion-card *ngIf="error">
-    <ion-card-header>
-      <ion-card-title>Error</ion-card-title>
-    </ion-card-header>
-    <ion-card-content>{{ error }}</ion-card-content>
-  </ion-card>
+<main class="requests-page">
+  <div class="requests-page__inner">
+    <section class="requests-hero">
+      <div class="requests-hero__mark" aria-hidden="true">
+        <mat-icon>content_paste</mat-icon>
+      </div>
+      <div class="requests-hero__copy">
+        <div class="requests-hero__eyebrow">Care Experts</div>
+        <h2>Seguimiento de tus solicitudes</h2>
+        <p>Revisa el estado de cada caso y retoma la conversacion cuando lo necesites.</p>
+      </div>
+      <button type="button" class="requests-hero__refresh" (click)="refresh()" [disabled]="loading" aria-label="Actualizar solicitudes">
+        <mat-icon
+          class="requests-hero__refresh-icon"
+          [class.requests-hero__refresh-icon--spinning]="loading"
+          aria-hidden="true"
+          >refresh</mat-icon
+        >
+        <span>Actualizar</span>
+      </button>
+    </section>
 
-  <ion-skeleton-text *ngIf="loading" animated="true" style="width: 100%; height: 120px"></ion-skeleton-text>
-
-  <div class="requests-shell" *ngIf="!loading && !error">
-    <div class="requests-list" *ngIf="items.length; else emptyRequests">
-      <article class="request-card" *ngFor="let r of items">
-        <div class="request-card__head">
-          <div>
-            <h2 class="request-card__title">{{ r.topic }}</h2>
-            <div class="request-card__meta">
-              <span>{{ r.channel }}</span>
-              <span>Estado: {{ statusLabel(r.status) }}</span>
-              <span>{{ r.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-          </div>
-          <ion-button fill="outline" [routerLink]="['/care-experts']" [queryParams]="{ request: r.id }">
-            Abrir
-          </ion-button>
-        </div>
-
-        <p class="request-card__details">{{ detailPreview(r.details) }}</p>
-
-        <div class="request-card__appointment" *ngIf="r.appointment as appointment">
-          <div class="request-card__appointment-title">Próxima cita</div>
-          <div class="request-card__appointment-meta">
-            <span>{{ appointment.kind }} · {{ appointment.scheduled_for | date: 'dd/MM/yyyy HH:mm' }}</span>
-            <span>{{ appointmentStatusLabel(appointment.status) }}</span>
-          </div>
-          <div class="request-card__appointment-code" *ngIf="appointment.meeting_code">
-            Código Meet: {{ appointment.meeting_code }}
-          </div>
-        </div>
+    <section class="requests-overview" *ngIf="!loading && items.length" aria-label="Resumen de solicitudes">
+      <article class="requests-overview__card">
+        <span>Total</span>
+        <strong>{{ items.length }}</strong>
       </article>
+      <article class="requests-overview__card">
+        <span>Activas</span>
+        <strong>{{ openRequestsCount }}</strong>
+      </article>
+      <article class="requests-overview__card">
+        <span>Cerradas</span>
+        <strong>{{ closedRequestsCount }}</strong>
+      </article>
+    </section>
+
+    <div *ngIf="loading" class="requests-state requests-state--loading">
+      <div class="requests-spinner" aria-hidden="true"></div>
+      <p>Cargando solicitudes...</p>
     </div>
 
-    <ng-template #emptyRequests>
-      <ion-card>
-        <ion-card-content>
-          Aún no tienes solicitudes. Puedes iniciar una en <a routerLink="/care-experts">Care Experts</a>.
-        </ion-card-content>
-      </ion-card>
-    </ng-template>
+    <div *ngIf="error" class="requests-state requests-state--error" role="alert">
+      <strong>Error:</strong>
+      <span>{{ error }}</span>
+    </div>
+
+    <div *ngIf="!loading && !error && !items.length" class="requests-state">
+      <mat-icon class="requests-state__icon" aria-hidden="true">forum</mat-icon>
+      <h3>No tienes solicitudes</h3>
+      <p>Puedes iniciar una nueva asesoria desde el dashboard o con un Care Expert.</p>
+      <a routerLink="/care-experts" class="requests-state__action">Iniciar asesoria</a>
+    </div>
+
+    <section *ngIf="!loading && items.length" class="requests-list" aria-label="Listado de solicitudes">
+      <a
+        *ngFor="let item of visibleItems"
+        [routerLink]="['/care-experts']"
+        [queryParams]="{ request: item.id }"
+        class="request-card"
+      >
+        <div class="request-card__main">
+          <div class="request-card__topic">{{ item.topic }}</div>
+          <div class="request-card__meta">
+            <span>{{ item.channel }}</span>
+            <span class="request-card__dot" aria-hidden="true"></span>
+            <span>{{ item.created_at | date: 'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <span class="request-card__status" [ngClass]="statusClass(item.status)">
+          {{ statusLabel(item.status) }}
+        </span>
+      </a>
+    </section>
+
+    <div *ngIf="!loading && totalPages > 1" class="requests-pagination">
+      <button
+        type="button"
+        class="requests-pagination__nav"
+        (click)="prevPage()"
+        [disabled]="currentPage === 1"
+      >
+        Anterior
+      </button>
+
+      <button
+        *ngFor="let page of pages"
+        type="button"
+        class="requests-pagination__page"
+        [class.is-active]="currentPage === page"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+
+      <button
+        type="button"
+        class="requests-pagination__nav"
+        (click)="nextPage()"
+        [disabled]="currentPage === totalPages"
+      >
+        Siguiente
+      </button>
+    </div>
   </div>
-</ion-content>
+</main>
+
+<app-site-footer></app-site-footer>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
@@ -28,7 +28,7 @@ type CourseDraft = {
   templateUrl: './training-admin.page.html',
   styleUrls: ['./training-admin.page.scss'],
 })
-export class TrainingAdminPage {
+export class TrainingAdminPage implements OnInit {
   public isStaff = false;
   public loading = true;
   public saving = false;
@@ -42,7 +42,7 @@ export class TrainingAdminPage {
     private readonly supabase: SupabaseService
   ) {}
 
-  public async ionViewWillEnter(): Promise<void> {
+  public async ngOnInit(): Promise<void> {
     await this.load();
   }
 
@@ -176,4 +176,3 @@ export class TrainingAdminPage {
     await this.loadCourses();
   }
 }
-

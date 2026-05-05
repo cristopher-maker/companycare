@@ -1,7 +1,5 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
-
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -9,40 +7,35 @@ import { SupabaseService } from '../../../core/services/supabase.service';
   styleUrls: ['./reset-password.page.scss'],
 })
 export class ResetPasswordPage {
+  public loading = false;
   public password = '';
   public confirmPassword = '';
-  public loading = false;
   public error: string | null = null;
   public success: string | null = null;
 
-  constructor(
-    private readonly supabase: SupabaseService,
-    private readonly router: Router
-  ) {}
+  constructor(private readonly auth: AuthService) {}
 
   public async submit(): Promise<void> {
+    if (this.password !== this.confirmPassword) {
+      this.error = 'Las contraseñas no coinciden.';
+      return;
+    }
+    if (this.password.length < 6) {
+      this.error = 'La contraseña debe tener al menos 6 caracteres.';
+      return;
+    }
+
+    this.loading = true;
     this.error = null;
     this.success = null;
-    this.loading = true;
 
     try {
-      if (!this.password) throw new Error('Ingresa una nueva contraseña.');
-      if (this.password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.');
-      if (this.password !== this.confirmPassword) throw new Error('Las contraseñas no coinciden.');
-
-      const { data } = await this.supabase.client.auth.getSession();
-      if (!data.session) throw new Error('Abre este link desde tu email para continuar.');
-
-      const { error } = await this.supabase.client.auth.updateUser({ password: this.password });
-      if (error) throw error;
-
-      this.success = 'Contraseña actualizada.';
-      await this.router.navigateByUrl('/dashboard');
-    } catch (e: any) {
-      this.error = e?.message ?? 'No se pudo actualizar la contraseña.';
+      await this.auth.updateUserPassword(this.password);
+      this.success = 'Tu contraseña ha sido actualizada con éxito.';
+    } catch (err: any) {
+      this.error = err?.message ?? 'No se pudo actualizar la contraseña.';
     } finally {
       this.loading = false;
     }
   }
 }
-

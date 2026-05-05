@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthService, ProfileRole } from '../../core/services/auth.service';
+import { UiService } from '../../core/services/ui.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 @Component({
@@ -9,7 +10,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
   templateUrl: './profile.page.html',
   styleUrls: ['./profile.page.scss'],
 })
-export class ProfilePage {
+export class ProfilePage implements OnInit {
   public loading = true;
   public saving = false;
   public fullName = '';
@@ -21,10 +22,11 @@ export class ProfilePage {
   constructor(
     public readonly auth: AuthService,
     private readonly supabase: SupabaseService,
-    private readonly router: Router
+    private readonly router: Router,
+    public readonly ui: UiService
   ) {}
 
-  public async ionViewWillEnter(): Promise<void> {
+  public async ngOnInit(): Promise<void> {
     await this.loadProfile();
   }
 

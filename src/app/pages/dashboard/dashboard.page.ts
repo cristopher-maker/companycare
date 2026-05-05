@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-
 import { SupabaseService } from '../../core/services/supabase.service';
+import { UiService } from '../../core/services/ui.service';
 
 type DashboardMode = 'public' | 'employee' | 'company';
 
@@ -68,6 +68,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   public recentRequests: RecentRequest[] = [];
   public featuredResources: FeaturedResource[] = [];
   public upcomingEvents: UpcomingEvent[] = [];
+
   public employeeCareIntakeOpen = false;
   public employeeCareIntakeId: string | null = null;
   public employeeCompanyId: string | null = null;
@@ -76,7 +77,10 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    public readonly ui: UiService,
+  ) {}
 
   public ngOnInit(): void {
     void this.refresh();
@@ -118,16 +122,14 @@ export class DashboardPage implements OnInit, OnDestroy {
 
     const role = (profile?.role ?? 'employee') as string;
     this.displayName = profile?.full_name?.trim() ? profile.full_name : 'Usuario';
-
     this.mode = role === 'admin' || role === 'company_admin' ? 'company' : 'employee';
 
+    const company = await this.getMyCompany(user.id);
+    this.companyName = company?.name ?? null;
+
     if (this.mode === 'company') {
-      const company = await this.getMyCompany(user.id);
-      this.companyName = company?.name ?? null;
       await this.loadCompanyDashboard(company?.id ?? null);
     } else {
-      const company = await this.getMyCompany(user.id);
-      this.companyName = company?.name ?? null;
       this.employeeCompanyId = company?.id ?? null;
       await this.loadEmployeeDashboard(user.id, company?.id ?? null);
     }
@@ -163,126 +165,43 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.employeeCareIntakeOpen = false;
   }
 
-  public intakeAmenityList(): string[] {
-    const amenities = this.employeeCareIntakeDraft.amenities;
-    return [
-      amenities.ensuite ? 'Baño privado' : null,
-      amenities.garden ? 'Jardines' : null,
-      amenities.library ? 'Biblioteca' : null,
-      amenities.pets ? 'Acepta mascotas' : null,
-    ].filter(Boolean) as string[];
-  }
-
-  public clinicalProfileLabel(value: string | null | undefined): string {
-    switch (value) {
-      case 'residential':
-        return 'Cuidado residencial';
-      case 'nursing':
-        return 'Cuidado de enfermería';
-      case 'dementia':
-        return 'Demencia / Alzheimer';
-      case 'respite':
-        return 'Cuidado de respiro';
-      default:
-        return value || 'Sin perfil';
-    }
-  }
-
-  public fundingLabel(value: string | null | undefined): string {
-    switch (value) {
-      case 'self_funder':
-        return 'Pago privado';
-      case 'local_authority':
-        return 'Ayuda pública';
-      default:
-        return value || 'Sin dato';
-    }
-  }
-
-  public urgencyLabel(value: string | null | undefined): string {
-    switch (value) {
-      case 'immediate':
-        return 'Inmediata';
-      case '3m':
-        return 'En 3 meses';
-      case '6m':
-        return 'En 6 meses';
-      case 'exploring':
-        return 'Explorando opciones';
-      default:
-        return value || 'Sin dato';
-    }
-  }
-
-  public ambianceLabel(value: string | null | undefined): string {
-    switch (value) {
-      case 'small':
-        return 'Residencia pequeña y familiar';
-      case 'large':
-        return 'Residencia grande con actividades';
-      case 'either':
-        return 'Indistinto';
-      default:
-        return value || 'Sin dato';
-    }
-  }
-
   public careTypeLabel(value: string | null | undefined): string {
-    switch (value) {
-      case 'guidance':
-        return 'Orientación general';
-      case 'home_care':
-        return 'Cuidados a domicilio';
-      case 'residential':
-        return 'Residencia';
-      case 'nursing':
-        return 'Enfermería';
-      case 'dementia':
-        return 'Demencia / Alzheimer';
-      case 'respite':
-        return 'Cuidado de respiro';
-      default:
-        return value || 'Sin perfil';
-    }
+    const map: Record<string, string> = {
+      guidance:    'Orientación general',
+      home_care:   'Cuidados a domicilio',
+      residential: 'Residencia',
+      nursing:     'Enfermería',
+      dementia:    'Demencia / Alzheimer',
+      respite:     'Cuidado de respiro',
+    };
+    return map[value ?? ''] ?? value ?? 'Sin perfil';
   }
 
   public dependencyLevelLabel(value: string | null | undefined): string {
-    switch (value) {
-      case 'low':
-        return 'Baja';
-      case 'medium':
-        return 'Media';
-      case 'high':
-        return 'Alta';
-      case 'full':
-        return 'Dependencia total';
-      default:
-        return value || 'Sin dato';
-    }
+    const map: Record<string, string> = {
+      low:    'Baja',
+      medium: 'Media',
+      high:   'Alta',
+      full:   'Dependencia total',
+    };
+    return map[value ?? ''] ?? value ?? 'Sin dato';
   }
 
   public preferredContactLabel(value: string | null | undefined): string {
-    switch (value) {
-      case 'chat':
-        return 'Chat';
-      case 'phone':
-        return 'Llamada';
-      case 'video':
-        return 'Videollamada';
-      default:
-        return value || 'Sin dato';
-    }
+    const map: Record<string, string> = {
+      chat:  'Chat',
+      phone: 'Llamada',
+      video: 'Videollamada',
+    };
+    return map[value ?? ''] ?? value ?? 'Sin dato';
   }
 
   public async saveEmployeeCareIntake(): Promise<void> {
     const userId = (await this.supabase.client.auth.getSession()).data.session?.user?.id ?? null;
     if (!userId) return;
+
     if (!this.employeeCompanyId) {
-      alert('No encontramos una empresa asociada a tu usuario para guardar la ficha.');
-      return;
-    }
-    if (!this.employeeCareIntakeDraft.caregiverRelation.trim()) {
-      alert('Ingresa un código postal.');
+      alert('No encontramos una empresa asociada a tu usuario.');
       return;
     }
 
@@ -319,7 +238,10 @@ export class DashboardPage implements OnInit, OnDestroy {
       };
 
       const query = this.employeeCareIntakeId
-        ? this.supabase.client.from('care_intakes').update({ payload }).eq('id', this.employeeCareIntakeId)
+        ? this.supabase.client
+            .from('care_intakes')
+            .update({ payload })
+            .eq('id', this.employeeCareIntakeId)
         : this.supabase.client.from('care_intakes').insert({
             company_id: this.employeeCompanyId,
             employee_id: userId,
@@ -331,7 +253,6 @@ export class DashboardPage implements OnInit, OnDestroy {
       if (error) throw error;
 
       if (!this.employeeCareIntakeId && this.employeeCompanyId) {
-        // Enviar a HubSpot solo cuando se crea, no al actualizar
         try {
           const profileRes = await this.supabase.client
             .from('profiles')
@@ -352,7 +273,7 @@ export class DashboardPage implements OnInit, OnDestroy {
             },
           });
         } catch (hubspotErr) {
-          console.warn('No se pudo sincronizar el caso con HubSpot:', hubspotErr);
+          console.warn('No se pudo sincronizar con HubSpot:', hubspotErr);
         }
       }
 
@@ -412,31 +333,15 @@ export class DashboardPage implements OnInit, OnDestroy {
     ]);
 
     this.stats = [
-      {
-        label: 'Solicitudes abiertas',
-        value: openRequests.count ?? 0,
-        icon: 'chatbubbles-outline',
-      },
-      {
-        label: 'Proveedores activos',
-        value: providersCount.count ?? 0,
-        icon: 'shield-checkmark-outline',
-      },
-      {
-        label: 'Recursos',
-        value: resourcesCount.count ?? 0,
-        icon: 'library-outline',
-      },
-      {
-        label: 'Vouchers disponibles',
-        value: vouchersCount.count ?? 0,
-        icon: 'ticket-outline',
-      },
+      { label: 'Solicitudes abiertas',  value: openRequests.count ?? 0,   icon: 'forum' },
+      { label: 'Proveedores activos',   value: providersCount.count ?? 0, icon: 'verified_user' },
+      { label: 'Recursos',              value: resourcesCount.count ?? 0, icon: 'library_books' },
+      { label: 'Vouchers disponibles',  value: vouchersCount.count ?? 0,  icon: 'local_activity' },
     ];
 
-    this.recentRequests = (recentRequests.data ?? []) as RecentRequest[];
+    this.recentRequests   = (recentRequests.data   ?? []) as RecentRequest[];
     this.featuredResources = (featuredResources.data ?? []) as FeaturedResource[];
-    this.upcomingEvents = (upcomingEvents.data ?? []) as UpcomingEvent[];
+    this.upcomingEvents    = (upcomingEvents.data   ?? []) as UpcomingEvent[];
 
     if (companyId) {
       await this.loadEmployeeCareIntake(userId);
@@ -444,64 +349,45 @@ export class DashboardPage implements OnInit, OnDestroy {
   }
 
   private async loadCompanyDashboard(companyId: string | null): Promise<void> {
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [employeesCount, vouchersCount, onboardingDone, analytics7d] =
-      await Promise.all([
-        companyId
-          ? this.supabase.client
-              .from('company_members')
-              .select('user_id', { count: 'exact', head: true })
-              .eq('company_id', companyId)
-          : Promise.resolve({ count: 0 } as { count: number | null }),
-        companyId
-          ? this.supabase.client
-              .from('vouchers')
-              .select('id', { count: 'exact', head: true })
-              .eq('company_id', companyId)
-              .eq('active', true)
-          : Promise.resolve({ count: 0 } as { count: number | null }),
-        companyId
-          ? this.supabase.client
-              .from('company_onboarding')
-              .select('id', { count: 'exact', head: true })
-              .eq('company_id', companyId)
-              .eq('status', 'done')
-          : Promise.resolve({ count: 0 } as { count: number | null }),
-        companyId
-          ? this.supabase.client
-              .from('analytics_events')
-              .select('id', { count: 'exact', head: true })
-              .eq('company_id', companyId)
-              .gte('created_at', sevenDaysAgo)
-          : Promise.resolve({ count: 0 } as { count: number | null }),
-      ]);
+    const [employeesCount, vouchersCount, onboardingDone, analytics7d] = await Promise.all([
+      companyId
+        ? this.supabase.client
+            .from('company_members')
+            .select('user_id', { count: 'exact', head: true })
+            .eq('company_id', companyId)
+        : Promise.resolve({ count: 0 } as { count: number | null }),
+      companyId
+        ? this.supabase.client
+            .from('vouchers')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_id', companyId)
+            .eq('active', true)
+        : Promise.resolve({ count: 0 } as { count: number | null }),
+      companyId
+        ? this.supabase.client
+            .from('company_onboarding')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_id', companyId)
+            .eq('status', 'done')
+        : Promise.resolve({ count: 0 } as { count: number | null }),
+      companyId
+        ? this.supabase.client
+            .from('analytics_events')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_id', companyId)
+            .gte('created_at', sevenDaysAgo)
+        : Promise.resolve({ count: 0 } as { count: number | null }),
+    ]);
 
     this.stats = [
-      {
-        label: 'Empleados (empresa)',
-        value: employeesCount.count ?? 0,
-        icon: 'people-outline',
-      },
-      {
-        label: 'Vouchers activos',
-        value: vouchersCount.count ?? 0,
-        icon: 'ticket-outline',
-      },
-      {
-        label: 'Onboarding listo',
-        value: onboardingDone.count ?? 0,
-        icon: 'checkmark-done-outline',
-      },
-      {
-        label: 'Eventos (7 días)',
-        value: analytics7d.count ?? 0,
-        icon: 'pulse-outline',
-      },
+      { label: 'Empleados (empresa)',  value: employeesCount.count ?? 0,  icon: 'group' },
+      { label: 'Vouchers activos',     value: vouchersCount.count ?? 0,   icon: 'local_activity' },
+      { label: 'Onboarding listo',     value: onboardingDone.count ?? 0,  icon: 'task_alt' },
+      { label: 'Eventos (7 días)',      value: analytics7d.count ?? 0,    icon: 'analytics' },
     ];
 
-    // Company view: show recent platform activity as a starting point.
     const [{ data: recent }, { data: resources }, { data: events }] = await Promise.all([
       this.supabase.client
         .from('care_requests')
@@ -521,10 +407,9 @@ export class DashboardPage implements OnInit, OnDestroy {
         .limit(3),
     ]);
 
-    this.recentRequests = (recent?.map((r) => r) ?? []) as RecentRequest[];
-    this.featuredResources = (resources ?? []) as FeaturedResource[];
-    this.upcomingEvents = (events ?? []) as UpcomingEvent[];
-
+    this.recentRequests    = (recent     ?? []) as RecentRequest[];
+    this.featuredResources = (resources  ?? []) as FeaturedResource[];
+    this.upcomingEvents    = (events     ?? []) as UpcomingEvent[];
   }
 
   private async loadEmployeeCareIntake(userId: string): Promise<void> {
@@ -537,7 +422,6 @@ export class DashboardPage implements OnInit, OnDestroy {
       .maybeSingle();
 
     if (error) throw error;
-
     if (!data?.id) {
       this.employeeCareIntakeId = null;
       this.employeeCareIntakeUpdatedAt = null;
@@ -545,45 +429,47 @@ export class DashboardPage implements OnInit, OnDestroy {
       return;
     }
 
-    const payload = (data.payload as any) ?? {};
+    const p = (data.payload as any) ?? {};
     this.employeeCareIntakeId = data.id as string;
-    this.employeeCareIntakeUpdatedAt = (data.updated_at as string | undefined) ?? (data.created_at as string | undefined) ?? null;
+    this.employeeCareIntakeUpdatedAt =
+      (data.updated_at as string | undefined) ?? (data.created_at as string | undefined) ?? null;
+
     this.employeeCareIntakeDraft = {
-      careType: payload?.care_type ?? payload?.clinical_profile ?? 'guidance',
-      careReceiverAge: payload?.care_receiver?.age ?? payload?.family?.age ?? null,
-      primaryCondition: payload?.care_receiver?.primary_condition ?? '',
-      dependencyLevel: payload?.care_receiver?.dependency_level ?? 'medium',
-      city: payload?.location?.city ?? payload?.location?.comuna ?? '',
-      postalCode: payload?.location?.postal_code ?? '',
-      supportNetwork: payload?.family_context?.support_network ?? '',
-      budgetMonthlyMax: payload?.budget?.monthly_max ?? payload?.budget?.weekly_max ?? null,
-      funding: payload?.budget?.funding ?? 'self_funder',
-      preferredContact: payload?.preferences?.preferred_contact ?? 'chat',
-      urgency: payload?.urgency ?? 'immediate',
-      caregiverName: payload?.caregiver?.name ?? '',
-      caregiverRelation: payload?.caregiver?.relation ?? '',
-      notes: payload?.notes ?? '',
-      amenities: { ensuite: false, garden: false, library: false, pets: false },
+      careType:         p?.care_type ?? p?.clinical_profile ?? 'guidance',
+      careReceiverAge:  p?.care_receiver?.age ?? p?.family?.age ?? null,
+      primaryCondition: p?.care_receiver?.primary_condition ?? '',
+      dependencyLevel:  p?.care_receiver?.dependency_level ?? 'medium',
+      city:             p?.location?.city ?? p?.location?.comuna ?? '',
+      postalCode:       p?.location?.postal_code ?? '',
+      supportNetwork:   p?.family_context?.support_network ?? '',
+      budgetMonthlyMax: p?.budget?.monthly_max ?? p?.budget?.weekly_max ?? null,
+      funding:          p?.budget?.funding ?? 'self_funder',
+      preferredContact: p?.preferences?.preferred_contact ?? 'chat',
+      urgency:          p?.urgency ?? 'immediate',
+      caregiverName:    p?.caregiver?.name ?? '',
+      caregiverRelation:p?.caregiver?.relation ?? '',
+      notes:            p?.notes ?? '',
+      amenities:        { ensuite: false, garden: false, library: false, pets: false },
     };
   }
 
   private createDefaultCareIntakeDraft(): EmployeeCareIntakeDraft {
     return {
-      careType: 'guidance',
-      careReceiverAge: null,
+      careType:         'guidance',
+      careReceiverAge:  null,
       primaryCondition: '',
-      dependencyLevel: 'medium',
-      city: '',
-      postalCode: '',
-      supportNetwork: '',
+      dependencyLevel:  'medium',
+      city:             '',
+      postalCode:       '',
+      supportNetwork:   '',
       budgetMonthlyMax: null,
-      funding: 'self_funder',
+      funding:          'self_funder',
       preferredContact: 'chat',
-      urgency: 'immediate',
-      caregiverName: '',
-      caregiverRelation: '',
-      notes: '',
-      amenities: { ensuite: false, garden: false, library: false, pets: false },
+      urgency:          'immediate',
+      caregiverName:    '',
+      caregiverRelation:'',
+      notes:            '',
+      amenities:        { ensuite: false, garden: false, library: false, pets: false },
     };
   }
 }

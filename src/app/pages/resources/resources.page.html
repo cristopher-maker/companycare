@@ -1,77 +1,86 @@
-<ion-header [translucent]="true" class="ion-no-border">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Recursos Digitales</ion-title>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content [fullscreen]="true" class="resources-container">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Recursos</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div class="res-page">
-    <section class="lib-intro">
-      <div class="lib-header__icon" aria-hidden="true">
-        <ion-icon name="book"></ion-icon>
+<header class="header">
+  <div class="header__inner">
+    <div class="header__left">
+      <button (click)="ui.toggleMenu()" type="button" class="header__menu-btn" aria-label="Abrir menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <span class="header__title">Recursos Digitales</span>
+    </div>
+  </div>
+</header>
+ 
+<main class="page">
+  <div class="page__container">
+ 
+    <section class="hero">
+      <div class="hero__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
       </div>
-      <div class="lib-intro__text">
-        <h1>Biblioteca</h1>
-        <p>Guías y herramientas para mejores decisiones.</p>
+      <div>
+        <h1 class="hero__title">Biblioteca de Recursos</h1>
+        <p class="hero__subtitle">Guías y herramientas para tomar mejores decisiones.</p>
       </div>
     </section>
-
-    <div class="filter-scroll-container">
-      <div class="lib-filters" role="tablist">
-        <button
-          type="button"
-          class="lib-filter-chip"
-          [class.is-active]="selectedCategory === 'Todos'"
-          (click)="setCategory('Todos')"
-        >
-          Todos
-        </button>
-        <button
-          *ngFor="let c of categories; trackBy: trackByCat"
-          type="button"
-          class="lib-filter-chip"
-          [class.is-active]="selectedCategory === c"
-          (click)="setCategory(c)"
-        >
-          {{ c }}
-        </button>
-      </div>
+ 
+    <div class="filters" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        [class.filters__pill--active]="selectedCategory === 'Todos'"
+        class="filters__pill"
+        (click)="setCategory('Todos')"
+      >Todos</button>
+ 
+      <button
+        *ngFor="let c of categories; trackBy: trackByCat"
+        type="button"
+        role="tab"
+        [class.filters__pill--active]="selectedCategory === c"
+        class="filters__pill"
+        (click)="setCategory(c)"
+      >{{ c }}</button>
     </div>
-
-    <div class="lib-grid">
+ 
+    <div class="grid">
       <article
         *ngFor="let r of filteredResources; trackBy: trackById"
-        class="resource-card"
-        [ngClass]="categoryClass(r.category)"
+        class="card"
+        [class]="'card card--' + categoryKey(r.category)"
       >
-        <div class="card-header">
-          <div class="card-icon">
-            <ion-icon [name]="categoryIcon(r.category)"></ion-icon>
+        <div class="card__body">
+          <div class="card__top">
+            <div class="card__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="categoryIconPath(r.category)"></svg>
+            </div>
+            <span *ngIf="r.isPriority" class="card__badge">Prioritario</span>
           </div>
-          <span *ngIf="r.isPriority" class="priority-badge">Prioritario</span>
+          <h3 class="card__title">{{ r.title }}</h3>
+          <p class="card__summary">{{ r.summary }}</p>
         </div>
-
-        <div class="card-body">
-          <h3 class="card-title">{{ r.title }}</h3>
-          <p class="card-summary">{{ r.summary }}</p>
-        </div>
-
-        <div class="card-footer">
-          <span class="category-tag">{{ r.category }}</span>
-          <button class="btn-open" (click)="open(r)">
-            Leer más <ion-icon name="arrow-forward"></ion-icon>
+ 
+        <div class="card__footer">
+          <span class="card__cat-label">{{ r.category }}</span>
+          <button type="button" class="card__read-btn" (click)="open(r)">
+            Leer más
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
           </button>
         </div>
       </article>
+ 
+      <p *ngIf="filteredResources.length === 0" class="grid__empty">
+        No hay recursos en esta categoría.
+      </p>
     </div>
+ 
   </div>
-</ion-content>
+</main>

@@ -81,6 +81,11 @@ export class AuthService {
     if (error) throw error;
   }
 
+  public async updateUserPassword(password: string): Promise<void> {
+    const { error } = await this.supabase.client.auth.updateUser({ password });
+    if (error) throw error;
+  }
+
   public async signOut(): Promise<void> {
     const { error } = await this.supabase.client.auth.signOut();
     if (error) throw error;
@@ -186,45 +191,14 @@ export class AuthService {
     const existingCompanyId = (membership?.company_id as string | undefined) ?? null;
     if (existingCompanyId) return;
 
-    const email = user.email ?? '';
-    const domain = email.includes('@') ? email.split('@')[1]!.toLowerCase() : null;
+    const { data: companyId, error } = await this.supabase.client.rpc('register_company_for_current_user', {
+      company_name: companyName,
+      company_tax_id: companyTaxId,
+    });
 
-    let companyId: string | null = null;
-
-    const insertCompany = await this.supabase.client
-      .from('companies')
-      .insert({ name: companyName, domain, tax_id: companyTaxId })
-      .select('id')
-      .maybeSingle();
-
-    if (insertCompany.data?.id) {
-      companyId = insertCompany.data.id as string;
-    } else if (domain) {
-      const { data: existing } = await this.supabase.client
-        .from('companies')
-        .select('id')
-        .eq('domain', domain)
-        .maybeSingle();
-      companyId = (existing?.id as string | undefined) ?? null;
-    } else {
-      const { data: existing } = await this.supabase.client
-        .from('companies')
-        .select('id')
-        .eq('tax_id', companyTaxId)
-        .maybeSingle();
-      companyId = (existing?.id as string | undefined) ?? null;
-    }
-
+    if (error) throw error;
     if (!companyId) {
-      if (insertCompany.error) throw insertCompany.error;
       throw new Error('No se pudo crear la empresa.');
     }
-
-    const { error: memberError } = await this.supabase.client.from('company_members').insert({
-      company_id: companyId,
-      user_id: user.id,
-      member_role: 'hr_admin',
-    });
-    if (memberError) throw memberError;
   }
 }

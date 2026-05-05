@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'; // ✅ eliminado ChangeDetectorRef
 import { SupabaseService } from '../../core/services/supabase.service';
+import { UiService } from '../../core/services/ui.service';
 
 type ProviderType = 'Residencia' | 'Cuidador a domicilio' | 'Servicio médico';
 type Availability = 'Hoy' | 'Esta semana' | 'Sin cupo';
@@ -68,7 +69,9 @@ export class ProvidersPage implements OnInit, OnDestroy {
   private allProviders: ProviderCard[] = [];
   public filteredProviders: ProviderCard[] = [];
   public visibleProviders: ProviderCard[] = [];
-  public canLoadMore = false;
+  public currentPage = 1;
+  public pageSize = 12;
+  public totalPages = 1;
   
   public averageRating = 0;
   public totalProviders = 0;
@@ -79,10 +82,12 @@ export class ProvidersPage implements OnInit, OnDestroy {
   public selectedProviderImages: string[] = [];
   public selectedProviderDistribution: Array<{ stars: number; value: number }> = [];
   
-  public visibleCount = 24;
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    public readonly ui: UiService
+  ) {}
 
   public ngOnInit(): void {
     void this.refresh();
@@ -128,7 +133,6 @@ export class ProvidersPage implements OnInit, OnDestroy {
   public async refresh(): Promise<void> {
     this.loading = true;
     this.error = '';
-    this.visibleCount = 24;
     try {
       const { data, error } = await this.supabase.client
         .from('providers')
@@ -195,23 +199,49 @@ export class ProvidersPage implements OnInit, OnDestroy {
       return right.rating - left.rating;
     });
 
-    this.visibleCount = 24; // Reset count when filters change
+    this.currentPage = 1; // Reset when filters change
     this.updateVisibleProviders();
   }
 
   private updateVisibleProviders(): void {
-    this.visibleProviders = this.filteredProviders.slice(0, this.visibleCount);
-    this.canLoadMore = this.visibleCount < this.filteredProviders.length;
+    this.totalPages = Math.ceil(this.filteredProviders.length / this.pageSize) || 1;
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages;
+    }
+    const start = (this.currentPage - 1) * this.pageSize;
+    this.visibleProviders = this.filteredProviders.slice(start, start + this.pageSize);
   }
 
-  public loadMore(event?: CustomEvent): void {
-    this.visibleCount += 24;
-    this.updateVisibleProviders();
-    const target = event?.target as { complete?: () => Promise<void> | void; disabled?: boolean } | undefined;
-    target?.complete?.();
-    if (target) {
-      target.disabled = !this.canLoadMore;
+  public get pages(): number[] {
+    const maxPagesToShow = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let end = Math.min(this.totalPages, start + maxPagesToShow - 1);
+
+    if (end - start + 1 < maxPagesToShow) {
+      start = Math.max(1, end - maxPagesToShow + 1);
     }
+
+    const p = [];
+    for (let i = start; i <= end; i++) {
+      p.push(i);
+    }
+    return p;
+  }
+
+  public goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updateVisibleProviders();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  public prevPage(): void {
+    this.goToPage(this.currentPage - 1);
+  }
+
+  public nextPage(): void {
+    this.goToPage(this.currentPage + 1);
   }
 
   public priceLabel(value: number | null): string {
@@ -324,6 +354,3 @@ export class ProvidersPage implements OnInit, OnDestroy {
     };
   }
 }
-
-
-
