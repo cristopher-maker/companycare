@@ -87,7 +87,7 @@
 }
 
 .hero::before {
-  background: url('/assets/img/carousel-2.jpeg') right center / cover no-repeat;
+  background: url('../../../assets/img/carousel-2.jpeg') right center / cover no-repeat;
   z-index: -2;
 }
 
@@ -342,7 +342,7 @@
   color: #fff;
   background:
     linear-gradient(145deg, rgba(11, 40, 50, 0.96) 0%, rgba(18, 60, 74, 0.92) 100%),
-    url('/assets/img/carousel-3.jpeg') center / cover;
+    url('../../../assets/img/carousel-3.jpeg') center / cover;
   border-color: transparent;
   box-shadow: 0 16px 36px rgba(15, 36, 64, 0.22);
 }
@@ -791,7 +791,7 @@
   color: #fff;
   background:
     linear-gradient(110deg, rgba(11, 40, 50, 0.98) 24%, rgba(18, 60, 74, 0.88) 100%),
-    url('/assets/img/about-us.jpg') center / cover;
+    url('../../../assets/img/about-us.jpg') center / cover;
   border-color: transparent;
 }
 
