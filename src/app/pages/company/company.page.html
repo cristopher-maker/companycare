@@ -140,6 +140,18 @@
         </article>
       </div>
 
+      <article class="company-plan-summary">
+        <div>
+          <span class="company-kicker">Plan actual</span>
+          <strong>{{ planTierLabel(currentSubscription?.plan_tier || activeContract?.plan_tier || company.plan_tier) }}</strong>
+          <small>{{ subscriptionStatusLabel(currentSubscription?.status || null) }} · {{ providerLabel(currentSubscription?.provider) }}</small>
+        </div>
+        <div>
+          <small>Periodo hasta: {{ (currentSubscription?.current_period_end | date:'dd/MM/yyyy') || 'Sin periodo' }}</small>
+          <small>Factura: {{ invoiceStatusLabel(latestInvoice?.status || null) }}</small>
+        </div>
+      </article>
+
       <form (ngSubmit)="saveCompany()" class="company-form">
         <label>
           <span>Nombre comercial</span>
@@ -221,7 +233,7 @@
           </div>
         </section>
 
-        <section class="company-subpanel">
+        <section class="company-subpanel" *ngIf="false">
           <div class="company-panel__header">
             <div>
               <h2>Plan / contrato activo</h2>
@@ -236,7 +248,7 @@
               <p>{{ providerLabel(currentSubscription?.provider) }} · {{ planTierLabel(currentSubscription?.plan_tier || activeContract?.plan_tier || company.plan_tier) }}</p>
             </div>
             <div>
-              <small>Periodo hasta: {{ currentSubscription?.current_period_end || 'Sin periodo' }}</small>
+              <small>Periodo hasta: {{ (currentSubscription?.current_period_end | date:'dd/MM/yyyy') || 'Sin periodo' }}</small>
               <small>Factura: {{ invoiceStatusLabel(latestInvoice?.status || null) }}</small>
               <strong *ngIf="latestInvoice?.amount_due">
                 {{ latestInvoice?.amount_due | currency:(latestInvoice?.currency || 'CLP'):'symbol-narrow':'1.0-0' }}
@@ -286,8 +298,8 @@
             </div>
             <div>
               <strong *ngIf="activeContract.amount">{{ activeContract.amount | currency:activeContract.currency:'symbol-narrow':'1.0-0' }}</strong>
-              <small>Inicio: {{ activeContract.starts_at || 'Sin fecha' }}</small>
-              <small>Renovacion: {{ activeContract.renews_at || 'Sin fecha' }}</small>
+              <small>Inicio: {{ (activeContract.starts_at | date:'dd/MM/yyyy') || 'Sin fecha' }}</small>
+              <small>Renovacion: {{ (activeContract.renews_at | date:'dd/MM/yyyy') || 'Sin fecha' }}</small>
               <small>{{ documentTitle(activeContract.document_id) }}</small>
             </div>
           </article>
@@ -296,6 +308,123 @@
           </ng-template>
         </section>
       </div>
+    </section>
+
+    <section billing-content class="company-panel company-panel--embedded">
+      <div class="company-panel__header">
+        <div>
+          <h2>Plan / contrato activo</h2>
+          <p>El estado se actualiza desde el pago o por administracion interna.</p>
+        </div>
+      </div>
+
+      <section class="company-billing-surface">
+        <article class="company-billing-hero">
+          <div class="company-billing-hero__status">
+            <span class="company-kicker">Estado de pago</span>
+            <strong>{{ subscriptionStatusLabel(currentSubscription?.status || null) }}</strong>
+            <p>{{ providerLabel(currentSubscription?.provider) }} · {{ planTierLabel(currentSubscription?.plan_tier || activeContract?.plan_tier || company.plan_tier) }}</p>
+          </div>
+          <div class="company-billing-hero__meta">
+            <div>
+              <span>Periodo</span>
+              <strong>{{ (currentSubscription?.current_period_end | date:'dd/MM/yyyy') || 'Sin periodo' }}</strong>
+            </div>
+            <div>
+              <span>Factura</span>
+              <strong>{{ invoiceStatusLabel(latestInvoice?.status || null) }}</strong>
+            </div>
+            <div *ngIf="latestInvoice?.amount_due">
+              <span>Monto</span>
+              <strong>{{ latestInvoice?.amount_due | currency:(latestInvoice?.currency || 'CLP'):'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+          </div>
+        </article>
+
+        <div class="company-plan-picker" *ngIf="!activeContract || currentSubscription?.status !== 'active'">
+          <button
+            *ngFor="let plan of paymentPlanOptions"
+            type="button"
+            class="company-plan-option"
+            [class.is-selected]="selectedPaymentPlan === plan.id"
+            [disabled]="requestingPaymentLink || currentSubscription?.status === 'active'"
+            (click)="selectedPaymentPlan = plan.id"
+          >
+            <div class="company-plan-option__copy">
+              <span class="company-plan-option__badge" *ngIf="selectedPaymentPlan === plan.id">Seleccionado</span>
+              <strong>{{ plan.label }}</strong>
+              <small>{{ plan.description }}</small>
+            </div>
+            <b>{{ plan.price }}</b>
+          </button>
+        </div>
+
+        <div class="company-billing-cta">
+          <div class="company-billing-cta__copy">
+            <strong>{{ activeContract && currentSubscription?.status === 'active' ? 'Plan activo' : 'Activar plan' }}</strong>
+            <small>{{ activeContract && currentSubscription?.status === 'active' ? 'La suscripcion ya esta operativa para esta empresa.' : 'Selecciona el plan correcto y genera el enlace de pago.' }}</small>
+            <small class="company-billing-cta__helper">{{ invoiceHelperText }}</small>
+          </div>
+          <div class="company-billing-cta__actions">
+            <a
+              *ngIf="invoiceUrl"
+              class="company-payment-link company-payment-link--secondary"
+              [href]="invoiceUrl"
+              target="_blank"
+              rel="noopener"
+            >
+              Ver boleta
+            </a>
+            <a
+              *ngIf="paymentUrl"
+              class="company-payment-link"
+              [href]="paymentUrl"
+              target="_blank"
+              rel="noopener"
+            >
+              Pagar ahora
+            </a>
+            <button
+              *ngIf="!paymentUrl"
+              type="button"
+              class="company-payment-link company-payment-link--button"
+              [disabled]="requestingPaymentLink"
+              (click)="requestPaymentLink()"
+            >
+              {{ requestingPaymentLink ? 'Generando...' : 'Pagar con Mercado Pago' }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <article class="company-contract-card" *ngIf="activeContract; else noContractBilling">
+        <div class="company-contract-card__copy">
+          <span class="company-kicker">Contrato actual</span>
+          <h3>{{ planTierLabel(activeContract.plan_tier) }}</h3>
+          <p>{{ contractStatusLabel(activeContract.status) }} · {{ billingCycleLabel(activeContract.billing_cycle) }}</p>
+        </div>
+        <div class="company-contract-card__meta">
+          <div *ngIf="activeContract.amount">
+            <span>Monto</span>
+            <strong>{{ activeContract.amount | currency:activeContract.currency:'symbol-narrow':'1.0-0' }}</strong>
+          </div>
+          <div>
+            <span>Inicio</span>
+            <small>{{ (activeContract.starts_at | date:'dd/MM/yyyy') || 'Sin fecha' }}</small>
+          </div>
+          <div>
+            <span>Renovacion</span>
+            <small>{{ (activeContract.renews_at | date:'dd/MM/yyyy') || 'Sin fecha' }}</small>
+          </div>
+          <div>
+            <span>Documento</span>
+            <small>{{ documentTitle(activeContract.document_id) }}</small>
+          </div>
+        </div>
+      </article>
+      <ng-template #noContractBilling>
+        <p class="company-empty">Aun no hay contrato registrado. Company Care lo activara al confirmar el plan y el pago.</p>
+      </ng-template>
     </section>
   </app-admin-dashboard>
 

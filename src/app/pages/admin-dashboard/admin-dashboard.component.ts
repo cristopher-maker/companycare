@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -7,14 +7,15 @@ import { ChartConfiguration } from 'chart.js';
 
 type LeadStatus = 'nuevo' | 'contactado' | 'evaluacion' | 'match' | 'cerrado' | 'perdido';
 type ConfigSection = 'company' | 'appearance' | 'workflow' | 'business' | 'documents' | 'messages' | 'onboarding';
-type DashboardView = 'metricas' | 'sedes' | 'camas' | 'pacientes' | 'admisiones' | 'tareas' | 'empleados' | 'vouchers' | 'config';
+type DashboardView = 'metricas' | 'sedes' | 'camas' | 'pacientes' | 'admisiones' | 'tareas' | 'empleados' | 'vouchers' | 'config' | 'facturacion' | 'gastos';
+type SummaryTone = 'primary' | 'blue' | 'green' | 'warn' | 'danger' | 'neutral';
 
 @Component({
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   @Input() hideWorkflowConfig = false;
   @Input() companyConfigMode = false;
 
@@ -22,6 +23,7 @@ export class AdminDashboardComponent implements OnInit {
   currentView: DashboardView = 'metricas';
 
   loading = true;
+  hasLoadedOnce = false;
   profileRole: string | null = null;
   hasActivePlan = false;
   activePlanTier: string | null = null;
@@ -32,16 +34,27 @@ export class AdminDashboardComponent implements OnInit {
   showCamaModal = false;
   showPacienteModal = false;
   showLeadModal = false;
+  showLeadDetailModal = false;
   showTareaModal = false;
   savingSede = false;
   savingCama = false;
   savingPaciente = false;
   savingLead = false;
+  loadingLeadDetail = false;
   savingTarea = false;
+  savingGasto = false;
+  showGastoModal = false;
+
+  // Modal de Historial de Cobros
+  showInvoicesModal = false;
+  selectedPatientInvoices: any[] = [];
+  selectedPatientForInvoices: any = null;
+  selectedLead: any = null;
+  selectedLeadIntake: any = null;
 
   sedeDraft: any = { id: null, nombre: '', ubicacion: '' };
   camaDraft: any = { db_id: null, resource_code: '', provider_id: '', care_type: 'Básico', status: 'Disponible', notes: '' };
-  pacienteDraft: any = { db_id: null, cama_id: '', sede: '', nombre_paciente: '' };
+  pacienteDraft: any = { id: null, first_name: '', last_name: '', document_id: '', emergency_contact_name: '', emergency_contact_phone: '', resource_id: null, monthly_fee: null, guarantor_name: '', guarantor_document_id: '', guarantor_email: '' };
   leadDraft: any = { id: null, nombre: '', comuna: '', dependencia: '', presupuesto: null };
   tareaDraft: any = {
     id: null,
@@ -54,8 +67,13 @@ export class AdminDashboardComponent implements OnInit {
     entity_id: null,
     entity_label: ''
   };
+  gastoDraft: any = { id: null, category: 'Operativos', amount: null, expense_date: '', description: '' };
   rawProviders: any[] = [];
   leads: any[] = [];
+  pacientes: any[] = [];
+  patientContracts: any[] = [];
+  patientInvoices: any[] = [];
+  gastos: any[] = [];
   private readonly planLockedViews = new Set<DashboardView>([
     'sedes',
     'camas',
@@ -63,7 +81,9 @@ export class AdminDashboardComponent implements OnInit {
     'admisiones',
     'tareas',
     'empleados',
-    'vouchers'
+    'vouchers',
+    'facturacion',
+    'gastos'
   ]);
 
   // Estadísticas generales
@@ -88,7 +108,7 @@ export class AdminDashboardComponent implements OnInit {
 
   // Configuración del gráfico de admisiones (Leads)
   totalLeads = 0;
-  public barChartLabels: string[] = ['Nuevas', 'Contact.', 'Eval.', 'Match', 'Cerrado', 'Perdido'];
+  public barChartLabels: string[] = ['Nuevas', 'Contact.', 'Eval.', 'Propuesta', 'Cerrado', 'Perdido'];
   public barChartDatasets: ChartConfiguration<'bar'>['data']['datasets'] = [
     { data: [0, 0, 0, 0, 0, 0], backgroundColor: '#6366f1', borderRadius: 4 }
   ];
@@ -104,11 +124,30 @@ export class AdminDashboardComponent implements OnInit {
 
   // Configuración del gráfico de tareas
   totalTareas = 0;
+  totalIngresos = 0;
+  totalGastos = 0;
   public tasksChartLabels: string[] = ['Pendientes', 'En progreso', 'Completadas'];
   public tasksChartDatasets: ChartConfiguration<'doughnut'>['data']['datasets'] = [
     { data: [0, 0, 0], backgroundColor: ['#f59e0b', '#3b82f6', '#22c55e'] }
   ];
   public tasksChartOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { boxWidth: 12, font: { size: 11, family: "'DM Sans', sans-serif" } }
+      }
+    }
+  };
+
+  // Configuración del gráfico de gastos
+  public expensesChartLabels: string[] = [];
+  public expensesChartDatasets: ChartConfiguration<'doughnut'>['data']['datasets'] = [
+    { data: [], backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981'] }
+  ];
+  public expensesChartOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true,
     maintainAspectRatio: false,
     cutout: '70%',
@@ -152,7 +191,6 @@ export class AdminDashboardComponent implements OnInit {
   commentDraft: any = { entity_type: 'company', entity_id: null, body: '', visibility: 'internal' };
   onboardingDraft: any = { title: 'Activación de empresa', starts_at: null };
   onboardingStepDraft: any = { project_id: null, title: '', description: '', step_key: '' };
-  invitationDraft: any = { email: '', role: 'employee' };
   brandingDraft: any = {
     logo_url: '',
     primary_color: '#123c4a',
@@ -181,6 +219,123 @@ export class AdminDashboardComponent implements OnInit {
   // Actividad reciente
   recentActivity: any[] = [];
   taskHistory: any[] = [];
+
+  get dashboardGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 20) return 'Buenas tardes';
+    return 'Buenas noches';
+  }
+
+  get dashboardSummaryCards(): Array<{ label: string; value: string | number; detail: string; icon: string; tone: SummaryTone }> {
+    const pendingTasks = this.tareas.filter((task) => task.status === 'pending').length;
+    const openLeads = this.leads.filter((lead) => !['cerrado', 'perdido'].includes(lead.estado)).length;
+    const pendingInvoices = this.patientInvoices.filter((invoice) => invoice.status !== 'paid').length;
+    const pendingInvitations = this.companyInvitations.filter((invite) => invite.status === 'pending').length;
+
+    return [
+      {
+        label: 'Solicitudes abiertas',
+        value: openLeads,
+        detail: `${this.totalLeads} admisiones totales`,
+        icon: 'view_kanban',
+        tone: openLeads > 0 ? 'blue' : 'neutral'
+      },
+      {
+        label: 'Tareas pendientes',
+        value: pendingTasks,
+        detail: `${this.tareas.filter((task) => task.status === 'in_progress').length} en progreso`,
+        icon: 'checklist',
+        tone: pendingTasks > 0 ? 'warn' : 'green'
+      },
+      {
+        label: 'Ocupación',
+        value: `${this.porcentajeOcupacion}%`,
+        detail: `${this.camasDisponibles} camas libres`,
+        icon: 'bed',
+        tone: this.camasDisponibles === 0 && this.camasTotales > 0 ? 'danger' : 'primary'
+      },
+      {
+        label: 'Colaboradores',
+        value: this.empleados.length,
+        detail: `${pendingInvitations} invitaciones pendientes`,
+        icon: 'badge',
+        tone: pendingInvitations > 0 ? 'blue' : 'neutral'
+      },
+      {
+        label: 'Ingresos pagados',
+        value: this.formatMoney(this.totalIngresos),
+        detail: `${pendingInvoices} cobros por revisar`,
+        icon: 'payments',
+        tone: this.totalIngresos > 0 ? 'green' : 'neutral'
+      },
+      {
+        label: 'Gastos',
+        value: this.formatMoney(this.totalGastos),
+        detail: `${this.formatMoney(this.totalIngresos - this.totalGastos)} neto`,
+        icon: 'account_balance_wallet',
+        tone: this.totalGastos > this.totalIngresos ? 'danger' : 'neutral'
+      }
+    ];
+  }
+
+  get dashboardActionItems(): Array<{ title: string; detail: string; icon: string; view: DashboardView; tone: SummaryTone }> {
+    const now = new Date();
+    const overdueTasks = this.tareas.filter((task) => task.due_at && task.status !== 'done' && new Date(task.due_at) < now).length;
+    const newLeads = this.kanbanData['nuevo']?.length || 0;
+    const pendingInvoices = this.patientInvoices.filter((invoice) => invoice.status !== 'paid').length;
+    const pendingInvitations = this.companyInvitations.filter((invite) => invite.status === 'pending').length;
+    const incompleteOnboarding = this.onboardingSteps.filter((step) => !step.completed).length;
+
+    const items: Array<{ title: string; detail: string; icon: string; view: DashboardView; tone: SummaryTone }> = [];
+
+    if (overdueTasks > 0) {
+      items.push({ title: 'Resolver tareas vencidas', detail: `${overdueTasks} pendientes fuera de plazo`, icon: 'priority_high', view: 'tareas', tone: 'danger' });
+    }
+    if (newLeads > 0) {
+      items.push({ title: 'Contactar admisiones nuevas', detail: `${newLeads} consultas esperan primer contacto`, icon: 'record_voice_over', view: 'admisiones', tone: 'blue' });
+    }
+    if (this.camasTotales > 0 && this.camasDisponibles <= 2) {
+      items.push({ title: 'Revisar disponibilidad', detail: `${this.camasDisponibles} camas libres registradas`, icon: 'bed', view: 'camas', tone: this.camasDisponibles === 0 ? 'danger' : 'warn' });
+    }
+    if (pendingInvoices > 0) {
+      items.push({ title: 'Revisar cobros pendientes', detail: `${pendingInvoices} facturas no pagadas`, icon: 'receipt_long', view: 'facturacion', tone: 'warn' });
+    }
+    if (pendingInvitations > 0) {
+      items.push({ title: 'Seguimiento de invitaciones', detail: `${pendingInvitations} empleados aun no aceptan`, icon: 'mail', view: 'empleados', tone: 'blue' });
+    }
+    if (incompleteOnboarding > 0) {
+      items.push({ title: 'Completar onboarding', detail: `${incompleteOnboarding} tareas de activación abiertas`, icon: 'rocket_launch', view: 'config', tone: 'primary' });
+    }
+
+    return items.slice(0, 5);
+  }
+
+  get latestOperationalEvents(): Array<{ title: string; detail: string; icon: string; created_at: string }> {
+    const taskEvents = this.tareas.slice(0, 3).map((task) => ({
+      title: task.title || 'Tarea sin titulo',
+      detail: this.statusLabel(task.status),
+      icon: 'checklist',
+      created_at: task.created_at
+    }));
+    const leadEvents = this.leads.slice(0, 3).map((lead) => ({
+      title: lead.nombre || 'Admision sin nombre',
+      detail: this.leadStatusLabel(lead.estado),
+      icon: 'view_kanban',
+      created_at: lead.created_at
+    }));
+    const invoiceEvents = this.patientInvoices.slice(0, 2).map((invoice) => ({
+      title: `Cobro ${this.formatMoney(invoice.amount || 0)}`,
+      detail: invoice.status === 'paid' ? 'Pagado' : 'Pendiente',
+      icon: 'receipt_long',
+      created_at: invoice.created_at
+    }));
+
+    return [...taskEvents, ...leadEvents, ...invoiceEvents]
+      .filter((event) => !!event.created_at)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 6);
+  }
 
   get filteredTareas() {
     return this.tareas.filter((tarea) => {
@@ -225,14 +380,57 @@ export class AdminDashboardComponent implements OnInit {
     };
   }
 
-  // Extrae los pacientes activos a partir de las camas ocupadas
+  private isMissingRelationError(error: any, relation: string): boolean {
+    const message = String(error?.message || '').toLowerCase();
+    return error?.code === 'PGRST205' || message.includes(`public.${relation}`) || message.includes(`'${relation}'`);
+  }
+
+  get allInvoicesView() {
+    return this.patientInvoices.map(inv => {
+      const patient = this.pacientes.find(p => p.id === inv.patient_id);
+      return {
+        ...inv,
+        patientName: patient ? `${patient.first_name} ${patient.last_name}` : 'Paciente desconocido',
+        document: patient ? patient.document_id : '-'
+      };
+    }).sort((a, b) => new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime());
+  }
+
   get pacientesActivos() {
-    return this.camasDetalle.filter(c => c.paciente && c.paciente.trim() !== '' && c.paciente !== '-');
+    // Mapear los pacientes reales y cruzar con la cama que tienen asignada
+    return this.pacientes.filter(p => p.status === 'active').map(p => {
+      const cama = this.camasDetalle.find(c => c.paciente_id === p.id);
+      const contract = this.patientContracts.find(c => c.patient_id === p.id);
+      return {
+        id: p.id,
+        nombreCompleto: `${p.first_name} ${p.last_name}`,
+        documento: p.document_id || 'N/A',
+        contacto: p.emergency_contact_name ? `${p.emergency_contact_name} (${p.emergency_contact_phone || '-'})` : 'Sin contacto',
+        camaAsignada: cama ? `${cama.sede} - ${cama.id}` : 'Sin cama',
+        cama_id: cama ? cama.dbId : null,
+        monthly_fee: contract?.monthly_fee || 0,
+        guarantor_name: contract?.guarantor_name || 'Sin tutor',
+        contract_id: contract?.id || null,
+        raw: p
+      };
+    });
   }
 
   // Extrae las camas que están disponibles para asignar un nuevo paciente
   get camasLibres() {
     return this.camasDetalle.filter(c => c.estado === 'Disponible');
+  }
+
+  // Muestra las camas libres + la cama actual del paciente (para no perderla en el select)
+  get camasAsignables() {
+    const libres = this.camasLibres;
+    if (this.pacienteDraft.resource_id) {
+      const camaActual = this.camasDetalle.find(c => c.dbId === this.pacienteDraft.resource_id);
+      if (camaActual && camaActual.estado !== 'Disponible') {
+        return [camaActual, ...libres];
+      }
+    }
+    return libres;
   }
 
   get hasOperationalAccess(): boolean {
@@ -250,7 +448,7 @@ export class AdminDashboardComponent implements OnInit {
     { id: 'nuevo', label: 'Nuevas Consultas' },
     { id: 'contactado', label: 'Contactado' },
     { id: 'evaluacion', label: 'Evaluación Clínica' },
-    { id: 'match', label: 'Propuesta / Match' },
+    { id: 'match', label: 'Propuesta' },
     { id: 'cerrado', label: 'Ingresado / Cerrado' },
     { id: 'perdido', label: 'Perdido' }
   ];
@@ -258,6 +456,8 @@ export class AdminDashboardComponent implements OnInit {
   kanbanData: Record<LeadStatus, any[]> = {
     nuevo: [], contactado: [], evaluacion: [], match: [], cerrado: [], perdido: []
   };
+
+  private realtimeChannel: any;
 
   constructor(
     private supabase: SupabaseService,
@@ -279,6 +479,24 @@ export class AdminDashboardComponent implements OnInit {
       this.selectedEntityId = params.get('entityId');
     });
     await this.loadData();
+    this.setupRealtimeSubscriptions();
+  }
+
+  ngOnDestroy() {
+    if (this.realtimeChannel) {
+      this.supabase.client.removeChannel(this.realtimeChannel);
+    }
+  }
+
+  setupRealtimeSubscriptions() {
+    // Suscribirse a cambios en Leads para la misma empresa
+    this.realtimeChannel = this.supabase.client
+      .channel('leads-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
+        // Recargamos los datos para reflejar el estado actual
+        this.loadData();
+      })
+      .subscribe();
   }
 
   async loadData() {
@@ -338,10 +556,50 @@ export class AdminDashboardComponent implements OnInit {
         .eq('company_id', companyId);
       this.rawProviders = providersData || [];
 
+      // Cargar tabla de Pacientes
+      const { data: patientsData } = await this.supabase.client.from('patients').select('*').eq('company_id', companyId);
+      this.pacientes = patientsData || [];
+
+      const { data: contractsData, error: contractsError } = await this.supabase.client
+        .from('patient_contracts')
+        .select('*')
+        .eq('company_id', companyId);
+      if (contractsError && !this.isMissingRelationError(contractsError, 'patient_contracts')) throw contractsError;
+      this.patientContracts = contractsData || [];
+
+      const { data: invoicesData, error: invoicesError } = await this.supabase.client
+        .from('patient_invoices')
+        .select('*')
+        .eq('company_id', companyId);
+      if (invoicesError && !this.isMissingRelationError(invoicesError, 'patient_invoices')) throw invoicesError;
+      this.patientInvoices = invoicesData || [];
+
+      const { data: gastosData } = await this.supabase.client.from('company_expenses').select('*').eq('company_id', companyId).order('expense_date', { ascending: false });
+      this.gastos = gastosData || [];
+
+      // Calcular balance financiero (Ingresos pagados vs Gastos totales)
+      this.totalIngresos = this.patientInvoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + Number(i.amount || 0), 0);
+      this.totalGastos = this.gastos.reduce((sum, g) => sum + Number(g.amount || 0), 0);
+
+      // Procesar datos para el gráfico de gastos
+      const gastosPorCategoria = this.gastos.reduce((acc, gasto) => {
+        const category = gasto.category || 'Otros';
+        acc[category] = (acc[category] || 0) + Number(gasto.amount || 0);
+        return acc;
+      }, {} as Record<string, number>);
+
+      this.expensesChartLabels = Object.keys(gastosPorCategoria);
+      this.expensesChartDatasets = [
+        {
+          data: Object.values(gastosPorCategoria),
+          backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#3b82f6']
+        }
+      ];
+
       // 3. Obtener los cupos/camas de la empresa junto a la info de su sede (provider)
       const { data: resources } = await this.supabase.client
         .from('care_resources')
-        .select('*, provider:providers(id, name, area)')
+        .select('*, provider:providers(id, name, area), patient:patients(id, first_name, last_name)')
         .eq('company_id', companyId);
 
       const resArray = resources || [];
@@ -354,7 +612,8 @@ export class AdminDashboardComponent implements OnInit {
         sede: (r.provider as any)?.name || r.location_label || 'Sede no especificada',
         tipo: r.care_type,
         estado: r.status,
-        paciente: r.notes || '-'
+          paciente_id: r.patient_id,
+          paciente: r.patient ? `${r.patient.first_name} ${r.patient.last_name}` : '-'
       }));
 
       // 5. Agrupar las camas por Proveedor/Sede para armar la tabla "Mis Sedes"
@@ -467,7 +726,7 @@ export class AdminDashboardComponent implements OnInit {
       if (membersError) console.warn('No se pudieron cargar los empleados:', membersError.message);
       this.empleados = (membersData || []).map(m => ({
         id: m.user_id,
-        name: (m.profiles as any)?.full_name || m.user_id,
+        name: (m.profiles as any)?.full_name || (m.profiles as any)?.email || m.user_id,
         email: (m.profiles as any)?.email || ''
       }));
 
@@ -518,6 +777,7 @@ export class AdminDashboardComponent implements OnInit {
     } catch (error) {
       console.error('Error cargando datos del dashboard:', error);
     } finally {
+      this.hasLoadedOnce = true;
       this.loading = false;
     }
   }
@@ -553,6 +813,13 @@ export class AdminDashboardComponent implements OnInit {
         event.previousIndex,
         event.currentIndex,
       );
+      
+      // 3. Flujo automático: Si pasó a Cerrado (Admitido), sugerir crear paciente
+      if (newStatus === 'cerrado' && event.previousContainer.id !== 'cerrado') {
+        if (confirm('El prospecto ha sido cerrado con éxito. ¿Deseas ingresarlo como paciente activo y configurar su tarifa mensual ahora?')) {
+           this.openNewPacienteFromLead(movedItem);
+        }
+      }
     }
   }
 
@@ -577,6 +844,119 @@ export class AdminDashboardComponent implements OnInit {
     interval = Math.floor(seconds / 60);
     if (interval >= 1) return `Hace ${interval} minuto${interval === 1 ? '' : 's'}`;
     return 'Hace unos segundos';
+  }
+
+  formatMoney(value: number | string | null | undefined): string {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      maximumFractionDigits: 0
+    }).format(Number(value || 0));
+  }
+
+  statusLabel(status: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      pending: 'Pendiente',
+      in_progress: 'En progreso',
+      done: 'Completada',
+      canceled: 'Cancelada'
+    };
+    return labels[status || ''] || 'Sin estado';
+  }
+
+  leadStatusLabel(status: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      nuevo: 'Nuevo',
+      contactado: 'Contactado',
+      evaluacion: 'En evaluación',
+      match: 'Propuesta',
+      cerrado: 'Cerrado',
+      perdido: 'Perdido'
+    };
+    return labels[status || ''] || 'Sin etapa';
+  }
+
+  careTypeLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      guidance: 'OrientaciÃ³n general',
+      home_care: 'Cuidados a domicilio',
+      residential: 'Residencia',
+      nursing: 'EnfermerÃ­a',
+      dementia: 'Demencia / Alzheimer',
+      respite: 'Cuidado de respiro'
+    };
+    return labels[value || ''] || value || 'Sin dato';
+  }
+
+  dependencyLevelLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      low: 'Baja',
+      medium: 'Media',
+      high: 'Alta',
+      full: 'Dependencia total'
+    };
+    return labels[value || ''] || value || 'Sin dato';
+  }
+
+  preferredContactLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      chat: 'Chat',
+      phone: 'Llamada',
+      video: 'Videollamada'
+    };
+    return labels[value || ''] || value || 'Sin dato';
+  }
+
+  fundingLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      self_funder: 'Pago privado',
+      local_authority: 'Ayuda pÃºblica'
+    };
+    return labels[value || ''] || value || 'Sin dato';
+  }
+
+  urgencyLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      immediate: 'Inmediata',
+      '3m': 'En 3 meses',
+      '6m': 'En 6 meses',
+      exploring: 'Explorando opciones'
+    };
+    return labels[value || ''] || value || 'Sin dato';
+  }
+
+  async openLeadDetail(lead: any): Promise<void> {
+    this.selectedLead = lead;
+    this.selectedLeadIntake = null;
+    this.showLeadDetailModal = true;
+
+    if (!lead?.employee_id || !lead?.company_id) return;
+
+    this.loadingLeadDetail = true;
+    try {
+      const { data, error } = await this.supabase.client
+        .from('care_intakes')
+        .select('id, payload, created_at, updated_at')
+        .eq('company_id', lead.company_id)
+        .eq('employee_id', lead.employee_id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      this.selectedLeadIntake = data || null;
+    } catch (error) {
+      console.warn('No se pudo cargar la ficha de la admisiÃ³n:', error);
+    } finally {
+      this.loadingLeadDetail = false;
+    }
+  }
+
+  closeLeadDetail(): void {
+    this.showLeadDetailModal = false;
+    this.selectedLead = null;
+    this.selectedLeadIntake = null;
+    this.loadingLeadDetail = false;
   }
 
   exportActivityToCSV() {
@@ -724,11 +1104,16 @@ export class AdminDashboardComponent implements OnInit {
         nombre: this.leadDraft.nombre,
         comuna: this.leadDraft.comuna || null,
         dependencia: this.leadDraft.dependencia || null,
-        presupuesto: this.leadDraft.presupuesto || null,
-        estado: 'nuevo' // Las nuevas consultas siempre empiezan en la columna 'nuevo'
+        presupuesto: this.leadDraft.presupuesto || null
       };
 
-      const { error } = await this.supabase.client.from('leads').insert(payload);
+      if (!this.leadDraft.id) {
+        payload.estado = 'nuevo'; // Las nuevas consultas siempre empiezan en la columna 'nuevo'
+      }
+
+      const { error } = this.leadDraft.id
+        ? await this.supabase.client.from('leads').update(payload).eq('id', this.leadDraft.id)
+        : await this.supabase.client.from('leads').insert(payload);
       if (error) throw error;
 
       this.showLeadModal = false;
@@ -864,9 +1249,13 @@ export class AdminDashboardComponent implements OnInit {
       if (error) throw error;
       this.showCamaModal = false;
       await this.loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error guardando cama:', error);
-      alert('Error al guardar la cama.');
+      if (error?.code === '23505') {
+        alert('Ya existe una cama con ese ID / Código. Por favor, ingresa uno diferente.');
+      } else {
+        alert('Error al guardar la cama. Revisa la consola para más detalles.');
+      }
     } finally {
       this.savingCama = false;
     }
@@ -890,52 +1279,252 @@ export class AdminDashboardComponent implements OnInit {
   openNewPacienteModal() {
     if (!this.ensureOperationalAccess()) return;
     this.pacienteDraft = {
-      db_id: null,
-      cama_id: null,
-      sede: '',
-      nombre_paciente: ''
+      id: null,
+      first_name: '',
+      last_name: '',
+      document_id: '',
+      emergency_contact_name: '',
+      emergency_contact_phone: '',
+      resource_id: null,
+      monthly_fee: null,
+      guarantor_name: '',
+      guarantor_document_id: '',
+      guarantor_email: ''
     };
     this.showPacienteModal = true;
   }
 
-  openPacienteModal(cama: any) {
+  openNewPacienteFromLead(lead: any) {
+    this.openNewPacienteModal();
+    const parts = (lead.nombre || '').split(' ');
+    this.pacienteDraft.first_name = parts[0] || '';
+    this.pacienteDraft.last_name = parts.slice(1).join(' ') || '';
+    this.pacienteDraft.monthly_fee = lead.presupuesto || null;
+  }
+
+  openPacienteModal(pacienteView: any) {
     if (!this.ensureOperationalAccess()) return;
+    const p = pacienteView.raw;
+    const contract = this.patientContracts.find(c => c.patient_id === p.id);
+
     this.pacienteDraft = {
-      db_id: cama.dbId,
-      cama_id: cama.id,
-      sede: cama.sede,
-      nombre_paciente: cama.paciente !== '-' ? cama.paciente : ''
+      id: p.id,
+      first_name: p.first_name,
+      last_name: p.last_name,
+      document_id: p.document_id,
+      emergency_contact_name: p.emergency_contact_name,
+      emergency_contact_phone: p.emergency_contact_phone,
+      resource_id: pacienteView.cama_id,
+      monthly_fee: contract?.monthly_fee || null,
+      guarantor_name: contract?.guarantor_name || '',
+      guarantor_document_id: contract?.guarantor_document_id || '',
+      guarantor_email: contract?.guarantor_email || ''
     };
     this.showPacienteModal = true;
   }
 
   async savePaciente() {
     if (!this.ensureOperationalAccess()) return;
-    if (!this.pacienteDraft.db_id) {
-      alert('Por favor selecciona una cama disponible.');
+    if (!this.pacienteDraft.first_name?.trim() || !this.pacienteDraft.last_name?.trim()) {
+      alert('El nombre y los apellidos son obligatorios.');
       return;
     }
     this.savingPaciente = true;
     
     try {
-      // Actualizamos las notas (donde guardamos el paciente) y marcamos la cama como Ocupada si hay nombre
-      const newStatus = this.pacienteDraft.nombre_paciente.trim() ? 'Ocupada' : 'Disponible';
-      
-      const { error } = await this.supabase.client.from('care_resources').update({
-        notes: this.pacienteDraft.nombre_paciente,
-        status: newStatus
-      }).eq('id', this.pacienteDraft.db_id);
+      let patientId = this.pacienteDraft.id;
+      const guarantorName = this.pacienteDraft.guarantor_name?.trim() || '';
+      const guarantorEmail = this.pacienteDraft.guarantor_email?.trim() || '';
+      const guarantorDocumentId = this.pacienteDraft.guarantor_document_id?.trim() || '';
+      const patientPayload = {
+        company_id: this.companyId,
+        first_name: this.pacienteDraft.first_name.trim(),
+        last_name: this.pacienteDraft.last_name.trim(),
+        status: 'active',
+        document_id: this.pacienteDraft.document_id || null,
+        emergency_contact_name: this.pacienteDraft.emergency_contact_name || null,
+        emergency_contact_phone: this.pacienteDraft.emergency_contact_phone || null
+      };
 
-      if (error) throw error;
+      // Upsert paciente
+      if (patientId) {
+        const { error } = await this.supabase.client.from('patients').update(patientPayload).eq('id', patientId);
+        if (error) throw error;
+      } else {
+        const res = await this.supabase.client.from('patients').insert(patientPayload).select('id').single();
+        if (res.error) throw res.error;
+        patientId = res.data.id;
+      }
+
+      // Gestionar la Cama: Liberar la cama anterior si existía
+      const { error: releaseBedError } = await this.supabase.client
+        .from('care_resources')
+        .update({ patient_id: null, status: 'Disponible' })
+        .eq('patient_id', patientId);
+      if (releaseBedError) throw releaseBedError;
+
+      // Asignar a la nueva cama
+      if (this.pacienteDraft.resource_id) {
+        const { error: assignBedError } = await this.supabase.client
+          .from('care_resources')
+          .update({ patient_id: patientId, status: 'Ocupada' })
+          .eq('id', this.pacienteDraft.resource_id);
+        if (assignBedError) throw assignBedError;
+      }
       
+      // Gestionar Contrato / Facturación
+      if (this.pacienteDraft.monthly_fee !== null || guarantorName || guarantorEmail || guarantorDocumentId) {
+        const contractPayload = {
+          company_id: this.companyId,
+          patient_id: patientId,
+          monthly_fee: this.pacienteDraft.monthly_fee || 0,
+          guarantor_name: guarantorName || null,
+          guarantor_email: guarantorEmail || null,
+          guarantor_document_id: guarantorDocumentId || null,
+        };
+        const { error: contractError } = await this.supabase.client
+          .from('patient_contracts')
+          .upsert(contractPayload, { onConflict: 'patient_id' });
+        if (contractError && !this.isMissingRelationError(contractError, 'patient_contracts')) throw contractError;
+        if (contractError && this.isMissingRelationError(contractError, 'patient_contracts')) {
+          alert('Paciente guardado, pero la sección de tutor/facturación no está disponible porque falta la tabla de contratos en esta base de datos.');
+        }
+      }
+
       this.showPacienteModal = false;
       await this.loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error guardando paciente:', error);
-      alert('Error al guardar los datos del paciente.');
+      alert(`Error al guardar los datos del paciente.${error?.message ? ' ' + error.message : ''}`);
     } finally {
       this.savingPaciente = false;
     }
+  }
+
+  openInvoicesModal(pacienteView: any) {
+    if (!this.ensureOperationalAccess()) return;
+    this.selectedPatientForInvoices = pacienteView;
+    this.selectedPatientInvoices = this.patientInvoices.filter(inv => inv.patient_id === pacienteView.id);
+    this.showInvoicesModal = true;
+  }
+
+  async emitirCobro(pacienteView: any) {
+    if (!this.ensureOperationalAccess()) return;
+    if (!pacienteView.contract_id || !pacienteView.monthly_fee) {
+      alert('Primero debes configurar la tarifa mensual (editar paciente) para emitir cobros.');
+      return;
+    }
+    if (confirm(`¿Generar un recordatorio de cobro (boleta) por ${pacienteView.monthly_fee} para ${pacienteView.nombreCompleto}?`)) {
+      const payload = {
+        company_id: this.companyId,
+        patient_id: pacienteView.id,
+        contract_id: pacienteView.contract_id,
+        amount: pacienteView.monthly_fee,
+        issue_date: new Date().toISOString().split('T')[0],
+        due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 5 días de vencimiento
+        status: 'draft'
+      };
+      const { error } = await this.supabase.client.from('patient_invoices').insert(payload);
+      if (error) {
+        alert('Error al generar cobro.');
+      } else {
+        alert('Cobro generado correctamente. (En una siguiente etapa podrás enviarlo por email o PDF).');
+        await this.loadData(); // Recargamos para que aparezca en el historial
+      }
+    }
+  }
+
+  async updateInvoiceStatus(invoice: any, status: string) {
+    if (!this.ensureOperationalAccess()) return;
+    const { error } = await this.supabase.client.from('patient_invoices').update({ status }).eq('id', invoice.id);
+    if (error) {
+      alert('Error al actualizar el estado.');
+    } else {
+      invoice.status = status;
+    }
+  }
+
+  exportExpensesToCSV() {
+    if (!this.gastos || this.gastos.length === 0) {
+      alert('No hay gastos para exportar.');
+      return;
+    }
+
+    const escapeCSV = (str: any) => `"${String(str || '').replace(/"/g, '""')}"`;
+    const headers = 'Fecha,Categoría,Descripción,Monto,Moneda';
+    const rows = this.gastos.map(g => 
+      [
+        g.expense_date,
+        g.category,
+        g.description,
+        g.amount,
+        g.currency
+      ].map(escapeCSV).join(',')
+    );
+
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `gastos_operativos_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  }
+
+  // --- GESTIÓN DE GASTOS ---
+
+  openGastoModal(gasto?: any) {
+    if (!this.ensureOperationalAccess()) return;
+    if (gasto) {
+      this.gastoDraft = { ...gasto, expense_date: gasto.expense_date ? new Date(gasto.expense_date).toISOString().split('T')[0] : '' };
+    } else {
+      this.gastoDraft = { id: null, category: 'Operativos', amount: null, expense_date: new Date().toISOString().split('T')[0], description: '' };
+    }
+    this.showGastoModal = true;
+  }
+
+  async saveGasto() {
+    if (!this.ensureOperationalAccess()) return;
+    if (!this.companyId || !this.gastoDraft.amount || !this.gastoDraft.expense_date) {
+      alert('El monto y la fecha del gasto son obligatorios.');
+      return;
+    }
+    this.savingGasto = true;
+    try {
+      const payload = {
+        company_id: this.companyId,
+        category: this.gastoDraft.category,
+        amount: this.gastoDraft.amount,
+        expense_date: this.gastoDraft.expense_date,
+        description: this.gastoDraft.description || null,
+        created_by: this.auth.user?.id
+      };
+
+      let error;
+      if (this.gastoDraft.id) {
+        const res = await this.supabase.client.from('company_expenses').update(payload).eq('id', this.gastoDraft.id);
+        error = res.error;
+      } else {
+        const res = await this.supabase.client.from('company_expenses').insert(payload);
+        error = res.error;
+      }
+
+      if (error) throw error;
+      this.showGastoModal = false;
+      await this.loadData();
+    } catch (error) {
+      console.error('Error guardando gasto:', error);
+      alert('Error al guardar el gasto.');
+    } finally {
+      this.savingGasto = false;
+    }
+  }
+
+  async deleteGasto(gasto: any) {
+    if (!this.ensureOperationalAccess()) return;
+    if (!confirm('¿Estás seguro de eliminar este registro de gasto?')) return;
+    const { error } = await this.supabase.client.from('company_expenses').delete().eq('id', gasto.id);
+    if (error) alert('Error al eliminar el gasto.');
+    else await this.loadData();
   }
 
   // --- GESTIÓN DE TAREAS ---
@@ -1045,9 +1634,9 @@ export class AdminDashboardComponent implements OnInit {
           label: `${cama.id} · ${cama.sede}`
         }));
       case 'paciente':
-        return this.pacientesActivos.map(cama => ({
-          id: cama.dbId,
-          label: `${cama.paciente} · ${cama.sede}`
+        return this.pacientesActivos.map(p => ({
+          id: p.id,
+          label: p.nombreCompleto
         }));
       default:
         return [];
@@ -1067,6 +1656,19 @@ export class AdminDashboardComponent implements OnInit {
   clearSelectedEntity() {
     this.selectedEntityType = null;
     this.selectedEntityId = null;
+  }
+
+  get onboardingCompletedCount() {
+    return this.onboardingSteps.filter((step) => step.completed).length;
+  }
+
+  get onboardingProgressPercent() {
+    if (!this.onboardingSteps.length) return 0;
+    return Math.round((this.onboardingCompletedCount / this.onboardingSteps.length) * 100);
+  }
+
+  get completedOnboardingProjectsCount() {
+    return this.onboardingProjects.filter((project) => project.status === 'completed').length;
   }
 
   async loadErpOperationalModules(companyId = this.companyId) {
@@ -1111,7 +1713,15 @@ export class AdminDashboardComponent implements OnInit {
       this.companyDocuments = documentsRes.data || [];
       this.entityComments = commentsRes.data || [];
       this.onboardingProjects = onboardingRes.data || [];
-      this.onboardingSteps = this.onboardingProjects.flatMap((project) => project.steps || []);
+      if (!this.onboardingStepDraft.project_id && this.onboardingProjects.length) {
+        this.onboardingStepDraft.project_id = this.onboardingProjects[0].id;
+      }
+      if (this.onboardingStepDraft.project_id && !this.onboardingProjects.some((project) => project.id === this.onboardingStepDraft.project_id)) {
+        this.onboardingStepDraft.project_id = this.onboardingProjects[0]?.id || null;
+      }
+      this.onboardingSteps = this.onboardingProjects
+        .flatMap((project) => (project.steps || []).map((step: any) => ({ ...step, project })))
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
       this.companyInvitations = invitationsRes.data || [];
       if (brandingRes.data) {
         this.brandingDraft = { ...this.brandingDraft, ...brandingRes.data };
@@ -1461,11 +2071,12 @@ export class AdminDashboardComponent implements OnInit {
       { step_key: 'company_profile', title: 'Completar ficha empresa', sort_order: 1 },
       { step_key: 'upload_employees', title: 'Cargar colaboradores', sort_order: 2 },
       { step_key: 'benefits_setup', title: 'Configurar beneficios y SLA', sort_order: 3 },
-      { step_key: 'send_invitations', title: 'Enviar invitaciones', sort_order: 4 }
+      { step_key: 'review_employees', title: 'Revisar colaboradores', sort_order: 4 }
     ];
     await this.supabase.client.from('onboarding_steps').insert(
       defaultSteps.map(step => ({ ...step, project_id: data.id }))
     );
+    this.onboardingStepDraft.project_id = data.id;
     await this.loadErpOperationalModules();
   }
 
@@ -1492,20 +2103,25 @@ export class AdminDashboardComponent implements OnInit {
       completed_at: completed ? new Date().toISOString() : null
     }).eq('id', step.id);
     if (error) return alert('No se pudo actualizar el paso.');
+    await this.syncOnboardingProjectStatus(step.project_id);
     await this.loadErpOperationalModules();
   }
 
-  async createInvitation() {
-    if (!this.companyId || !this.invitationDraft.email?.trim()) return;
-    const { error } = await this.supabase.client.from('company_invitations').insert({
-      company_id: this.companyId,
-      email: this.invitationDraft.email.trim().toLowerCase(),
-      role: this.invitationDraft.role,
-      invited_by: this.auth.user?.id
-    });
-    if (error) return alert('No se pudo crear la invitación.');
-    this.invitationDraft = { email: '', role: 'employee' };
-    await this.loadErpOperationalModules();
+  private async syncOnboardingProjectStatus(projectId: string) {
+    const { data, error } = await this.supabase.client
+      .from('onboarding_steps')
+      .select('completed')
+      .eq('project_id', projectId);
+    if (error || !data?.length) return;
+
+    const isCompleted = data.every((step) => step.completed);
+    await this.supabase.client
+      .from('onboarding_projects')
+      .update({
+        status: isCompleted ? 'completed' : 'active',
+        completed_at: isCompleted ? new Date().toISOString() : null
+      })
+      .eq('id', projectId);
   }
 
   exportConfigSnapshotToCSV() {
@@ -1554,7 +2170,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   setConfigSection(section: ConfigSection) {
-    const companySections: ConfigSection[] = ['company', 'documents', 'messages', 'onboarding'];
+    const companySections: ConfigSection[] = ['company', 'appearance', 'documents', 'messages', 'onboarding'];
     if (this.companyConfigMode && !companySections.includes(section)) {
       this.configSection = 'company';
       return;

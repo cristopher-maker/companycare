@@ -1,126 +1,160 @@
 :host {
-  --cc-primary: #1b4dff;
+  display: block;
+  --auth-bg: #090814;
+  --auth-panel: rgba(34, 34, 42, 0.88);
+  --auth-panel-border: rgba(255, 255, 255, 0.12);
+  --auth-input: rgba(255, 255, 255, 0.08);
+  --auth-text: rgba(255, 255, 255, 0.94);
+  --auth-muted: rgba(255, 255, 255, 0.7);
 }
 
-ion-content.login {
-  --background: transparent;
+main.login {
+  position: relative;
+  overflow: hidden;
+  background: var(--auth-bg);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
+.auth-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 560px;
+  height: 620px;
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  background-image: url('../../../../assets/img/login-bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  overflow: visible;
 }
 
-.overlay {
-  position: fixed;
+.auth-stage::before {
+  content: '';
+  position: absolute;
   inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(1200px 700px at 50% 40%, rgba(15, 23, 42, 0.30), rgba(15, 23, 42, 0.52)),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.25), rgba(15, 23, 42, 0.35));
-  backdrop-filter: blur(6px);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02), transparent 52%);
+}
+
+.auth-shape {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+}
+
+.auth-shape::after {
+  content: '';
+  position: absolute;
+  inset: -26px;
+  border-radius: 50%;
+  z-index: -1;
+  opacity: 0.9;
+  filter: blur(18px);
+}
+
+.auth-shape--blue {
+  top: 18px;
+  left: 38px;
+  background: linear-gradient(180deg, #3155ba 0%, #2f9af7 100%);
+}
+
+.auth-shape--orange {
+  right: 16px;
+  bottom: 8px;
+  background: linear-gradient(180deg, #ff6a2a 0%, #f6a313 100%);
+}
+
+.auth-shape--blue::after {
+  background: radial-gradient(circle, rgba(47, 154, 247, 0.55) 0%, rgba(47, 154, 247, 0) 68%);
+}
+
+.auth-shape--orange::after {
+  background: radial-gradient(circle, rgba(246, 163, 19, 0.52) 0%, rgba(246, 163, 19, 0) 68%);
 }
 
 .topbar {
   position: fixed;
   inset: 0 0 auto 0;
-  padding: 14px;
+  padding: 18px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   pointer-events: none;
   z-index: 5;
- 
 }
 
 .topbar .back {
   pointer-events: auto;
   width: 42px;
   height: 42px;
-  --padding-start: 0;
-  --padding-end: 0;
-  --border-radius: 16px;
-  --background: rgba(255, 255, 255, 0.18);
-  --border-color: rgba(255, 255, 255, 0.28);
-  --border-style: solid;
-  --border-width: 1px;
-  --box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22);
-  --color: rgba(255, 255, 255, 0.92);
-  
-}
-
-.topbar .back::part(native) {
-  width: 42px;
-  height: 42px;
-  padding-inline: 0;
-  border-radius: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.26);
 }
 
 .topbar .back mat-icon {
-  color: rgba(255, 255, 255, 0.92);
   font-size: 22px;
   width: 22px;
   height: 22px;
 }
 
 .shell {
-  min-height: 100%;
-  display: grid;
-  place-items: center;
-  padding: 84px 16px 28px;
+  width: min(560px, 100%);
+  min-height: 620px;
+  padding: 64px 16px 28px;
   position: relative;
   z-index: 3;
 }
 
 .card {
-  position: relative;
-  width: min(425px, 100%);
-  padding: 34px 26px 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 36px 92px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(400px, 100%);
+  transform: translate(-50%, -50%);
+  padding: 38px 36px 30px;
+  border-radius: 12px;
+  background: var(--auth-panel);
+  border: 1px solid var(--auth-panel-border);
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .title {
-  margin: 10px 0 18px;
+  margin: 8px 0 26px;
   text-align: center;
-  font-size: 40px;
-  font-weight: 950;
+  font-size: 32px;
+  font-weight: 800;
   letter-spacing: -0.03em;
-  color: rgba(255, 255, 255, 0.94);
+  color: var(--auth-text);
 }
 
 .form {
   display: grid;
-  gap: 14px;
+  gap: 18px;
 }
 
 .pill {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 16px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  min-height: 50px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--auth-input);
+  border: 1px solid transparent;
+}
+
+.pill:focus-within {
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .pill mat-icon {
   font-size: 20px;
   width: 20px;
   height: 20px;
-  color: rgba(255, 255, 255, 0.84);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .pill__icon-button {
@@ -136,11 +170,7 @@ ion-content.login {
 }
 
 .pill__icon-button mat-icon {
-  pointer-events: none;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.84);
 }
 
 .pill input {
@@ -148,34 +178,33 @@ ion-content.login {
   border: 0;
   outline: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 16px;
+  color: var(--auth-text);
+  font-size: 15px;
 }
 
 .pill input::placeholder {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.52);
 }
 
 .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 2px 6px 0;
+  gap: 12px;
 }
 
 .remember {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 14px;
+  color: var(--auth-muted);
+  font-size: 13px;
   user-select: none;
 }
 
 .remember input {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
 }
 
 .link {
@@ -184,74 +213,99 @@ ion-content.login {
   background: transparent;
   padding: 0;
   color: rgba(255, 255, 255, 0.92);
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   text-decoration: none;
 }
 
 .link:hover {
-  text-decoration: underline;
+  opacity: 0.85;
 }
 
 .primary {
   width: 100%;
-  height: 52px;
+  height: 56px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 8px;
   background: #ffffff;
-  color: rgba(15, 23, 42, 0.92);
-  font-weight: 900;
+  color: #111320;
+  font-size: 18px;
+  font-weight: 800;
   letter-spacing: -0.01em;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
 }
 
 .primary:disabled {
   opacity: 0.65;
 }
 
-.primary ion-spinner {
-  width: 18px;
-  height: 18px;
-}
-
 .msg {
   padding: 10px 12px;
-  border-radius: 16px;
+  border-radius: 10px;
   font-size: 14px;
 }
 
 .msg.error {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.16);
   border: 1px solid rgba(239, 68, 68, 0.18);
-  color: rgba(127, 29, 29, 0.96);
+  color: #fff;
 }
 
 .msg.success {
-  background: rgba(34, 197, 94, 0.12);
+  background: rgba(34, 197, 94, 0.16);
   border: 1px solid rgba(34, 197, 94, 0.18);
-  color: rgba(20, 83, 45, 0.96);
-}
-
-.bottom {
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  padding-top: 10px;
+  color: #fff;
 }
 
 .register-line {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.86);
   width: 100%;
   justify-content: center;
   text-align: center;
-  
+  color: var(--auth-muted);
+  font-size: 14px;
 }
 
-@media (min-width: 992px) {
-  .title {
-    font-size: 40px;
+@media (max-width: 640px) {
+  .shell {
+    width: 100%;
+    min-height: auto;
+    display: grid;
+    place-items: center;
+    padding-top: 92px;
+  }
+
+  .auth-stage {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: none;
+    top: 0;
+    left: 0;
+  }
+
+  .card {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    padding: 30px 22px 24px;
+  }
+
+  .auth-shape--blue {
+    top: 22px;
+    left: calc(50% - 146px);
+    width: 180px;
+    height: 180px;
+  }
+
+  .auth-shape--orange {
+    right: calc(50% - 150px);
+    bottom: 18px;
+    width: 180px;
+    height: 180px;
   }
 }

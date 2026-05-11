@@ -6,15 +6,16 @@
   - <ion-spinner> se reemplaza por un SVG de spinner.
 -->
 <main class="login relative w-full h-screen flex items-center justify-center p-4">
-  <div class="bg" aria-hidden="true"></div>
-  <div class="overlay" aria-hidden="true"></div>
-
   <div class="topbar absolute top-4 left-4">
     <a routerLink="/home" aria-label="Volver al inicio" class="back inline-flex items-center justify-center w-10 h-10 rounded-full text-white hover:bg-white/10 transition-colors">
       <mat-icon>arrow_back</mat-icon>
     </a>
   </div>
   <div class="shell w-full max-w-md">
+    <div class="auth-stage" aria-hidden="true">
+      <div class="auth-shape auth-shape--blue"></div>
+      <div class="auth-shape auth-shape--orange"></div>
+    </div>
     <div class="card" role="region" aria-label="Acceso">
       <h1 class="title">{{ mode === 'Ingresar' ? 'Ingresar' : 'Link mágico' }}</h1>
 

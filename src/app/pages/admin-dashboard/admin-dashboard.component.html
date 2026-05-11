@@ -39,6 +39,14 @@
         <mat-icon class="nav-icon">people</mat-icon>
         Pacientes
       </button>
+      <button class="nav-item" [class.active]="currentView === 'facturacion'" [class.is-locked]="isPlanLockedView('facturacion')" [disabled]="isPlanLockedView('facturacion')" (click)="setView('facturacion')">
+        <mat-icon class="nav-icon">receipt_long</mat-icon>
+        Facturación
+      </button>
+      <button class="nav-item" [class.active]="currentView === 'gastos'" [class.is-locked]="isPlanLockedView('gastos')" [disabled]="isPlanLockedView('gastos')" (click)="setView('gastos')">
+        <mat-icon class="nav-icon">account_balance_wallet</mat-icon>
+        Gastos y Finanzas
+      </button>
     </div>
  
     <div class="nav-divider"></div>
@@ -85,6 +93,7 @@
         <span class="topbar-page">resumen</span>
       </div>
       <div class="topbar-right">
+        <span class="topbar-status" *ngIf="loading && hasLoadedOnce">Actualizando...</span>
         <span class="status-dot"></span>
         <span class="topbar-status">Sistema operativo</span>
       </div>
@@ -99,7 +108,7 @@
     </div>
  
     <!-- Loading overlay -->
-    <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-overlay" *ngIf="loading && !hasLoadedOnce">
       <div class="loading-spinner"></div>
       <span class="loading-label">Cargando datos...</span>
     </div>
@@ -109,6 +118,71 @@
 
       <!-- View: Métricas -->
       <div *ngIf="currentView === 'metricas'">
+        <section class="dashboard-hero">
+          <div>
+            <span class="dashboard-hero__eyebrow">Panel de control</span>
+            <h1>{{ dashboardGreeting }}, Administrador</h1>
+            <p>Resumen operativo de empresa, admisiones, tareas, disponibilidad y finanzas.</p>
+          </div>
+          <div class="dashboard-hero__meta">
+            <span>{{ activePlanTier || 'Sin plan activo' }}</span>
+            <strong>{{ hasActivePlan ? 'Operativo' : 'Bloqueado' }}</strong>
+          </div>
+        </section>
+
+        <div class="dashboard-summary-grid">
+          <button type="button" class="dashboard-summary-card" *ngFor="let card of dashboardSummaryCards" [ngClass]="'dashboard-summary-card--' + card.tone">
+            <span class="dashboard-summary-card__icon">
+              <mat-icon>{{ card.icon }}</mat-icon>
+            </span>
+            <span class="dashboard-summary-card__label">{{ card.label }}</span>
+            <strong>{{ card.value }}</strong>
+            <small>{{ card.detail }}</small>
+          </button>
+        </div>
+
+        <div class="dashboard-workbench">
+          <section class="table-card dashboard-panel dashboard-panel--actions">
+            <div class="dashboard-panel__header">
+              <div>
+                <h3>Próximas acciones</h3>
+                <p>Prioridades sugeridas con los datos actuales.</p>
+              </div>
+            </div>
+            <div class="dashboard-action-list" *ngIf="dashboardActionItems.length">
+              <button type="button" class="dashboard-action" *ngFor="let item of dashboardActionItems" [ngClass]="'dashboard-action--' + item.tone" (click)="setView(item.view)">
+                <span><mat-icon>{{ item.icon }}</mat-icon></span>
+                <strong>{{ item.title }}</strong>
+                <small>{{ item.detail }}</small>
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+            <div class="dashboard-empty" *ngIf="!dashboardActionItems.length">
+              No hay acciones urgentes pendientes.
+            </div>
+          </section>
+
+          <section class="table-card dashboard-panel">
+            <div class="dashboard-panel__header">
+              <div>
+                <h3>Ultimos registros</h3>
+                <p>Últimos movimientos de tareas, admisiones y cobros.</p>
+              </div>
+            </div>
+            <div class="dashboard-event-list" *ngIf="latestOperationalEvents.length">
+              <article class="dashboard-event" *ngFor="let event of latestOperationalEvents">
+                <span><mat-icon>{{ event.icon }}</mat-icon></span>
+                <div>
+                  <strong>{{ event.title }}</strong>
+                  <small>{{ event.detail }} · {{ getTimeAgo(event.created_at) }}</small>
+                </div>
+              </article>
+            </div>
+            <div class="dashboard-empty" *ngIf="!latestOperationalEvents.length">
+              Aún no hay actividad para mostrar.
+            </div>
+          </section>
+        </div>
         <div class="view-header">
           <span class="view-title">Métricas Principales</span>
         </div>
@@ -241,39 +315,9 @@
             </div>
           </section>
         </div>
-
-        <!-- Log de Actividad Reciente -->
-        <div style="margin-top: 2rem;">
-          <div class="view-header">
-            <span class="view-title">Actividad Reciente</span>
-            <button class="btn-ghost" style="font-size: 12px; padding: 6px 12px; display: flex; align-items: center;" (click)="exportActivityToCSV()">
-              <mat-icon style="font-size: 16px; width: 16px; height: 16px; margin-right: 6px;">download</mat-icon>
-              Exportar CSV
-            </button>
-          </div>
-          <div class="table-card" style="padding: 1.5rem;">
-            <ul style="list-style: none; padding: 0; margin: 0;">
-              <li *ngFor="let act of recentActivity; let last = last" [style.border-bottom]="last ? 'none' : '1px solid #f1f5f9'" [style.padding-bottom]="last ? '0' : '1rem'" [style.margin-bottom]="last ? '0' : '1rem'" style="display: flex; gap: 1rem;">
-                <div style="background: #e0e7ff; color: #4f46e5; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                  <mat-icon style="font-size: 18px; width: 18px; height: 18px;">history</mat-icon>
-                </div>
-                <div style="flex: 1;">
-                  <p style="margin: 0; font-size: 14px; color: #334155; line-height: 1.4;">
-                    <strong>{{ act.profiles?.full_name || 'Usuario' }}</strong>
-                    {{ act.event_name }}
-                  </p>
-                  <span style="font-size: 12px; color: #94a3b8; display: block; margin-top: 2px;">{{ getTimeAgo(act.created_at) }}</span>
-                </div>
-              </li>
-              <li *ngIf="recentActivity.length === 0" style="color: #94a3b8; font-size: 14px; text-align: center; padding: 1rem 0;">
-                No hay actividad reciente registrada aún.
-              </li>
-            </ul>
-          </div>
-        </div>
       </div>
 
-      <!-- View: Tareas -->
+        <!-- View: Tareas -->
       <div *ngIf="currentView === 'tareas'" class="mt-8">
         <div class="view-header">
           <span class="view-title">Gestión de Tareas</span>
@@ -515,22 +559,34 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:25%">Paciente</th>
-                <th style="width:20%">Sede</th>
-                <th style="width:15%">ID Cama</th>
-                <th style="width:20%">Tipo de cuidado</th>
+                <th style="width:20%">Paciente</th>
+                <th style="width:25%">Tutor / Financiero</th>
+                <th style="width:20%">Contacto Emergencia</th>
+                <th style="width:15%">Cama / Sede</th>
                 <th style="width:20%"></th>
               </tr>
             </thead>
             <tbody *ngIf="pacientesActivos.length > 0">
-              <tr *ngFor="let cama of pacientesActivos" [class.row-highlight]="isSelectedEntity('paciente', cama.dbId)">
-                <td class="td-primary">{{ cama.paciente }}</td>
-                <td>{{ cama.sede }}</td>
-                <td class="td-mono">{{ cama.id }}</td>
-                <td>{{ cama.tipo }}</td>
+              <tr *ngFor="let p of pacientesActivos" [class.row-highlight]="isSelectedEntity('paciente', p.id)">
+                <td class="td-primary">
+                  {{ p.nombreCompleto }}
+                  <div style="font-size: 11px; color: var(--text3); font-weight: normal; margin-top: 2px;">RUT: {{ p.documento }}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">{{ p.guarantor_name }}</div>
+                  <div style="font-size: 11px; color: var(--text3); margin-top: 2px;" *ngIf="p.monthly_fee > 0">Tarifa: {{ p.monthly_fee | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+                </td>
+                <td>{{ p.contacto }}</td>
+                <td><span class="status-badge badge-gray">{{ p.camaAsignada }}</span></td>
                 <td class="td-actions">
-                  <button class="btn-ghost" (click)="openPacienteModal(cama)">
-                    Editar paciente
+                  <button class="btn-ghost" (click)="openPacienteModal(p)">
+                    Editar
+                  </button>
+                  <button class="btn-ghost" style="color: var(--text2);" (click)="openInvoicesModal(p)">
+                    Historial
+                  </button>
+                  <button class="btn-ghost" style="color: var(--blue);" (click)="emitirCobro(p)">
+                    Cobro
                   </button>
                 </td>
               </tr>
@@ -538,6 +594,146 @@
             <tbody *ngIf="pacientesActivos.length === 0">
               <tr>
                 <td colspan="5" class="td-empty">No hay pacientes registrados. Asigna el nombre de un paciente a una cama para que aparezca aquí.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- View: Facturación -->
+      <div *ngIf="currentView === 'facturacion'" class="mt-8">
+        <div class="view-header">
+          <span class="view-title">Facturación y Cobros globales</span>
+        </div>
+        <section *ngIf="companyConfigMode" class="table-card">
+          <ng-content select="[billing-content]"></ng-content>
+        </section>
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:25%">Paciente</th>
+                <th style="width:15%">Emisión</th>
+                <th style="width:15%">Vencimiento</th>
+                <th style="width:15%">Monto</th>
+                <th style="width:15%">Estado</th>
+                <th style="width:15%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody *ngIf="allInvoicesView.length > 0">
+              <tr *ngFor="let inv of allInvoicesView">
+                <td class="td-primary">
+                  {{ inv.patientName }}
+                  <div style="font-size: 11px; color: var(--text3); font-weight: normal; margin-top: 2px;">RUT: {{ inv.document }}</div>
+                </td>
+                <td class="td-mono">{{ inv.issue_date | date:'dd/MM/yyyy' }}</td>
+                <td class="td-mono">{{ inv.due_date | date:'dd/MM/yyyy' }}</td>
+                <td class="td-mono" style="font-weight: 500;">{{ inv.amount | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+                <td>
+                  <span class="status-badge badge-gray" *ngIf="inv.status === 'draft'">Borrador</span>
+                  <span class="status-badge badge-blue" *ngIf="inv.status === 'sent'">Enviado</span>
+                  <span class="status-badge badge-green" *ngIf="inv.status === 'paid'">Pagado</span>
+                  <span class="status-badge badge-red" *ngIf="inv.status === 'overdue'">Vencido</span>
+                </td>
+                <td class="td-actions">
+                  <button class="btn-ghost" *ngIf="inv.status !== 'paid'" style="color: var(--accent);" (click)="updateInvoiceStatus(inv, 'paid')">Marcar Pagado</button>
+                </td>
+              </tr>
+            </tbody>
+            <tbody *ngIf="allInvoicesView.length === 0">
+              <tr>
+                <td colspan="6" class="td-empty">No hay cobros emitidos globalmente. Genera el primer cobro desde la pestaña de Pacientes.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- View: Gastos y Finanzas -->
+      <div *ngIf="currentView === 'gastos'" class="mt-8">
+        <div class="view-header">
+          <span class="view-title">Flujo de Caja y Gastos</span>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn-secondary" (click)="exportExpensesToCSV()">
+              <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">download</mat-icon>
+              Exportar CSV
+            </button>
+            <button class="btn-primary" (click)="openGastoModal()">
+              <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">add</mat-icon>
+              Registrar Gasto
+            </button>
+          </div>
+        </div>
+        
+        <div class="ops-overview" style="margin-bottom: 1.5rem;">
+          <section class="table-card ops-panel">
+            <div class="ops-panel__header">
+              <h3 class="ops-panel__title">Flujo de Caja Mensual</h3>
+            </div>
+            <div class="ops-summary-grid">
+              <article class="ops-summary-card ops-summary-card--blue">
+                <span class="ops-summary-card__label">Ingresos Reales (Pagados)</span>
+                <strong class="ops-summary-card__value">{{ totalIngresos | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong>
+              </article>
+              <article class="ops-summary-card ops-summary-card--warn">
+                <span class="ops-summary-card__label">Total Gastos Operativos</span>
+                <strong class="ops-summary-card__value">{{ totalGastos | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong>
+              </article>
+              <article class="ops-summary-card" [ngClass]="(totalIngresos - totalGastos) >= 0 ? 'ops-summary-card--green' : 'ops-summary-card--warn'">
+                <span class="ops-summary-card__label">Balance Neto</span>
+                <strong class="ops-summary-card__value">{{ (totalIngresos - totalGastos) | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong>
+              </article>
+            </div>
+          </section>
+
+          <section class="table-card chart-card">
+            <div class="chart-card__header">
+              <h3 class="chart-card__title">Gastos por Categoría</h3>
+            </div>
+            <div class="chart-card__body">
+              <canvas *ngIf="totalGastos > 0"
+                baseChart
+                [labels]="expensesChartLabels"
+                [datasets]="expensesChartDatasets"
+                [options]="expensesChartOptions"
+                [legend]="true"
+                type="doughnut">
+              </canvas>
+              <div *ngIf="totalGastos === 0" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding-bottom: 1.5rem;">
+                <div style="width: 140px; height: 140px; border-radius: 50%; border: 18px solid #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-weight: 600; font-size: 13px;">
+                  Sin gastos
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:15%">Fecha</th>
+                <th style="width:20%">Categoría</th>
+                <th style="width:35%">Descripción</th>
+                <th style="width:15%">Monto</th>
+                <th style="width:15%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody *ngIf="gastos.length > 0">
+              <tr *ngFor="let g of gastos">
+                <td class="td-mono">{{ g.expense_date | date:'dd/MM/yyyy' }}</td>
+                <td><span class="status-badge badge-gray">{{ g.category }}</span></td>
+                <td>{{ g.description || 'Sin descripción' }}</td>
+                <td class="td-mono" style="font-weight: 500; color: var(--danger);">{{ g.amount | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="td-actions">
+                  <button class="btn-ghost" style="margin-right: 6px;" (click)="openGastoModal(g)">Editar</button>
+                  <button class="btn-ghost" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);" (click)="deleteGasto(g)">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+            <tbody *ngIf="gastos.length === 0">
+              <tr>
+                <td colspan="5" class="td-empty">No hay gastos registrados en el sistema.</td>
               </tr>
             </tbody>
           </table>
@@ -576,7 +772,7 @@
               </div>
 
               <!-- Itera sobre los leads (tarjetas) de esta columna -->
-              <div class="kanban-card" [class.kanban-card--selected]="isSelectedEntity('lead', lead.id)" *ngFor="let lead of kanbanData[column.id]; trackBy: trackByLead" cdkDrag [cdkDragData]="lead" cdkDragPreviewContainer="parent">
+              <div class="kanban-card" [class.kanban-card--selected]="isSelectedEntity('lead', lead.id)" *ngFor="let lead of kanbanData[column.id]; trackBy: trackByLead" cdkDrag [cdkDragData]="lead" cdkDragPreviewContainer="parent" role="button" tabindex="0" (click)="openLeadDetail(lead)" (keydown.enter)="openLeadDetail(lead)">
                 <ng-template cdkDragPlaceholder>
                   <div class="kanban-card kanban-card--placeholder">
                     <div class="kanban-card-content"></div>
@@ -665,7 +861,7 @@
           <button type="button" class="erp-summary-card" (click)="setConfigSection('onboarding')">
             <span>Onboarding</span>
             <strong>{{ onboardingProjects.length }}</strong>
-            <small>Proyectos activos</small>
+            <small>{{ completedOnboardingProjectsCount }} completados</small>
           </button>
         </div>
 
@@ -674,7 +870,7 @@
             <mat-icon>business</mat-icon>
             Mi empresa
           </button>
-          <button *ngIf="!companyConfigMode" type="button" [class.active]="configSection === 'appearance'" (click)="setConfigSection('appearance')">
+          <button type="button" [class.active]="configSection === 'appearance'" (click)="setConfigSection('appearance')">
             <mat-icon>palette</mat-icon>
             Apariencia
           </button>
@@ -705,7 +901,7 @@
             <ng-content select="[config-content]"></ng-content>
           </section>
 
-          <section class="table-card erp-panel erp-panel--wide appearance-panel" *ngIf="configSection === 'appearance' && !companyConfigMode">
+          <section class="table-card erp-panel erp-panel--wide appearance-panel" *ngIf="configSection === 'appearance'">
             <div class="erp-panel__header">
               <div>
                 <h3>Apariencia del ERP</h3>
@@ -1157,56 +1353,51 @@
             </div>
           </section>
 
-          <section class="table-card erp-panel erp-panel--wide" *ngIf="configSection === 'onboarding'">
-            <div class="erp-panel__header">
+          <section class="table-card erp-panel erp-panel--wide onboarding-panel" *ngIf="configSection === 'onboarding'">
+            <div class="onboarding-hero">
               <div>
+                <span class="onboarding-kicker">Puesta en marcha</span>
                 <h3>Activación de empresa</h3>
-                <p>Crea una lista de tareas para dejar lista la empresa antes de invitar usuarios.</p>
+                <p>Checklist simple para dejar configurada la empresa antes de operar.</p>
               </div>
-              <span>{{ onboardingProjects.length }} proyectos</span>
+              <div class="onboarding-progress" aria-label="Progreso de activación">
+                <strong>{{ onboardingProgressPercent }}%</strong>
+                <span>{{ onboardingCompletedCount }} de {{ onboardingSteps.length || 0 }} tareas</span>
+              </div>
             </div>
-            <div class="erp-form-grid erp-form-grid--three">
-              <input class="field-input" [(ngModel)]="onboardingDraft.title" placeholder="Nombre de la activación">
-              <input class="field-input" type="date" [(ngModel)]="onboardingDraft.starts_at">
-            </div>
-            <button class="btn-primary" (click)="createOnboardingProject()">Crear checklist de activación</button>
-            <div class="erp-form-grid erp-form-grid--three" style="margin-top: 12px;">
-              <select class="field-input" [(ngModel)]="onboardingStepDraft.project_id">
-                <option [ngValue]="null">Selecciona una activación</option>
-                <option *ngFor="let project of onboardingProjects" [ngValue]="project.id">{{ project.title }}</option>
-              </select>
-              <input class="field-input" [(ngModel)]="onboardingStepDraft.title" placeholder="Nueva tarea">
-              <button class="btn-secondary" (click)="addOnboardingStep()">Añadir tarea</button>
-            </div>
-            <div class="erp-step-list">
-              <label class="erp-step" *ngFor="let step of onboardingSteps">
-                <input type="checkbox" [checked]="step.completed" (change)="toggleOnboardingStep(step)">
-                <span>{{ step.title }}</span>
-              </label>
-            </div>
-          </section>
 
-          <section class="table-card erp-panel" *ngIf="configSection === 'onboarding'">
-            <div class="erp-panel__header">
-              <div>
-                <h3>Invitaciones</h3>
-                <p>Crea accesos pendientes para empleados, RR.HH. o managers.</p>
+            <div class="onboarding-progress-bar" aria-hidden="true">
+              <span [style.width.%]="onboardingProgressPercent"></span>
+            </div>
+
+            <div class="onboarding-main">
+              <div class="onboarding-actions">
+                <input class="field-input" [(ngModel)]="onboardingDraft.title" placeholder="Nombre de la activación">
+                <input class="field-input" type="date" [(ngModel)]="onboardingDraft.starts_at">
+                <button class="btn-primary" (click)="createOnboardingProject()">Crear checklist</button>
               </div>
-              <span>{{ companyInvitations.length }} invitaciones</span>
-            </div>
-            <div class="erp-form-grid erp-form-grid--two">
-              <input class="field-input" type="email" [(ngModel)]="invitationDraft.email" placeholder="correo@empresa.com">
-              <select class="field-input" [(ngModel)]="invitationDraft.role">
-                <option value="employee">Empleado</option>
-                <option value="hr_admin">RR.HH.</option>
-                <option value="manager">Manager</option>
-              </select>
-            </div>
-            <button class="btn-primary" (click)="createInvitation()">Crear invitación</button>
-            <div class="erp-list">
-              <div class="erp-list-row" *ngFor="let invite of companyInvitations | slice:0:5">
-                <strong>{{ invite.email }}</strong>
-                <span>{{ invite.role }} · {{ invite.status }}</span>
+
+              <div class="onboarding-add-task">
+                <select class="field-input" [(ngModel)]="onboardingStepDraft.project_id">
+                  <option [ngValue]="null">Selecciona una activación</option>
+                  <option *ngFor="let project of onboardingProjects" [ngValue]="project.id">{{ project.title }}</option>
+                </select>
+                <input class="field-input" [(ngModel)]="onboardingStepDraft.title" placeholder="Nueva tarea">
+                <button class="btn-secondary" (click)="addOnboardingStep()">Añadir</button>
+              </div>
+
+              <div class="erp-empty-state" *ngIf="!onboardingSteps.length">
+                Crea un checklist para ver las tareas base de activación.
+              </div>
+
+              <div class="onboarding-step-list" *ngIf="onboardingSteps.length">
+                <label class="onboarding-step" *ngFor="let step of onboardingSteps" [class.is-complete]="step.completed">
+                  <input type="checkbox" [checked]="step.completed" (change)="toggleOnboardingStep(step)">
+                  <span>
+                    {{ step.title }}
+                    <small *ngIf="step.project?.title">{{ step.project.title }}</small>
+                  </span>
+                </label>
               </div>
             </div>
           </section>
@@ -1257,6 +1448,52 @@
       <button class="btn-secondary" (click)="showSedeModal = false">Cancelar</button>
       <button class="btn-primary" (click)="saveSede()" [disabled]="savingSede">
         {{ savingSede ? 'Guardando...' : 'Guardar sede' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Registrar Gasto -->
+<div class="modal-backdrop" *ngIf="showGastoModal" (click)="showGastoModal = false">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">{{ gastoDraft.id ? 'Editar Gasto' : 'Registrar Nuevo Gasto' }}</span>
+      <button class="modal-close" (click)="showGastoModal = false">
+        <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label class="field-label">Categoría</label>
+        <select class="field-input" [(ngModel)]="gastoDraft.category">
+          <option value="Operativos">Operativos Generales</option>
+          <option value="RRHH">Nómina / Recursos Humanos</option>
+          <option value="Insumos">Insumos y Suministros</option>
+          <option value="Infraestructura">Arriendo / Mantenimiento</option>
+          <option value="Servicios">Servicios Básicos (Luz, Agua, Internet)</option>
+          <option value="Marketing">Marketing / Publicidad</option>
+          <option value="Otros">Otros</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="field-group">
+          <label class="field-label">Monto (CLP)</label>
+          <input class="field-input" type="number" [(ngModel)]="gastoDraft.amount" placeholder="Ej: 50000">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Fecha del gasto</label>
+          <input class="field-input" type="date" [(ngModel)]="gastoDraft.expense_date">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Descripción</label>
+        <input class="field-input" type="text" [(ngModel)]="gastoDraft.description" placeholder="Ej: Compra de insumos de enfermería">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showGastoModal = false">Cancelar</button>
+      <button class="btn-primary" (click)="saveGasto()" [disabled]="savingGasto">
+        {{ savingGasto ? 'Guardando...' : 'Guardar Gasto' }}
       </button>
     </div>
   </div>
@@ -1338,11 +1575,137 @@
   </div>
 </div>
 
+<!-- Modal: Detalle de Admision -->
+<div class="modal-backdrop" *ngIf="showLeadDetailModal" (click)="closeLeadDetail()">
+  <div class="modal-box modal-box--wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Detalle de admision</span>
+      <button class="modal-close" (click)="closeLeadDetail()">
+        <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body lead-detail" *ngIf="selectedLead">
+      <div class="lead-detail__header">
+        <div>
+          <h3>{{ selectedLead.nombre }}</h3>
+          <p>{{ selectedLead.comuna || 'Sin comuna' }}</p>
+        </div>
+        <span class="status-badge"
+              [class.badge-warn]="selectedLead.estado === 'nuevo'"
+              [class.badge-blue]="selectedLead.estado === 'contactado' || selectedLead.estado === 'match'"
+              [class.badge-gray]="selectedLead.estado === 'evaluacion'"
+              [class.badge-green]="selectedLead.estado === 'cerrado'"
+              [class.badge-red]="selectedLead.estado === 'perdido'">
+          {{ leadStatusLabel(selectedLead.estado) }}
+        </span>
+      </div>
+
+      <div class="lead-detail__grid">
+        <div class="lead-detail__item">
+          <span>Dependencia</span>
+          <strong>{{ selectedLead.dependencia || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Presupuesto</span>
+          <strong>{{ selectedLead.presupuesto ? (selectedLead.presupuesto | currency:'CLP':'symbol-narrow':'1.0-0') : 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Telefono</span>
+          <strong>{{ selectedLead.telefono || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Creada</span>
+          <strong>{{ selectedLead.created_at | date:'dd/MM/yyyy HH:mm' }}</strong>
+        </div>
+      </div>
+
+      <div class="lead-detail__loading" *ngIf="loadingLeadDetail">
+        Cargando ficha...
+      </div>
+
+      <ng-container *ngIf="selectedLeadIntake?.payload as intake">
+        <div class="lead-detail__section">
+          <h4>Ficha de cuidado</h4>
+          <div class="lead-detail__grid">
+            <div class="lead-detail__item">
+              <span>Tipo de apoyo</span>
+              <strong>{{ careTypeLabel(intake.care_type) }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Edad persona cuidada</span>
+              <strong>{{ intake.care_receiver?.age || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Condicion principal</span>
+              <strong>{{ intake.care_receiver?.primary_condition || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Nivel dependencia</span>
+              <strong>{{ dependencyLevelLabel(intake.care_receiver?.dependency_level) }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Ciudad o comuna</span>
+              <strong>{{ intake.location?.city || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Codigo postal</span>
+              <strong>{{ intake.location?.postal_code || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Red de apoyo</span>
+              <strong>{{ intake.family_context?.support_network || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Financiamiento</span>
+              <strong>{{ fundingLabel(intake.budget?.funding) }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Contacto preferido</span>
+              <strong>{{ preferredContactLabel(intake.preferences?.preferred_contact) }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Urgencia</span>
+              <strong>{{ urgencyLabel(intake.urgency) }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Cuidador</span>
+              <strong>{{ intake.caregiver?.name || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Relacion</span>
+              <strong>{{ intake.caregiver?.relation || 'Sin dato' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="lead-detail__notes" *ngIf="intake.notes">
+          <span>Notas relevantes</span>
+          <p>{{ intake.notes }}</p>
+        </div>
+      </ng-container>
+
+      <div class="lead-detail__empty" *ngIf="!loadingLeadDetail && selectedLead.employee_id && !selectedLeadIntake">
+        No se encontro ficha asociada a esta admision.
+      </div>
+
+      <div class="lead-detail__empty" *ngIf="!selectedLead.employee_id">
+        Esta admision fue creada manualmente y no tiene ficha de empleado asociada.
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeLeadDetail()">Cerrar</button>
+      <button class="btn-primary" (click)="showLeadDetailModal = false; openLeadModal(selectedLead)">Editar admision</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Nueva Consulta (Lead) -->
 <div class="modal-backdrop" *ngIf="showLeadModal" (click)="showLeadModal = false">
   <div class="modal-box" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <span class="modal-title">Nueva consulta / Lead</span>
+      <span class="modal-title">{{ leadDraft.id ? 'Editar admision' : 'Nueva consulta / Lead' }}</span>
       <button class="modal-close" (click)="showLeadModal = false">
         <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
       </button>
@@ -1368,12 +1731,56 @@
     <div class="modal-footer">
       <button class="btn-secondary" (click)="showLeadModal = false">Cancelar</button>
       <button class="btn-primary" (click)="saveLead()" [disabled]="savingLead">
-        {{ savingLead ? 'Guardando...' : 'Crear consulta' }}
+        {{ savingLead ? 'Guardando...' : (leadDraft.id ? 'Guardar cambios' : 'Crear consulta') }}
       </button>
     </div>
   </div>
 </div>
  
+<!-- Modal: Historial de Cobros / Boletas -->
+<div class="modal-backdrop" *ngIf="showInvoicesModal" (click)="showInvoicesModal = false">
+  <div class="modal-box" (click)="$event.stopPropagation()" style="max-width: 650px;">
+    <div class="modal-header">
+      <span class="modal-title">Historial de Cobros - {{ selectedPatientForInvoices?.nombreCompleto }}</span>
+      <button class="modal-close" (click)="showInvoicesModal = false">
+        <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body" style="padding: 0;">
+      <table class="data-table" style="border: none;">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Emisión</th>
+            <th style="width: 25%;">Vencimiento</th>
+            <th style="width: 25%;">Monto</th>
+            <th style="width: 25%;">Estado</th>
+          </tr>
+        </thead>
+        <tbody *ngIf="selectedPatientInvoices.length > 0">
+          <tr *ngFor="let inv of selectedPatientInvoices">
+            <td class="td-mono">{{ inv.issue_date | date:'dd/MM/yyyy' }}</td>
+            <td class="td-mono">{{ inv.due_date | date:'dd/MM/yyyy' }}</td>
+            <td class="td-mono" style="font-weight: 500;">{{ inv.amount | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+            <td>
+              <span class="status-badge badge-gray" *ngIf="inv.status === 'draft'">Borrador / Pendiente</span>
+              <span class="status-badge badge-blue" *ngIf="inv.status === 'sent'">Enviado</span>
+              <span class="status-badge badge-green" *ngIf="inv.status === 'paid'">Pagado</span>
+              <span class="status-badge badge-red" *ngIf="inv.status === 'overdue'">Vencido</span>
+            </td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="selectedPatientInvoices.length === 0">
+          <tr>
+            <td colspan="4" class="td-empty" style="padding: 2rem;">No se han emitido cobros para este paciente aún.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showInvoicesModal = false">Cerrar historial</button>
+    </div>
+  </div>
+</div>
 <!-- Modal: Editar Paciente -->
 <div class="modal-backdrop" *ngIf="showPacienteModal" (click)="showPacienteModal = false">
   <div class="modal-box" (click)="$event.stopPropagation()">
@@ -1384,25 +1791,63 @@
       </button>
     </div>
     <div class="modal-body">
-      <p *ngIf="pacienteDraft.cama_id" style="font-size: 12px; color: var(--text3); margin-bottom: 10px;">
-        Cama: <strong>{{ pacienteDraft.cama_id }}</strong> | Sede: {{ pacienteDraft.sede }}
-      </p>
-      
-      <div class="field-group" *ngIf="!pacienteDraft.cama_id">
-        <label class="field-label">Cama disponible</label>
-        <select class="field-input" [(ngModel)]="pacienteDraft.db_id" [disabled]="camasLibres.length === 0">
-          <option [ngValue]="null">Selecciona una cama...</option>
-          <option *ngFor="let cama of camasLibres" [ngValue]="cama.dbId">{{ cama.sede }} - {{ cama.id }} ({{ cama.tipo }})</option>
-        </select>
-        <span *ngIf="camasLibres.length === 0" style="font-size: 11px; color: #ef4444; margin-top: 4px; display: block;">
-          No hay camas con estado "Disponible". Debes añadir una nueva o liberar alguna.
-        </span>
+      <div class="grid grid-cols-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="field-group">
+          <label class="field-label">Nombre</label>
+          <input class="field-input" type="text" [(ngModel)]="pacienteDraft.first_name" placeholder="Ej: Juan">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Apellidos</label>
+          <input class="field-input" type="text" [(ngModel)]="pacienteDraft.last_name" placeholder="Ej: Pérez">
+        </div>
       </div>
       
       <div class="field-group">
-        <label class="field-label">Nombre del Paciente / Notas</label>
-        <input class="field-input" type="text" [(ngModel)]="pacienteDraft.nombre_paciente" placeholder="Ej. Juan Pérez">
-        <span style="font-size: 10px; color: var(--text3); margin-top: 4px;">Si dejas este campo vacío, la cama pasará a estado "Disponible".</span>
+        <label class="field-label">RUT / Documento</label>
+        <input class="field-input" type="text" [(ngModel)]="pacienteDraft.document_id" placeholder="Ej: 12.345.678-9">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Asignar a cama (Opcional)</label>
+        <select class="field-input" [(ngModel)]="pacienteDraft.resource_id" [disabled]="camasAsignables.length === 0">
+          <option [ngValue]="null">Sin asignar / Retirar de la cama</option>
+          <option *ngFor="let cama of camasAsignables" [ngValue]="cama.dbId">{{ cama.sede }} - {{ cama.id }} ({{ cama.tipo }})</option>
+        </select>
+      </div>
+      
+      <div class="grid grid-cols-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="field-group">
+          <label class="field-label">Contacto Emergencia</label>
+          <input class="field-input" type="text" [(ngModel)]="pacienteDraft.emergency_contact_name" placeholder="Nombre completo">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Teléfono Emergencia</label>
+          <input class="field-input" type="text" [(ngModel)]="pacienteDraft.emergency_contact_phone" placeholder="+56 9...">
+        </div>
+      </div>
+
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+        <h4 style="margin: 0 0 1rem 0; font-size: 14px; font-weight: 600; color: var(--text);">Tutor Legal y Facturación</h4>
+        <div class="grid grid-cols-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="field-group">
+            <label class="field-label">Nombre del Tutor Legal</label>
+            <input class="field-input" type="text" [(ngModel)]="pacienteDraft.guarantor_name" placeholder="Ej: María Pérez">
+          </div>
+          <div class="field-group">
+            <label class="field-label">RUT del Tutor</label>
+            <input class="field-input" type="text" [(ngModel)]="pacienteDraft.guarantor_document_id" placeholder="Ej: 15.678.901-2">
+          </div>
+        </div>
+        <div class="grid grid-cols-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="field-group">
+            <label class="field-label">Email de Facturación</label>
+            <input class="field-input" type="email" [(ngModel)]="pacienteDraft.guarantor_email" placeholder="maria@ejemplo.com">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Tarifa Mensual (CLP)</label>
+            <input class="field-input" type="number" [(ngModel)]="pacienteDraft.monthly_fee" placeholder="Ej: 1500000">
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">

@@ -21,7 +21,7 @@ $accent-map: (
 ───────────────────────────────────────────────────────────────────────────
  
 .services-page {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: $text-body;
   background: $white;
 }
@@ -72,7 +72,7 @@ $accent-map: (
   margin-bottom: 3rem;
  
   h2 {
-    font-family: 'Fraunces', serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: clamp(28px, 3.5vw, 38px);
     font-weight: 800;
     color: $navy;
@@ -113,7 +113,7 @@ $accent-map: (
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   font-weight: 600;
   border-radius: 8px;
@@ -179,7 +179,7 @@ $accent-map: (
 }
  
 .services-hero__title {
-  font-family: 'Fraunces', serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: clamp(36px, 4.5vw, 52px);
   font-weight: 800;
   color: $navy;
@@ -296,7 +296,7 @@ $accent-map: (
   &:last-child { border-right: none; }
  
   dt {
-    font-family: 'Fraunces', serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 22px;
     font-weight: 700;
     color: $white;
@@ -374,7 +374,7 @@ $accent-map: (
   }
  
   &__title {
-    font-family: 'Fraunces', serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 20px;
     font-weight: 700;
     color: $navy;
@@ -516,7 +516,7 @@ $accent-map: (
   z-index: 1;
  
   &__index {
-    font-family: 'Fraunces', serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 13px;
     font-weight: 700;
     color: $white;
@@ -534,7 +534,7 @@ $accent-map: (
   }
  
   &__title {
-    font-family: 'Fraunces', serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 18px;
     font-weight: 700;
     color: $navy;
@@ -604,7 +604,7 @@ $accent-map: (
   max-width: 520px;
  
   h2 {
-    font-family: 'Fraunces', serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: clamp(24px, 3vw, 32px);
     font-weight: 800;
     color: $white;
@@ -623,17 +623,17 @@ $accent-map: (
 .services-cta__actions {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 12px;
   flex-shrink: 0;
 }
  
 .services-cta__note {
-  font-size: 11px;
-  color: rgba($white, 0.3);
-  text-align: center;
+  font-size: 12px;
+  color: rgba($white, 0.58);
+  text-align: left;
   margin: 0;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
  
 // ─────────────────────────────────────────────────────────────────────────────
@@ -674,7 +674,7 @@ $accent-map: (
 }
 
 .services-grid-section .services-section-head h2 {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   max-width: 540px;
   font-size: clamp(32px, 3.8vw, 46px);
   line-height: 1.08;
@@ -690,17 +690,6 @@ $accent-map: (
   position: relative;
   z-index: 1;
   gap: 1.5rem;
-}
-
-.services-grid::before {
-  content: '';
-  position: absolute;
-  top: 48px;
-  left: 9%;
-  right: 9%;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(#1d4ed8, 0.18), rgba(#16a34a, 0.18), rgba(#d97706, 0.18));
-  pointer-events: none;
 }
 
 .service-card {
@@ -722,13 +711,13 @@ $accent-map: (
 
 .service-card::after {
   position: absolute;
-  top: 1.7rem;
-  right: 1.85rem;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 40px;
+  top: 1.3rem;
+  right: 1.35rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 26px;
   font-weight: 800;
   line-height: 1;
-  color: rgba($navy, 0.06);
+  color: rgba($navy, 0.09);
 }
 
 .service-card:nth-child(1)::after {
@@ -765,7 +754,7 @@ $accent-map: (
 }
 
 .service-card__title {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 21px;
   letter-spacing: -0.02em;
 }
@@ -817,7 +806,7 @@ $accent-map: (
 }
 
 .services-process .services-section-head h2 {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: clamp(32px, 3.4vw, 44px);
   letter-spacing: -0.03em;
   line-height: 1.08;
@@ -864,7 +853,7 @@ $accent-map: (
 }
 
 .services-step__title {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -894,7 +883,7 @@ $accent-map: (
 }
 
 .services-cta__copy h2 {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   max-width: 600px;
   font-size: clamp(28px, 3vw, 40px);
   letter-spacing: -0.03em;
@@ -908,10 +897,17 @@ $accent-map: (
 .services-cta__actions {
   position: relative;
   z-index: 1;
-  padding: 1rem;
-  border: 1px solid rgba($white, 0.09);
-  border-radius: 16px;
-  background: rgba($white, 0.04);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.services-btn--cta {
+  min-width: 210px;
+  justify-content: center;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.18);
 }
 
 @media (max-width: 900px) {

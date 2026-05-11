@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.mercadopago-webhook]
 verify_jwt = false
+
+[functions.send-company-invitation]
+verify_jwt = false

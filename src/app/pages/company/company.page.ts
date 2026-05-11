@@ -1,4 +1,4 @@
-﻿﻿﻿﻿import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { UiService } from '../../core/services/ui.service';
@@ -115,6 +115,7 @@ type CompanyInvoice = {
   due_at: string | null;
   paid_at: string | null;
   hosted_invoice_url: string | null;
+  invoice_pdf_url: string | null;
 };
 
 @Component({
@@ -178,7 +179,8 @@ export class CompanyPage implements OnInit, OnDestroy {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly supabase: SupabaseService,
-    public readonly ui: UiService
+    public readonly ui: UiService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   public getTabLabel(id: CompanyTab): string {
@@ -219,6 +221,24 @@ export class CompanyPage implements OnInit, OnDestroy {
 
   public get paymentUrl(): string | null {
     return this.selectedPlanSubscription?.payment_url || null;
+  }
+
+  public get invoiceUrl(): string | null {
+    return this.latestInvoice?.invoice_pdf_url || this.latestInvoice?.hosted_invoice_url || null;
+  }
+
+  public get invoiceHelperText(): string {
+    if (this.invoiceUrl) {
+      return this.latestInvoice?.status === 'paid'
+        ? 'La boleta ya esta disponible para revision.'
+        : 'La factura de este cobro ya fue emitida.';
+    }
+
+    if (this.latestInvoice) {
+      return 'El cobro existe, pero aun no tiene boleta publicada.';
+    }
+
+    return 'La boleta se genera cuando Mercado Pago confirma el cobro.';
   }
 
   public get paymentReturnTitle(): string {
@@ -376,7 +396,7 @@ export class CompanyPage implements OnInit, OnDestroy {
           .order('created_at', { ascending: false }),
         this.supabase.client
           .from('company_invoices')
-          .select('id,company_id,subscription_id,status,amount_due,amount_paid,currency,due_at,paid_at,hosted_invoice_url')
+          .select('id,company_id,subscription_id,status,amount_due,amount_paid,currency,due_at,paid_at,hosted_invoice_url,invoice_pdf_url')
           .eq('company_id', companyId)
           .order('created_at', { ascending: false })
           .limit(5),
@@ -417,6 +437,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = err.message;
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -469,6 +490,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al guardar: ${err.message}`;
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -476,10 +498,11 @@ export class CompanyPage implements OnInit, OnDestroy {
     if (!this.company || !this.inviteEmail) return;
     this.saving = true;
     try {
-      const { error } = await this.supabase.client.auth.admin.inviteUserByEmail(this.inviteEmail, {
-        data: {
-          company_id: this.company.id,
-          member_role: this.inviteRole,
+      const { error } = await this.supabase.client.functions.invoke('send-company-invitation', {
+        body: {
+          companyId: this.company.id,
+          email: this.inviteEmail.trim().toLowerCase(),
+          role: this.inviteRole,
         },
       });
       if (error) throw error;
@@ -487,10 +510,20 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.inviteEmail = '';
       // Aquí podrías mostrar una notificación de éxito
     } catch (err: any) {
-      this.error = `Error al invitar: ${err.message}`;
+      this.error = await this.getFunctionErrorMessage(err, 'Error al invitar.');
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
+  }
+
+  private async getFunctionErrorMessage(error: any, fallback: string): Promise<string> {
+    const response = error?.context;
+    if (response && typeof response.json === 'function') {
+      const body = await response.json().catch(() => null);
+      if (body?.error) return `${fallback} ${body.error}`;
+    }
+    return `${fallback} ${error?.message || ''}`.trim();
   }
 
   public async removeMember(member: CompanyMember): Promise<void> {
@@ -508,6 +541,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al eliminar: ${err.message}`;
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
   
@@ -547,6 +581,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al guardar voucher: ${err.message}`;
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -563,6 +598,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al actualizar voucher: ${err.message}`;
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -604,6 +640,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al guardar contacto: ${err.message}`;
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -618,6 +655,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al eliminar contacto: ${err.message}`;
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -686,6 +724,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al guardar contrato: ${err.message}`;
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -700,6 +739,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al eliminar contrato: ${err.message}`;
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -724,6 +764,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       this.error = `Error al generar link Mercado Pago: ${await this.describeFunctionError(err)}`;
     } finally {
       this.requestingPaymentLink = false;
+      this.cdr.detectChanges();
     }
   }
 

@@ -261,12 +261,13 @@ export class DashboardPage implements OnInit, OnDestroy {
             .maybeSingle();
 
           const userName = profileRes.data?.full_name || 'Empleado';
+          const careType = this.careTypeLabel(this.employeeCareIntakeDraft.careType);
 
           await this.supabase.client.functions.invoke('hubspot-integration', {
             body: {
               action: 'create_deal',
               companyId: this.employeeCompanyId,
-              dealname: `Solicitud: ${userName} (${this.careTypeLabel(this.employeeCareIntakeDraft.careType)})`,
+              dealname: `Solicitud: ${userName} (${careType})`,
               employee_id: userId,
               comuna: this.employeeCareIntakeDraft.city,
               dependency: this.employeeCareIntakeDraft.dependencyLevel,

@@ -5,9 +5,18 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { DashboardPageRoutingModule } from './dashboard-routing.module';
 import { DashboardPage } from './dashboard.page';
+import { SiteHeaderComponent } from '../../shared/components/site-header/site-header.component';
+import { SiteFooterComponent } from '../../shared/components/site-footer/site-footer.component';
 
 @NgModule({
-  imports: [CommonModule, FormsModule, DashboardPageRoutingModule, MatIconModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DashboardPageRoutingModule,
+    MatIconModule,
+    SiteHeaderComponent,
+    SiteFooterComponent,
+  ],
   declarations: [DashboardPage],
 })
 export class DashboardPageModule {}

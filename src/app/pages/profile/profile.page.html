@@ -31,7 +31,7 @@
           <div class="profile-hero__meta">
             <span class="profile-role">{{ roleLabel(role) }}</span>
             <span class="profile-taxid" *ngIf="companyTaxId">
-              <img src="svg/business-outline.svg" class="w-4 h-4 inline -mt-1 mr-1" alt="" />
+              <mat-icon>business</mat-icon>
               RUT {{ companyTaxId }}
             </span>
           </div>
@@ -45,7 +45,7 @@
       <section class="profile-section">
         <div class="profile-section__head">
           <div class="profile-section__icon">
-            <img src="svg/person-outline.svg" class="w-6 h-6" alt="" />
+            <mat-icon>person</mat-icon>
           </div>
           <div>
             <h2>Datos personales</h2>
@@ -64,7 +64,7 @@
           <div class="profile-field">
             <label>Correo electrónico</label>
             <div class="profile-item profile-item--readonly">
-              <img src="svg/mail-outline.svg" class="field-icon" alt="" />
+              <mat-icon class="field-icon">mail</mat-icon>
               <input [value]="email" readonly="true" />
             </div>
           </div>
@@ -72,7 +72,7 @@
           <div class="profile-field">
             <label>Empresa <span class="optional">opcional</span></label>
             <div class="profile-item">
-              <img src="svg/briefcase-outline.svg" class="field-icon" alt="" />
+              <mat-icon class="field-icon">work</mat-icon>
               <input [(ngModel)]="company" name="company" placeholder="Ej.: Advisor" />
             </div>
           </div>
@@ -80,13 +80,13 @@
           <div class="profile-field">
             <label>RUT empresa</label>
             <div class="profile-item profile-item--readonly">
-              <img src="svg/document-text-outline.svg" class="field-icon" alt="" />
+              <mat-icon class="field-icon">description</mat-icon>
               <input [value]="companyTaxId || 'No disponible'" readonly="true" />
             </div>
           </div>
 
           <button type="submit" class="profile-save btn-primary w-full" [disabled]="saving">
-            <img src="svg/checkmark-outline.svg" class="w-5 h-5 mr-2" alt="" />
+            <mat-icon>check</mat-icon>
             {{ saving ? 'Guardando...' : 'Guardar cambios' }}
           </button>
         </form>
@@ -96,7 +96,7 @@
       <section class="profile-section profile-section--security">
         <div class="profile-section__head">
           <div class="profile-section__icon profile-section__icon--red">
-            <img src="svg/shield-checkmark-outline.svg" class="w-6 h-6" alt="" />
+            <mat-icon>shield</mat-icon>
           </div>
           <div>
             <h2>Seguridad</h2>
@@ -105,12 +105,12 @@
         </div>
 
         <div class="security-info">
-          <img src="svg/lock-closed-outline.svg" class="w-8 h-8" alt="" />
+          <mat-icon>lock</mat-icon>
           <p>Te enviaremos un correo con un enlace para restablecer tu contraseña de forma segura.</p>
         </div>
 
         <button type="button" class="security-btn btn-secondary w-full" (click)="sendResetPassword()">
-          <img src="svg/mail-outline.svg" class="w-5 h-5 mr-2" alt="" />
+          <mat-icon>mail</mat-icon>
           Enviar correo para cambiar contraseña
         </button>
       </section>

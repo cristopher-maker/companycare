@@ -38,8 +38,8 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   align-items: center;
   justify-content: center;
   padding: 10px 22px;
-  background: $teal-800;
-  color: $teal-50;
+  background: #f27a5e;
+  color: $white;
   font-size: 14px;
   font-weight: 500;
   border: none;
@@ -48,7 +48,7 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   text-decoration: none;
   transition: background 0.15s, transform 0.1s;
 
-  &:hover  { background: $teal-700; }
+  &:hover  { background: #dd684d; }
   &:active { transform: scale(0.98); }
   &:disabled { opacity: 0.55; cursor: not-allowed; }
 }
@@ -76,11 +76,12 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
 
 // ─── Header ─────────────────────────────────────────────────────────────────
 // --- Header -----------------------------------------------------------------
-.dash-header {
+.dash-header,
+.dash-toolbar {
   background: $white;
   border-bottom: 1px solid $slate-200;
   position: sticky;
-  top: 0;
+  top: 64px;
   z-index: 40;
 
   &__inner {
@@ -153,14 +154,22 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
 
 // ─── Page layout ────────────────────────────────────────────────────────────
 // --- Page layout ------------------------------------------------------------
+.dash-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: 64px;
+  background: $white;
+}
+
 .dash-page {
   background: $white;
-  min-height: calc(100vh - 60px);
+  flex: 1;
 
   &__container {
     max-width: 1140px;
     margin: 0 auto;
-    padding: 48px 24px 80px;
+    padding: 40px 24px 72px;
   }
 }
 
@@ -185,7 +194,7 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: $teal-700;
+    color: #f27a5e;
     margin-bottom: 6px;
   }
 
@@ -199,7 +208,7 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
 
     em {
       font-style: normal;
-      color: $teal-700;
+      color: $slate-900;
     }
 
     @media (max-width: 640px) { font-size: 30px; }
@@ -214,12 +223,42 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
 
   &__actions {
     display: flex;
+    align-items: center;
     gap: 10px;
     flex-shrink: 0;
 
     @media (max-width: 640px) {
       flex-wrap: wrap;
     }
+  }
+}
+
+.dash-refresh-btn {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid $slate-200;
+  background: $white;
+  border-radius: $radius-md;
+  color: $slate-500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  &:hover {
+    background: $slate-50;
+    border-color: $slate-300;
+    color: #f27a5e;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .spin {
+    animation: spin 0.9s linear infinite;
   }
 }
 
@@ -331,7 +370,7 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   &__action {
     font-size: 13px;
     font-weight: 500;
-    color: $teal-700;
+    color: #f27a5e;
     background: none;
     border: none;
     cursor: pointer;
@@ -339,7 +378,7 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
     padding: 0;
     transition: color 0.15s;
 
-    &:hover { color: $teal-800; text-decoration: underline; }
+    &:hover { color: #dd684d; text-decoration: underline; }
   }
 
   &__empty {
@@ -486,8 +525,8 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: $teal-700;
-    background: $teal-50;
+    color: #b5533d;
+    background: rgba(242, 122, 94, 0.12);
     padding: 2px 8px;
     border-radius: $radius-pill;
     margin-bottom: 6px;
@@ -605,28 +644,38 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
 
 // ─── Modal ──────────────────────────────────────────────────────────────────
 // --- Modal ------------------------------------------------------------------
-.modal-backdrop {
+.care-intake-backdrop {
   position: fixed;
   inset: 0;
   background: rgba($slate-950, 0.55);
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
+  z-index: 1200;
+  overflow-y: auto;
   backdrop-filter: blur(2px);
 }
 
-.modal {
+.care-intake-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   background: $white;
   border-radius: $radius-lg;
-  width: 100%;
+  width: min(680px, calc(100vw - 32px));
   max-width: 680px;
-  max-height: 90vh;
+  max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
   box-shadow: 0 24px 64px rgba(0,0,0,0.22);
   overflow: hidden;
+
+  @media (max-width: 720px) {
+    top: 24px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+    width: auto;
+    max-height: calc(100vh - 48px);
+  }
 
   &__head {
     display: flex;

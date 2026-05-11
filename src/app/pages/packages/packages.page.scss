@@ -341,8 +341,8 @@
 .plan-card--featured {
   color: #fff;
   background:
-    linear-gradient(145deg, rgba(11, 40, 50, 0.96) 0%, rgba(18, 60, 74, 0.92) 100%),
-    url('../../../assets/img/carousel-3.jpeg') center / cover;
+    radial-gradient(circle at top right, rgba(242, 122, 94, 0.18), transparent 34%),
+    linear-gradient(145deg, #173744 0%, #123c4a 58%, #0f2d38 100%);
   border-color: transparent;
   box-shadow: 0 16px 36px rgba(15, 36, 64, 0.22);
 }
@@ -790,8 +790,8 @@
   justify-content: space-between;
   color: #fff;
   background:
-    linear-gradient(110deg, rgba(11, 40, 50, 0.98) 24%, rgba(18, 60, 74, 0.88) 100%),
-    url('../../../assets/img/about-us.jpg') center / cover;
+    radial-gradient(circle at top right, rgba(242, 122, 94, 0.16), transparent 30%),
+    linear-gradient(110deg, #0d2530 24%, #123c4a 68%, #173744 100%);
   border-color: transparent;
 }
 
@@ -807,6 +807,17 @@
 
 .final-cta p {
   color: rgba(255, 255, 255, 0.76);
+}
+
+.final-cta .btn-warm-ghost {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.final-cta .btn-warm-ghost:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .cta-actions {

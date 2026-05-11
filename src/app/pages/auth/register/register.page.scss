@@ -1,37 +1,79 @@
 :host {
-  --cc-primary: #1b4dff;
+  display: block;
+  --auth-bg: #090814;
+  --auth-panel: rgba(34, 34, 42, 0.88);
+  --auth-panel-border: rgba(255, 255, 255, 0.12);
+  --auth-input: rgba(255, 255, 255, 0.08);
+  --auth-text: rgba(255, 255, 255, 0.94);
+  --auth-muted: rgba(255, 255, 255, 0.7);
 }
 
-ion-content.register {
-  --background: transparent;
+main.register {
+  position: relative;
+  overflow: hidden;
+  background: var(--auth-bg);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
+.auth-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 680px;
+  height: 700px;
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  background-image: url('../../../../assets/img/login-bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  overflow: visible;
 }
 
-.overlay {
-  position: fixed;
+.auth-stage::before {
+  content: '';
+  position: absolute;
   inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(1200px 700px at 50% 40%, rgba(15, 23, 42, 0.30), rgba(15, 23, 42, 0.52)),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.25), rgba(15, 23, 42, 0.35));
-  backdrop-filter: blur(6px);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02), transparent 52%);
+}
+
+.auth-shape {
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+}
+
+.auth-shape::after {
+  content: '';
+  position: absolute;
+  inset: -26px;
+  border-radius: 50%;
+  z-index: -1;
+  opacity: 0.9;
+  filter: blur(18px);
+}
+
+.auth-shape--blue {
+  top: 22px;
+  left: 48px;
+  background: linear-gradient(180deg, #3155ba 0%, #2f9af7 100%);
+}
+
+.auth-shape--orange {
+  right: 26px;
+  bottom: 12px;
+  background: linear-gradient(180deg, #ff6a2a 0%, #f6a313 100%);
+}
+
+.auth-shape--blue::after {
+  background: radial-gradient(circle, rgba(47, 154, 247, 0.55) 0%, rgba(47, 154, 247, 0) 68%);
+}
+
+.auth-shape--orange::after {
+  background: radial-gradient(circle, rgba(246, 163, 19, 0.52) 0%, rgba(246, 163, 19, 0) 68%);
 }
 
 .topbar {
   position: fixed;
   inset: 0 0 auto 0;
-  padding: 14px;
+  padding: 18px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -43,141 +85,132 @@ ion-content.register {
   pointer-events: auto;
   width: 42px;
   height: 42px;
-  --padding-start: 0;
-  --padding-end: 0;
-  --border-radius: 16px;
-  --color: rgba(255, 255, 255, 0.92);
-  --background: rgba(255, 255, 255, 0.18);
-  --border-color: rgba(255, 255, 255, 0.28);
-  --border-style: solid;
-  --border-width: 1px;
-  --box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22);
-}
-
-.topbar .back::part(native) {
-  width: 42px;
-  height: 42px;
-  padding-inline: 0;
-  border-radius: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.26);
 }
 
 .topbar .back mat-icon {
-  color: rgba(255, 255, 255, 0.92);
   font-size: 22px;
   width: 22px;
   height: 22px;
 }
 
 .shell {
-  min-height: 100%;
-  display: grid;
-  place-items: center;
-  padding: 84px 16px 28px;
+  width: min(680px, 100%);
+  min-height: 700px;
+  padding: 64px 16px 28px;
   position: relative;
   z-index: 3;
 }
 
 .card {
-  position: relative;
-  width: min(560px, 100%);
-  padding: 30px 26px 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 36px 92px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(520px, 100%);
+  transform: translate(-50%, -50%);
+  padding: 34px 34px 28px;
+  border-radius: 12px;
+  background: var(--auth-panel);
+  border: 1px solid var(--auth-panel-border);
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .mark {
-  width: 42px;
-  height: 42px;
-  border-radius: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
-  font-weight: 950;
+  font-weight: 900;
   letter-spacing: -0.02em;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.20);
-  color: rgba(255, 255, 255, 0.92);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .brand-text .name {
-  font-weight: 950;
-  letter-spacing: -0.02em;
-  color: rgba(255, 255, 255, 0.92);
+  font-weight: 800;
+  color: var(--auth-text);
 }
 
 .brand-text .sub {
   font-size: 12px;
-  opacity: 0.8;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.66);
 }
 
 .title {
-  margin: 6px 0 6px;
-  font-size: 40px;
-  font-weight: 950;
+  margin: 0 0 6px;
+  font-size: 32px;
+  font-weight: 800;
   letter-spacing: -0.03em;
-  color: rgba(255, 255, 255, 0.94);
+  color: var(--auth-text);
 }
 
 .hint {
-  margin: 0 0 14px;
-  color: rgba(255, 255, 255, 0.82);
+  margin: 0 0 16px;
+  color: var(--auth-muted);
 }
 
 .role {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin: 10px 0 14px;
+  margin: 0 0 16px;
 }
 
 .role-btn {
-  height: 44px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.14);
-  font-weight: 950;
+  height: 46px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 800;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.90);
+  color: rgba(255, 255, 255, 0.86);
 }
 
 .role-btn.active {
-  background: rgba(27, 77, 255, 0.34);
-  border-color: rgba(255, 255, 255, 0.32);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.50);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .form {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .pill {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 16px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  min-height: 50px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--auth-input);
+  border: 1px solid transparent;
+}
+
+.pill:focus-within {
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .pill mat-icon {
   font-size: 20px;
   width: 20px;
   height: 20px;
-  color: rgba(255, 255, 255, 0.84);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .icon-btn {
@@ -188,22 +221,13 @@ ion-content.register {
   margin: 0;
   width: 28px;
   height: 28px;
-  border-radius: 999px;
   display: grid;
   place-items: center;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.10);
 }
 
 .icon-btn mat-icon {
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.84);
 }
 
 .pill input {
@@ -211,62 +235,59 @@ ion-content.register {
   border: 0;
   outline: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 16px;
+  color: var(--auth-text);
+  font-size: 15px;
 }
 
 .pill input::placeholder {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.52);
 }
 
 .primary {
   width: 100%;
-  height: 52px;
+  height: 56px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 8px;
   background: #ffffff;
-  color: rgba(15, 23, 42, 0.92);
-  font-weight: 950;
+  color: #111320;
+  font-size: 18px;
+  font-weight: 800;
   letter-spacing: -0.01em;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
 }
 
 .primary:disabled {
   opacity: 0.65;
 }
 
-.primary ion-spinner {
-  width: 18px;
-  height: 18px;
-}
-
 .msg {
   padding: 10px 12px;
-  border-radius: 16px;
+  border-radius: 10px;
   font-size: 14px;
 }
 
 .msg.error {
-  background: rgba(239, 68, 68, 0.18);
-  border: 1px solid rgba(239, 68, 68, 0.22);
-  color: rgba(255, 255, 255, 0.94);
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  color: #fff;
 }
 
 .msg.success {
-  background: rgba(34, 197, 94, 0.18);
-  border: 1px solid rgba(34, 197, 94, 0.22);
-  color: rgba(255, 255, 255, 0.94);
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  color: #fff;
 }
 
 .bottom {
   display: grid;
   justify-items: center;
   gap: 6px;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .muted {
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--auth-muted);
 }
 
 .link {
@@ -275,11 +296,52 @@ ion-content.register {
   background: transparent;
   padding: 0;
   color: rgba(255, 255, 255, 0.92);
-  font-weight: 950;
+  font-weight: 700;
   cursor: pointer;
   text-decoration: none;
 }
 
 .link:hover {
-  text-decoration: underline;
+  opacity: 0.85;
+}
+
+@media (max-width: 640px) {
+  .shell {
+    width: 100%;
+    min-height: auto;
+    display: grid;
+    place-items: center;
+    padding-top: 92px;
+  }
+
+  .auth-stage {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: none;
+    top: 0;
+    left: 0;
+  }
+
+  .card {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    padding: 28px 22px 22px;
+  }
+
+  .auth-shape--blue {
+    top: 22px;
+    left: calc(50% - 146px);
+    width: 180px;
+    height: 180px;
+  }
+
+  .auth-shape--orange {
+    right: calc(50% - 150px);
+    bottom: 18px;
+    width: 180px;
+    height: 180px;
+  }
 }

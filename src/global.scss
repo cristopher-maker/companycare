@@ -82,46 +82,46 @@ body {
 .cc-nav--scrolled {
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  background: linear-gradient(180deg, rgba(11, 40, 50, 0.95), rgba(18, 60, 74, 0.86));
+  background: rgba(0, 0, 0, 0.94);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px rgba(11, 40, 50, 0.16);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.26);
 }
 
 .cc-nav--light {
-  background: rgba(250, 249, 246, 0.94);
-  border-bottom: 1px solid rgba(18, 60, 74, 0.08);
-  box-shadow: 0 10px 28px rgba(18, 60, 74, 0.06);
+  background: rgba(0, 0, 0, 0.94);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
 
 .cc-nav--light .cc-menu-btn {
-  border-color: rgba(18, 60, 74, 0.12);
-  background: #ffffff;
-  color: #123c4a;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .cc-nav--light .cc-brand .cc-brand-text .name {
-  color: #123c4a;
+  color: #ffffff;
 }
 
 .cc-nav--light .cc-brand .cc-brand-text .sub {
-  color: rgba(18, 60, 74, 0.58);
+  color: rgba(255, 255, 255, 0.56);
 }
 
 .cc-nav--light .cc-nav-links a {
-  color: rgba(18, 60, 74, 0.66);
+  color: rgba(255, 255, 255, 0.74);
 }
 
 .cc-nav--light .cc-nav-links a:hover,
 .cc-nav--light .cc-nav-links a.active-link {
-  color: #123c4a;
+  color: #ffffff;
 }
 
 .cc-nav--light .cc-nav-actions .btn-ghost {
-  color: #123c4a;
-  border-color: rgba(18, 60, 74, 0.16);
-  background: #ffffff;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .cc-menu-btn {
