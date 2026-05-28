@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService, ProfileRole } from '../../core/services/auth.service';
@@ -98,6 +98,8 @@ type CareTaskRow = {
   styleUrls: ['./care-experts.page.scss'],
 })
 export class CareExpertsPage implements OnInit, OnDestroy {
+  @ViewChild('messagesViewport') private messagesViewport?: ElementRef<HTMLElement>;
+
   public channel: SupportChannel = 'Chat';
   public topic = 'Orientación general';
   public details = '';
@@ -112,6 +114,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public activeRequestChannel: SupportChannel | null = null;
   public messages: CareMessage[] = [];
   public messageDraft = '';
+  public typingLabel: string | null = null;
   public expertRequests: ExpertRequest[] = [];
   public selectedRequest: ExpertRequest | null = null;
   public statusDraft: CareRequestStatus = 'open';
@@ -125,6 +128,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public showAttachmentMenu = false;
   public composerMode: ComposerMode = 'client';
   public selectedCollaborator: CollaboratorSummary | null = null;
+  public showContextSheet = false;
   public selectedHistory: ExpertRequest[] = [];
   public selectedTags: string[] = [];
   public employeeAppointments: AppointmentRow[] = [];
@@ -316,14 +320,18 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   }
 
   private realtimeChannel: any | null = null;
-  private readonly allowedRoles: ProfileRole[] = ['employee', 'care_expert', 'admin'];
+  private typingTimeout: ReturnType<typeof setTimeout> | null = null;
+  private stopTypingTimeout: ReturnType<typeof setTimeout> | null = null;
+  private readonly allowedRoles: ProfileRole[] = ['employee', 'company_admin', 'care_expert', 'admin'];
 
   constructor(
     public readonly auth: AuthService,
     private readonly supabase: SupabaseService,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-    public readonly ui: UiService
+    public readonly ui: UiService,
+    private readonly cdr: ChangeDetectorRef,
+    private readonly zone: NgZone
   ) {}
 
   public ngOnInit(): void {
@@ -331,6 +339,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   }
 
   public ngOnDestroy(): void {
+    if (this.typingTimeout) clearTimeout(this.typingTimeout);
+    if (this.stopTypingTimeout) clearTimeout(this.stopTypingTimeout);
     void this.teardownRealtime();
   }
 
@@ -354,6 +364,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       return;
     }
 
+    this.error = null;
     this.saving = true;
     try {
       const { data: requestRow, error: requestError } = await this.supabase.client
@@ -384,7 +395,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       await this.setupRealtime();
     } catch (err: any) {
       console.error(err);
-      alert(err?.message ?? 'No se pudo crear la solicitud.');
+      this.error = this.formatCareRequestError(err);
     } finally {
       this.saving = false;
     }
@@ -628,25 +639,22 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
     this.loading = true;
     try {
-      let requestId = this.activeRequestId;
-      if (!requestId) {
-        const requestSummary = this.details.trim() || `Solicitud para ${this.appointmentKind.toLowerCase()}`;
-        const { data: requestRow, error: requestError } = await this.supabase.client
-          .from('care_requests')
-          .insert({
-            employee_id: user.id,
-            channel: this.appointmentKind,
-            topic: this.topic,
-            details: requestSummary,
-          })
-          .select('id')
-          .single();
+      const requestSummary = this.details.trim() || `Solicitud para ${this.appointmentKind.toLowerCase()}`;
+      const { data: requestRow, error: requestError } = await this.supabase.client
+        .from('care_requests')
+        .insert({
+          employee_id: user.id,
+          channel: this.appointmentKind,
+          topic: this.topic,
+          details: requestSummary,
+        })
+        .select('id')
+        .single();
 
-        if (requestError) throw requestError;
-        requestId = requestRow.id as string;
-        this.activeRequestId = requestId;
-        this.activeRequestChannel = this.appointmentKind;
-      }
+      if (requestError) throw requestError;
+      const requestId = requestRow.id as string;
+      this.activeRequestId = requestId;
+      this.activeRequestChannel = this.appointmentKind;
 
       const { data: appointmentRow, error } = await this.supabase.client
         .from('appointments')
@@ -673,10 +681,10 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       this.appointmentDate = '';
       this.appointmentTime = '';
       this.appointmentNotes = '';
+      this.details = '';
+      this.advisorStep = 1;
       await this.loadEmployeeAppointments();
-      if (requestId) {
-        await this.openRequest(requestId);
-      }
+      await this.router.navigate(['/requests']);
     } catch (err: any) {
       alert(err?.message ?? 'No se pudo agendar la hora.');
     } finally {
@@ -691,6 +699,23 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public openMeeting(appointment: AppointmentRow): void {
     if (!appointment.meeting_url) return;
     window.open(appointment.meeting_url, '_blank', 'noopener,noreferrer');
+  }
+
+  public async copyMeetingLink(appointment: AppointmentRow): Promise<void> {
+    if (!appointment.meeting_url) return;
+    try {
+      await navigator.clipboard.writeText(appointment.meeting_url);
+    } catch {
+      window.prompt('Copia el enlace de la reunion:', appointment.meeting_url);
+    }
+  }
+
+  public openContextSheet(): void {
+    this.showContextSheet = true;
+  }
+
+  public closeContextSheet(): void {
+    this.showContextSheet = false;
   }
 
   public advisorSummaryValue(field: 'channel' | 'topic' | 'details' | 'date' | 'time'): string {
@@ -725,6 +750,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     if (!body) return;
 
     this.messageDraft = '';
+    await this.broadcastTyping(false);
     this.showQuickReplies = false;
     this.showAttachmentMenu = false;
 
@@ -743,6 +769,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     };
 
     this.messages = [...this.messages, optimisticMessage];
+    this.afterMessagesChanged();
 
     const { data, error } = await this.supabase.client
       .from('care_messages')
@@ -756,6 +783,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
     if (error) {
       this.messages = this.messages.filter((message) => message.id !== optimisticMessage.id);
+      this.afterMessagesChanged();
       alert(error.message);
       return;
     }
@@ -763,6 +791,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.messages = this.messages.map((message) =>
       message.id === optimisticMessage.id ? { ...(data as CareMessage), sender_name: 'Tú', kind: 'client' } : message
     );
+    await this.loadMessages();
   }
 
   public isOwnMessage(senderId: string): boolean {
@@ -918,11 +947,18 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.messageDraft = body;
     this.composerMode = 'client';
     this.showQuickReplies = false;
+    void this.broadcastTyping(true);
   }
 
   public insertAttachmentTemplate(body: string): void {
     this.messageDraft = body;
     this.showAttachmentMenu = false;
+    void this.broadcastTyping(true);
+  }
+
+  public onMessageDraftChange(value: string): void {
+    this.messageDraft = value;
+    void this.broadcastTyping(value.trim().length > 0);
   }
 
   public get expertFilteredItems(): ExpertRequest[] {
@@ -949,10 +985,6 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         }
       })
       .sort((left, right) => {
-        const leftAttention = this.requestNeedsAttention(left) ? 1 : 0;
-        const rightAttention = this.requestNeedsAttention(right) ? 1 : 0;
-        if (leftAttention !== rightAttention) return rightAttention - leftAttention;
-
         return new Date(right.updated_at || right.created_at).getTime() - new Date(left.updated_at || left.created_at).getTime();
       });
   }
@@ -1094,6 +1126,17 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     return false;
   }
 
+  private formatCareRequestError(error: unknown): string {
+    const message = error && typeof error === 'object' && 'message' in error ? String((error as { message?: unknown }).message ?? '') : '';
+    const code = error && typeof error === 'object' && 'code' in error ? String((error as { code?: unknown }).code ?? '') : '';
+
+    if (code === '42501' || message.includes('row-level security') || message.includes('care_requests')) {
+      return 'No pudimos iniciar el chat porque este usuario todavia no tiene acceso activo a los beneficios de su empresa. Activa el plan piloto o revisa su membresia de empresa.';
+    }
+
+    return message || 'No se pudo crear la solicitud. Intentalo nuevamente.';
+  }
+
   private async loadCurrentUserBenefitAccess(userId: string | null): Promise<boolean> {
     if (!userId) return false;
 
@@ -1183,6 +1226,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
     if (!this.expertMode) {
       this.messages = dbMessages;
+      this.afterMessagesChanged();
       return;
     }
 
@@ -1206,6 +1250,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.messages = [...dbMessages, ...notes].sort(
       (left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime()
     );
+    this.afterMessagesChanged();
   }
 
   private async loadEmployeeAppointments(): Promise<void> {
@@ -1397,10 +1442,12 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     } else {
       this.messages = [];
       this.selectedCollaborator = null;
+      this.showContextSheet = false;
       this.selectedHistory = [];
       this.selectedTags = [];
       this.selectedAppointments = [];
       this.activeRequestChannel = null;
+      this.showContextSheet = false;
       await this.teardownRealtime();
     }
   }
@@ -1424,16 +1471,19 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         (payload: any) => {
           const row = payload?.new as CareMessage | undefined;
           if (!row?.id) return;
-          if (this.messages.some((message) => message.id === row.id)) return;
-          this.messages = [
-            ...this.messages,
-            {
-              ...row,
-              sender_name:
-                this.selectedRequest?.employee_id === row.sender_id ? this.selectedRequest.employee_name : null,
-              kind: 'client',
-            },
-          ];
+          this.zone.run(() => {
+            if (this.messages.some((message) => message.id === row.id)) return;
+            this.messages = [
+              ...this.messages,
+              {
+                ...row,
+                sender_name:
+                  this.selectedRequest?.employee_id === row.sender_id ? this.selectedRequest.employee_name : null,
+                kind: 'client',
+              },
+            ];
+            this.afterMessagesChanged();
+          });
         }
       )
       .on(
@@ -1447,21 +1497,79 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         (payload: any) => {
           const row = payload?.new as { id: string; body: string; created_at: string; author_id: string } | undefined;
           if (!row?.id) return;
-          if (this.messages.some((message) => message.id === row.id)) return;
-          this.messages = [
-            ...this.messages,
-            {
-              id: row.id,
-              body: row.body,
-              created_at: row.created_at,
-              sender_id: row.author_id,
-              sender_name: 'Nota interna',
-              kind: 'internal',
-            },
-          ];
+          this.zone.run(() => {
+            if (this.messages.some((message) => message.id === row.id)) return;
+            this.messages = [
+              ...this.messages,
+              {
+                id: row.id,
+                body: row.body,
+                created_at: row.created_at,
+                sender_id: row.author_id,
+                sender_name: 'Nota interna',
+                kind: 'internal',
+              },
+            ];
+            this.afterMessagesChanged();
+          });
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'typing' },
+        (payload: any) => {
+          const userId = this.auth.user?.id;
+          const event = payload?.payload as { userId?: string; name?: string | null; isTyping?: boolean } | undefined;
+          if (!event?.userId || event.userId === userId) return;
+
+          if (!event.isTyping) {
+            this.typingLabel = null;
+            if (this.typingTimeout) clearTimeout(this.typingTimeout);
+            return;
+          }
+
+          this.typingLabel = `${event.name || 'La otra persona'} está escribiendo...`;
+          if (this.typingTimeout) clearTimeout(this.typingTimeout);
+          this.typingTimeout = setTimeout(() => {
+            this.typingLabel = null;
+          }, 3500);
         }
       )
       .subscribe();
+  }
+
+  private async broadcastTyping(isTyping: boolean): Promise<void> {
+    if (!this.realtimeChannel || !this.activeRequestId || this.composerMode === 'internal') return;
+    const user = this.auth.user;
+    if (!user) return;
+
+    await this.realtimeChannel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: {
+        userId: user.id,
+        name: user.user_metadata?.['full_name'] || user.email || 'Usuario',
+        isTyping,
+      },
+    });
+
+    if (this.stopTypingTimeout) clearTimeout(this.stopTypingTimeout);
+    if (isTyping) {
+      this.stopTypingTimeout = setTimeout(() => {
+        void this.broadcastTyping(false);
+      }, 1800);
+    }
+  }
+
+  private afterMessagesChanged(): void {
+    this.cdr.detectChanges();
+    setTimeout(() => this.scrollMessagesToBottom(), 0);
+  }
+
+  private scrollMessagesToBottom(): void {
+    const element = this.messagesViewport?.nativeElement;
+    if (!element) return;
+    element.scrollTop = element.scrollHeight;
   }
 
   private async teardownRealtime(): Promise<void> {

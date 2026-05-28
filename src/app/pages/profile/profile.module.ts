@@ -5,9 +5,10 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ProfilePageRoutingModule } from './profile-routing.module';
 import { ProfilePage } from './profile.page';
+import { SiteHeaderComponent } from '../../shared/components/site-header/site-header.component';
 
 @NgModule({
-  imports: [CommonModule, FormsModule, MatIconModule, ProfilePageRoutingModule],
+  imports: [CommonModule, FormsModule, MatIconModule, SiteHeaderComponent, ProfilePageRoutingModule],
   declarations: [ProfilePage],
 })
 export class ProfilePageModule {}

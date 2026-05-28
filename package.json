@@ -10,7 +10,8 @@
     "build:gh": "npm run tw:build && ng build --configuration production --base-href /companycare/ --deploy-url /companycare/",
     "deploy": "npm run build:gh && gh-pages -d dist/app --no-history",
     "test": "ng test",
-    "lint": "ng lint"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "lint": "npm run typecheck"
   },
   "dependencies": {
     "@angular/animations": "^18.2.0",

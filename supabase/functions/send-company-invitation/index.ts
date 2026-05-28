@@ -96,6 +96,59 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Ya existe una invitacion pendiente para este correo.' }, 409);
     }
 
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email')
+      .ilike('email', email)
+      .maybeSingle();
+
+    if (existingProfile?.id) {
+      const { data: existingMembership } = await supabaseAdmin
+        .from('company_members')
+        .select('company_id, user_id, member_role')
+        .eq('company_id', companyId)
+        .eq('user_id', existingProfile.id)
+        .maybeSingle();
+
+      if (existingMembership?.user_id) {
+        return jsonResponse({ error: 'Este usuario ya pertenece a la empresa.' }, 409);
+      }
+
+      const { data: invitation, error: invitationError } = await supabaseAdmin
+        .from('company_invitations')
+        .insert({
+          company_id: companyId,
+          email,
+          role,
+          invited_by: user.id,
+          status: 'accepted',
+          accepted_at: new Date().toISOString(),
+        })
+        .select('id, email, role, status, token, expires_at, accepted_at')
+        .single();
+
+      if (invitationError || !invitation) {
+        return jsonResponse({ error: invitationError?.message || 'Could not create invitation.' }, 400);
+      }
+
+      const { error: membershipError } = await supabaseAdmin
+        .from('company_members')
+        .upsert(
+          {
+            company_id: companyId,
+            user_id: existingProfile.id,
+            member_role: role,
+          },
+          { onConflict: 'company_id,user_id' }
+        );
+
+      if (membershipError) {
+        return jsonResponse({ error: membershipError.message }, 400);
+      }
+
+      return jsonResponse({ invitation, linkedExistingUser: true });
+    }
+
     const { data: invitation, error: invitationError } = await supabaseAdmin
       .from('company_invitations')
       .insert({

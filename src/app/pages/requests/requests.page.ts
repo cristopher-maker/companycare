@@ -8,6 +8,16 @@ type CareRequestRow = {
   channel: string;
   status: 'open' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
   created_at: string;
+  appointment?: AppointmentSummary | null;
+};
+
+type AppointmentSummary = {
+  id: string;
+  request_id: string | null;
+  kind: 'Videollamada' | 'Llamada';
+  scheduled_for: string;
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  meeting_url: string | null;
 };
 
 @Component({
@@ -59,7 +69,37 @@ export class RequestsPage implements OnInit, OnDestroy {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      this.items = (data ?? []) as CareRequestRow[];
+      const requests = (data ?? []) as CareRequestRow[];
+      const requestIds = requests.map((item) => item.id);
+      let appointmentsByRequestId = new Map<string, AppointmentSummary>();
+
+      if (requestIds.length) {
+        const { data: appointments, error: appointmentsError } = await this.supabase.client
+          .from('appointments')
+          .select('id, request_id, kind, scheduled_for, status, meeting_url')
+          .in('request_id', requestIds)
+          .order('scheduled_for', { ascending: true });
+
+        if (appointmentsError) throw appointmentsError;
+
+        appointmentsByRequestId = ((appointments ?? []) as AppointmentSummary[])
+          .filter((appointment) => !!appointment.request_id)
+          .reduce((map, appointment) => {
+            const requestId = appointment.request_id as string;
+            const current = map.get(requestId);
+            const appointmentTime = new Date(appointment.scheduled_for).getTime();
+            const currentTime = current ? new Date(current.scheduled_for).getTime() : Number.POSITIVE_INFINITY;
+            if (!current || appointmentTime < currentTime) {
+              map.set(requestId, appointment);
+            }
+            return map;
+          }, new Map<string, AppointmentSummary>());
+      }
+
+      this.items = requests.map((item) => ({
+        ...item,
+        appointment: appointmentsByRequestId.get(item.id) ?? null,
+      }));
       const totalPages = this.totalPages;
       if (this.currentPage > totalPages) this.currentPage = totalPages;
     } catch (err: any) {
@@ -85,6 +125,18 @@ export class RequestsPage implements OnInit, OnDestroy {
       closed: 'request-card__status--closed',
     };
     return classes[status] ?? 'request-card__status--closed';
+  }
+
+  public displayDate(item: CareRequestRow): string {
+    return item.appointment?.scheduled_for ?? item.created_at;
+  }
+
+  public hasVideoMeeting(item: CareRequestRow): boolean {
+    return item.appointment?.kind === 'Videollamada' && !!item.appointment.meeting_url;
+  }
+
+  public isPendingVideoMeeting(item: CareRequestRow): boolean {
+    return item.appointment?.kind === 'Videollamada' && !item.appointment.meeting_url;
   }
 
   public get openRequestsCount(): number {
@@ -132,5 +184,12 @@ export class RequestsPage implements OnInit, OnDestroy {
 
   public nextPage(): void {
     this.goToPage(this.currentPage + 1);
+  }
+
+  public openMeeting(event: MouseEvent, url: string | null | undefined): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 }

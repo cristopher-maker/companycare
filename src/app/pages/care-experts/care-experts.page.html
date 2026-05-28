@@ -385,14 +385,26 @@
 
       <section class="ce-panel ce-chat-panel" *ngIf="hasActiveChatRequest">
         <div class="ce-chat__head">
-          <div>
-            <div class="ce-chat__title">Chat con Care Expert</div>
-            <div class="ce-chat__hint">{{ topic }}</div>
+          <div class="ce-chat__agent">
+            <div class="ce-chat__avatar" aria-hidden="true">
+              <mat-icon>support_agent</mat-icon>
+            </div>
+            <div>
+              <div class="ce-chat__title">Chat con Care Expert</div>
+              <div class="ce-chat__hint">{{ topic }}</div>
+            </div>
           </div>
-          <div class="ce-chat__status-indicator" aria-hidden="true"></div>
+          <div class="ce-chat__status">
+            <span class="ce-chat__status-indicator" aria-hidden="true"></span>
+            <span>Activo</span>
+          </div>
         </div>
 
-        <div class="ce-chat__messages">
+        <div class="ce-chat__messages" #messagesViewport>
+          <div *ngIf="messages.length === 0" class="ce-chat__empty">
+            <mat-icon>chat_bubble_outline</mat-icon>
+            <span>Escribe el primer mensaje para continuar con tu Care Expert.</span>
+          </div>
           <div
             *ngFor="let message of messages"
             class="ce-msg"
@@ -403,17 +415,22 @@
               {{ messageAuthorLabel(message) }} · {{ message.created_at | date:'HH:mm' }}
             </div>
           </div>
+          <div *ngIf="typingLabel" class="ce-chat__typing">{{ typingLabel }}</div>
         </div>
 
         <div class="ce-chat__input-area">
           <input
-            [(ngModel)]="messageDraft"
+            [ngModel]="messageDraft"
+            (ngModelChange)="onMessageDraftChange($event)"
             type="text"
             class="ce-chat__input"
             placeholder="Escribe tu mensaje..."
             (keyup.enter)="sendMessage()"
           />
-          <button type="button" class="ce-btn-send-text" (click)="sendMessage()">Enviar</button>
+          <button type="button" class="ce-btn-send-text" [disabled]="!messageDraft.trim()" (click)="sendMessage()">
+            <mat-icon>send</mat-icon>
+            <span>Enviar</span>
+          </button>
         </div>
       </section>
     </div>
@@ -550,6 +567,7 @@
           <p *ngIf="messages.length === 0" class="ce-expert-app__messages-empty">
             No hay mensajes todavía. Escribe para iniciar la conversación.
           </p>
+          <p *ngIf="typingLabel" class="ce-expert-app__typing">{{ typingLabel }}</p>
         </div>
 
         <div class="ce-expert-app__composer">
@@ -583,7 +601,8 @@
 
             <div class="ce-expert-app__write-row">
               <textarea
-                [(ngModel)]="messageDraft"
+                [ngModel]="messageDraft"
+                (ngModelChange)="onMessageDraftChange($event)"
                 (keyup.enter)="sendMessage()"
                 rows="3"
                 class="ce-expert-app__textarea"
@@ -639,16 +658,35 @@
               </div>
               <p class="ce-expert-app__appointment-date">{{ app.scheduled_for | date:'EEEE d MMM, HH:mm' }}</p>
 
-              <select
-                [ngModel]="app.status"
-                (ngModelChange)="updateAppointmentStatus(app, $event)"
-                class="ce-expert-app__select ce-expert-app__select--compact"
-              >
-                <option value="scheduled">Agendada</option>
-                <option value="confirmed">Confirmada</option>
-                <option value="completed">Completada</option>
-                <option value="cancelled">Cancelada</option>
-              </select>
+              <div class="ce-expert-app__appointment-status">
+                <span>Estado</span>
+                <strong>{{ appointmentStatusLabel(app.status) }}</strong>
+              </div>
+
+              <div class="ce-expert-app__appointment-url" *ngIf="app.meeting_url; else pendingMeetingLink">
+                <span>Link de la videollamada</span>
+                <a [href]="app.meeting_url" target="_blank" rel="noopener noreferrer">{{ app.meeting_url }}</a>
+              </div>
+              <ng-template #pendingMeetingLink>
+                <div *ngIf="app.kind === 'Videollamada'" class="ce-expert-app__appointment-url is-pending">
+                  <span>Link de la videollamada</span>
+                  <strong>Enlace pendiente de generacion</strong>
+                </div>
+              </ng-template>
+
+              <label class="ce-expert-app__appointment-field">
+                <span>Cambiar estado</span>
+                <select
+                  [ngModel]="app.status || 'scheduled'"
+                  (ngModelChange)="updateAppointmentStatus(app, $event)"
+                  class="ce-expert-app__select ce-expert-app__select--compact"
+                >
+                  <option value="scheduled">Agendada</option>
+                  <option value="confirmed">Confirmada</option>
+                  <option value="completed">Completada</option>
+                  <option value="cancelled">Cancelada</option>
+                </select>
+              </label>
 
               <button
                 *ngIf="hasMeetingLink(app)"
@@ -659,6 +697,16 @@
                 <mat-icon>videocam</mat-icon>
                 Unirse a la reunión
               </button>
+
+              <button
+                *ngIf="hasMeetingLink(app)"
+                type="button"
+                class="ce-expert-app__appointment-link ce-expert-app__appointment-link--secondary"
+                (click)="copyMeetingLink(app)"
+              >
+                <mat-icon>content_copy</mat-icon>
+                Copiar link
+              </button>
             </article>
           </div>
         </section>
@@ -666,13 +714,40 @@
         <section *ngIf="selectedCollaborator" class="ce-expert-app__card">
           <div class="ce-expert-app__card-head">
             <h3 class="ce-expert-app__card-title">Ficha de contexto</h3>
-            <mat-icon>assignment</mat-icon>
+            <button type="button" class="ce-expert-app__card-action" (click)="openContextSheet()">
+              <mat-icon>assignment</mat-icon>
+              <span>Ver ficha</span>
+            </button>
           </div>
 
           <div class="ce-expert-app__context">
             <div class="ce-expert-app__context-item">
+              <span>Colaborador</span>
+              <strong>{{ selectedCollaborator.fullName || selectedCollaborator.email || 'No informado' }}</strong>
+            </div>
+            <div class="ce-expert-app__context-item">
+              <span>Email</span>
+              <strong>{{ selectedCollaborator.email || 'No informado' }}</strong>
+            </div>
+            <div class="ce-expert-app__context-item">
+              <span>Empresa</span>
+              <strong>{{ selectedCollaborator.company || 'No informada' }}</strong>
+            </div>
+            <div class="ce-expert-app__context-item">
+              <span>Rol</span>
+              <strong>{{ memberRoleLabel(selectedCollaborator.memberRole) }}</strong>
+            </div>
+            <div class="ce-expert-app__context-item">
               <span>Ubicación</span>
               <strong>{{ selectedCollaborator.location || 'No informada' }}</strong>
+            </div>
+            <div class="ce-expert-app__context-item">
+              <span>Edad persona cuidada</span>
+              <strong>{{ selectedCollaborator.familyAge || 'No informada' }}</strong>
+            </div>
+            <div class="ce-expert-app__context-item">
+              <span>Relación</span>
+              <strong>{{ selectedCollaborator.relation || 'No informada' }}</strong>
             </div>
             <div class="ce-expert-app__context-item">
               <span>Condición principal</span>
@@ -683,12 +758,78 @@
               <strong>{{ selectedCollaborator.dependencyLevel || 'No informado' }}</strong>
             </div>
             <div class="ce-expert-app__context-item">
-              <span>Presupuesto / financiamiento</span>
+              <span>Contacto preferido</span>
+              <strong>{{ selectedCollaborator.preferredContact || 'No informado' }}</strong>
+            </div>
+            <div class="ce-expert-app__context-item">
+              <span>Red de apoyo</span>
               <strong>{{ selectedCollaborator.supportNetwork || 'No informado' }}</strong>
             </div>
           </div>
         </section>
       </aside>
+    </div>
+
+    <div *ngIf="showContextSheet && selectedCollaborator" class="ce-context-sheet" role="dialog" aria-modal="true" aria-label="Ficha completa de contexto">
+      <div class="ce-context-sheet__backdrop" (click)="closeContextSheet()"></div>
+      <section class="ce-context-sheet__panel">
+        <header class="ce-context-sheet__head">
+          <div>
+            <p>Ficha completa</p>
+            <h3>{{ selectedCollaborator.fullName || selectedCollaborator.email || 'Colaborador' }}</h3>
+          </div>
+          <button type="button" class="ce-context-sheet__close" (click)="closeContextSheet()" aria-label="Cerrar ficha">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <div class="ce-context-sheet__grid">
+          <div class="ce-context-sheet__item">
+            <span>Email</span>
+            <strong>{{ selectedCollaborator.email || 'No informado' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Empresa</span>
+            <strong>{{ selectedCollaborator.company || 'No informada' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Rol</span>
+            <strong>{{ memberRoleLabel(selectedCollaborator.memberRole) }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Ubicación</span>
+            <strong>{{ selectedCollaborator.location || 'No informada' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Edad persona cuidada</span>
+            <strong>{{ selectedCollaborator.familyAge || 'No informada' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Relación</span>
+            <strong>{{ selectedCollaborator.relation || 'No informada' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Condición principal</span>
+            <strong>{{ selectedCollaborator.condition || 'No informada' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Nivel dependencia</span>
+            <strong>{{ selectedCollaborator.dependencyLevel || 'No informado' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Contacto preferido</span>
+            <strong>{{ selectedCollaborator.preferredContact || 'No informado' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item ce-context-sheet__item--wide">
+            <span>Red de apoyo</span>
+            <strong>{{ selectedCollaborator.supportNetwork || 'No informado' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item ce-context-sheet__item--wide" *ngIf="selectedRequest?.details">
+            <span>Contexto de la solicitud</span>
+            <strong>{{ selectedRequest?.details }}</strong>
+          </div>
+        </div>
+      </section>
     </div>
   </section>
 </section>

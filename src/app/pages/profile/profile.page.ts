@@ -18,6 +18,7 @@ export class ProfilePage implements OnInit {
   public companyTaxId = '';
   public email = '';
   public role: ProfileRole | null = null;
+  public activeSessions: Array<{ device: string; detail: string; icon: string; current: boolean }> = [];
 
   constructor(
     public readonly auth: AuthService,
@@ -128,8 +129,47 @@ export class ProfilePage implements OnInit {
       } else {
         this.companyTaxId = '';
       }
+      await this.loadCurrentSession();
     } finally {
       this.loading = false;
     }
+  }
+
+  private async loadCurrentSession(): Promise<void> {
+    const { data } = await this.supabase.client.auth.getSession();
+    const session = data.session;
+    const userAgent = navigator.userAgent;
+    const browser = this.detectBrowser(userAgent);
+    const os = this.detectOs(userAgent);
+    const loginDate = session?.user?.last_sign_in_at ? new Date(session.user.last_sign_in_at) : null;
+
+    this.activeSessions = [{
+      device: `${browser} · ${os}`,
+      detail: loginDate ? `Ultimo ingreso ${loginDate.toLocaleString('es-CL')}` : 'Sesion actual',
+      icon: this.isMobileUserAgent(userAgent) ? 'smartphone' : 'laptop',
+      current: true
+    }];
+  }
+
+  private detectBrowser(userAgent: string): string {
+    if (/Edg\//.test(userAgent)) return 'Edge';
+    if (/OPR\//.test(userAgent)) return 'Opera';
+    if (/Chrome\//.test(userAgent)) return 'Chrome';
+    if (/Safari\//.test(userAgent) && !/Chrome\//.test(userAgent)) return 'Safari';
+    if (/Firefox\//.test(userAgent)) return 'Firefox';
+    return 'Navegador';
+  }
+
+  private detectOs(userAgent: string): string {
+    if (/Windows/i.test(userAgent)) return 'Windows';
+    if (/Mac OS X/i.test(userAgent)) return 'macOS';
+    if (/Android/i.test(userAgent)) return 'Android';
+    if (/iPhone|iPad|iPod/i.test(userAgent)) return 'iOS';
+    if (/Linux/i.test(userAgent)) return 'Linux';
+    return 'Dispositivo';
+  }
+
+  private isMobileUserAgent(userAgent: string): boolean {
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
   }
 }

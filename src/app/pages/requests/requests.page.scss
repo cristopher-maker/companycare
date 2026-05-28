@@ -263,6 +263,45 @@ app-requests {
   text-transform: uppercase;
 }
 
+.request-card__actions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.request-card__meeting {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(21, 128, 61, 0.18);
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.request-card__meeting mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.request-card__meeting--pending {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+  cursor: default;
+}
+
 .request-card__status--open {
   background: #dbeafe;
   color: #1d4ed8;
@@ -393,5 +432,10 @@ app-requests {
     flex-direction: column;
     align-items: flex-start;
     padding: 18px;
+  }
+
+  .request-card__actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }

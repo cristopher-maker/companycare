@@ -9,15 +9,15 @@
       </div>
       <div>
         <div class="logo-text">Care Admin</div>
-        <div class="logo-sub">Panel de gestión</div>
+        <div class="logo-sub">Panel de gesti&oacute;n</div>
       </div>
     </div>
  
     <div class="nav-section">
-      <div class="nav-label">Gestión</div>
+      <div class="nav-label">Gesti&oacute;n</div>
       <button class="nav-item" [class.active]="currentView === 'metricas'" (click)="setView('metricas')">
         <mat-icon class="nav-icon">monitoring</mat-icon>
-        Métricas
+        M&eacute;tricas
       </button>
       <button class="nav-item" [class.active]="currentView === 'admisiones'" [class.is-locked]="isPlanLockedView('admisiones')" [disabled]="isPlanLockedView('admisiones')" (click)="setView('admisiones')">
         <mat-icon class="nav-icon">view_kanban</mat-icon>
@@ -41,7 +41,7 @@
       </button>
       <button class="nav-item" [class.active]="currentView === 'facturacion'" [class.is-locked]="isPlanLockedView('facturacion')" [disabled]="isPlanLockedView('facturacion')" (click)="setView('facturacion')">
         <mat-icon class="nav-icon">receipt_long</mat-icon>
-        Facturación
+        Facturaci&oacute;n
       </button>
       <button class="nav-item" [class.active]="currentView === 'gastos'" [class.is-locked]="isPlanLockedView('gastos')" [disabled]="isPlanLockedView('gastos')" (click)="setView('gastos')">
         <mat-icon class="nav-icon">account_balance_wallet</mat-icon>
@@ -52,7 +52,7 @@
     <div class="nav-divider"></div>
  
     <div class="nav-section">
-      <div class="nav-label">Configuración</div>
+      <div class="nav-label">Configuraci&oacute;n</div>
       <button class="nav-item" [class.active]="currentView === 'empleados'" [class.is-locked]="isPlanLockedView('empleados')" [disabled]="isPlanLockedView('empleados')" (click)="setView('empleados')">
         <mat-icon class="nav-icon">badge</mat-icon>
         Empleados
@@ -63,7 +63,7 @@
       </button>
       <button class="nav-item" [class.active]="currentView === 'config'" (click)="setView('config')">
         <mat-icon class="nav-icon">settings</mat-icon>
-        Configuración
+        Configuraci&oacute;n
       </button>
       <a routerLink="/home" class="nav-item">
         <mat-icon class="nav-icon">arrow_back</mat-icon>
@@ -87,8 +87,11 @@
  
     <!-- Topbar -->
     <header class="admin-topbar">
+      <button class="topbar-menu-toggle" type="button" (click)="toggleMobileNav()" [attr.aria-expanded]="mobileNavOpen">
+        <mat-icon>{{ mobileNavOpen ? 'close' : 'menu' }}</mat-icon>
+      </button>
       <div class="topbar-breadcrumb">
-        <span class="topbar-section">{{ currentView }}</span>
+        <span class="topbar-section">{{ currentViewLabel }}</span>
         <span class="topbar-sep">/</span>
         <span class="topbar-page">resumen</span>
       </div>
@@ -98,6 +101,34 @@
         <span class="topbar-status">Sistema operativo</span>
       </div>
     </header>
+
+    <div class="mobile-nav-panel" *ngIf="mobileNavOpen">
+      <div class="mobile-nav-section" *ngFor="let section of mobileNavSections">
+        <div class="mobile-nav-section__label">{{ section.label }}</div>
+        <button
+          type="button"
+          class="mobile-nav-item"
+          *ngFor="let item of section.items"
+          [class.active]="currentView === item.view"
+          [class.is-locked]="item.locked && isPlanLockedView(item.view)"
+          [disabled]="item.locked && isPlanLockedView(item.view)"
+          (click)="setView(item.view)"
+        >
+          <span class="mobile-nav-item__main">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span>{{ item.label }}</span>
+          </span>
+          <mat-icon *ngIf="item.locked && isPlanLockedView(item.view)">lock</mat-icon>
+        </button>
+      </div>
+
+      <a routerLink="/home" class="mobile-nav-item mobile-nav-item--link" (click)="closeMobileNav()">
+        <span class="mobile-nav-item__main">
+          <mat-icon>arrow_back</mat-icon>
+          <span>Volver al portal</span>
+        </span>
+      </a>
+    </div>
 
     <div class="plan-gate-banner" *ngIf="!hasOperationalAccess">
       <mat-icon>lock</mat-icon>
@@ -116,15 +147,15 @@
     <!-- Content area -->
     <div class="admin-content">
 
-      <!-- View: Métricas -->
-      <div *ngIf="currentView === 'metricas'">
+      <!-- View: M&eacute;tricas -->
+      <div *ngIf="currentView === 'metricas'" class="metrics-view">
         <section class="dashboard-hero">
           <div>
             <span class="dashboard-hero__eyebrow">Panel de control</span>
             <h1>{{ dashboardGreeting }}, Administrador</h1>
-            <p>Resumen operativo de empresa, admisiones, tareas, disponibilidad y finanzas.</p>
+            <p>Resumen operativo de admisiones, tareas, disponibilidad y alertas.</p>
           </div>
-          <div class="dashboard-hero__meta">
+          <div class="dashboard-hero__meta" *ngIf="false">
             <span>{{ activePlanTier || 'Sin plan activo' }}</span>
             <strong>{{ hasActivePlan ? 'Operativo' : 'Bloqueado' }}</strong>
           </div>
@@ -145,7 +176,7 @@
           <section class="table-card dashboard-panel dashboard-panel--actions">
             <div class="dashboard-panel__header">
               <div>
-                <h3>Próximas acciones</h3>
+                <h3>Pr&oacute;ximas acciones</h3>
                 <p>Prioridades sugeridas con los datos actuales.</p>
               </div>
             </div>
@@ -161,33 +192,12 @@
               No hay acciones urgentes pendientes.
             </div>
           </section>
-
-          <section class="table-card dashboard-panel">
-            <div class="dashboard-panel__header">
-              <div>
-                <h3>Ultimos registros</h3>
-                <p>Últimos movimientos de tareas, admisiones y cobros.</p>
-              </div>
-            </div>
-            <div class="dashboard-event-list" *ngIf="latestOperationalEvents.length">
-              <article class="dashboard-event" *ngFor="let event of latestOperationalEvents">
-                <span><mat-icon>{{ event.icon }}</mat-icon></span>
-                <div>
-                  <strong>{{ event.title }}</strong>
-                  <small>{{ event.detail }} · {{ getTimeAgo(event.created_at) }}</small>
-                </div>
-              </article>
-            </div>
-            <div class="dashboard-empty" *ngIf="!latestOperationalEvents.length">
-              Aún no hay actividad para mostrar.
-            </div>
-          </section>
         </div>
-        <div class="view-header">
-          <span class="view-title">Métricas Principales</span>
+        <div class="view-header" *ngIf="false">
+          <span class="view-title">M&eacute;tricas Principales</span>
         </div>
         <!-- Stat cards -->
-        <div class="stats-grid">
+        <div class="stats-grid" *ngIf="false">
           <div class="stat-card">
             <div class="stat-label">Total sedes</div>
             <div class="stat-value">{{ totalSedes }}</div>
@@ -205,10 +215,10 @@
             <div class="stat-bar bar-warn"></div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Ocupación</div>
+            <div class="stat-label">Ocupaci&oacute;n</div>
             <div class="stat-value">{{ porcentajeOcupacion }}%</div>
             <div class="stat-delta" [class.delta-up]="camasTotales > 0 && porcentajeOcupacion > 0">
-              {{ camasTotales > 0 ? 'Ocupacion actual' : 'Sin variacion' }}
+              {{ camasTotales > 0 ? 'Ocupaci&oacute;n actual' : 'Sin variaci&oacute;n' }}
             </div>
             <div class="stat-bar bar-blue"></div>
           </div>
@@ -222,55 +232,23 @@
           </div>
         </div>
 
-        <div class="ops-overview">
-          <section class="table-card ops-panel">
-            <div class="ops-panel__header">
-              <h3 class="ops-panel__title">Resumen de tareas</h3>
-            </div>
-            <div class="ops-summary-grid">
-              <article class="ops-summary-card" *ngFor="let card of taskSummaryCards" [ngClass]="'ops-summary-card--' + card.tone">
-                <span class="ops-summary-card__label">{{ card.label }}</span>
-                <strong class="ops-summary-card__value">{{ card.value }}</strong>
-              </article>
-            </div>
-          </section>
-
-          <section class="table-card ops-panel">
-            <div class="ops-panel__header">
-              <h3 class="ops-panel__title">Alertas operativas</h3>
-            </div>
-            <div class="ops-alerts">
-              <article class="ops-alert" *ngFor="let alert of operationalAlerts" [ngClass]="'ops-alert--' + alert.level">
-                <div class="ops-alert__dot"></div>
-                <div class="ops-alert__body">
-                  <strong>{{ alert.title }}</strong>
-                  <p>{{ alert.detail }}</p>
-                </div>
-              </article>
-            </div>
-          </section>
-        </div>
-
         <div class="metrics-charts">
           <section class="table-card chart-card">
             <div class="chart-card__header">
-              <h3 class="chart-card__title">Distribución de Camas</h3>
+              <h3 class="chart-card__title">Distribuci&oacute;n de Camas</h3>
             </div>
             <div class="chart-card__body">
-            <canvas *ngIf="camasTotales > 0"
-                baseChart
-                [labels]="doughnutChartLabels"
-                [datasets]="doughnutChartDatasets"
-                [options]="doughnutChartOptions"
-                [legend]="true"
-                type="doughnut">
-              </canvas>
-            <!-- Estado vacío (Sin datos) -->
-            <div *ngIf="camasTotales === 0" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding-bottom: 1.5rem;">
-              <div style="width: 140px; height: 140px; border-radius: 50%; border: 18px solid #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-weight: 600; font-size: 13px;">
-                Sin datos
+              <div *ngIf="camasTotales > 0" class="chart-canvas chart-canvas--square">
+                <canvas
+                  baseChart
+                  [labels]="doughnutChartLabels"
+                  [datasets]="doughnutChartDatasets"
+                  [options]="doughnutChartOptions"
+                  [legend]="true"
+                  type="doughnut">
+                </canvas>
               </div>
-            </div>
+              <div *ngIf="camasTotales === 0" class="chart-empty-state">Sin datos</div>
             </div>
           </section>
           <section class="table-card chart-card">
@@ -278,20 +256,17 @@
               <h3 class="chart-card__title">Estado de Admisiones</h3>
             </div>
             <div class="chart-card__body">
-              <canvas *ngIf="totalLeads > 0"
-                baseChart
-                [labels]="barChartLabels"
-                [datasets]="barChartDatasets"
-                [options]="barChartOptions"
-                [legend]="false"
-                type="bar">
-              </canvas>
-              <!-- Estado vacío (Sin datos) -->
-              <div *ngIf="totalLeads === 0" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding-bottom: 1.5rem;">
-                <div style="width: 140px; height: 140px; border-radius: 50%; border: 18px solid #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-weight: 600; font-size: 13px;">
-                  Sin datos
-                </div>
+              <div *ngIf="totalLeads > 0" class="chart-canvas chart-canvas--bar">
+                <canvas
+                  baseChart
+                  [labels]="barChartLabels"
+                  [datasets]="barChartDatasets"
+                  [options]="barChartOptions"
+                  [legend]="false"
+                  type="bar">
+                </canvas>
               </div>
+              <div *ngIf="totalLeads === 0" class="chart-empty-state">Sin datos</div>
             </div>
           </section>
           <section class="table-card chart-card">
@@ -299,38 +274,77 @@
               <h3 class="chart-card__title">Estado de Tareas</h3>
             </div>
             <div class="chart-card__body">
-              <canvas *ngIf="totalTareas > 0"
-                baseChart
-                [labels]="tasksChartLabels"
-                [datasets]="tasksChartDatasets"
-                [options]="tasksChartOptions"
-                [legend]="true"
-                type="doughnut">
-              </canvas>
-              <div *ngIf="totalTareas === 0" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding-bottom: 1.5rem;">
-                <div style="width: 140px; height: 140px; border-radius: 50%; border: 18px solid #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-weight: 600; font-size: 13px;">
-                  Sin datos
-                </div>
+              <div *ngIf="totalTareas > 0" class="chart-canvas chart-canvas--square">
+                <canvas
+                  baseChart
+                  [labels]="tasksChartLabels"
+                  [datasets]="tasksChartDatasets"
+                  [options]="tasksChartOptions"
+                  [legend]="true"
+                  type="doughnut">
+                </canvas>
               </div>
+              <div *ngIf="totalTareas === 0" class="chart-empty-state">Sin datos</div>
             </div>
           </section>
         </div>
+
+        <section class="table-card ops-panel metrics-alerts-panel">
+          <div class="ops-panel__header">
+            <h3 class="ops-panel__title">Alertas operativas</h3>
+          </div>
+          <div class="ops-alerts-grid">
+            <article class="ops-alert" *ngFor="let alert of operationalAlerts" [ngClass]="'ops-alert--' + alert.level">
+              <div class="ops-alert__dot"></div>
+              <div class="ops-alert__body">
+                <strong>{{ alert.title }}</strong>
+                <p>{{ alert.detail }}</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="table-card dashboard-panel">
+          <div class="dashboard-panel__header">
+            <div>
+              <h3>Actividad reciente</h3>
+              <p>&Uacute;ltimos movimientos de tareas, admisiones y cobros.</p>
+            </div>
+          </div>
+          <div class="dashboard-event-list" *ngIf="latestOperationalEvents.length">
+            <article class="dashboard-event" *ngFor="let event of latestOperationalEvents">
+              <span><mat-icon>{{ event.icon }}</mat-icon></span>
+              <div>
+                <strong>{{ event.title }}</strong>
+                <small>{{ event.detail }} &middot; {{ getTimeAgo(event.created_at) }}</small>
+              </div>
+            </article>
+          </div>
+          <div class="dashboard-empty" *ngIf="!latestOperationalEvents.length">
+            A&uacute;n no hay actividad para mostrar.
+          </div>
+        </section>
       </div>
 
         <!-- View: Tareas -->
       <div *ngIf="currentView === 'tareas'" class="mt-8">
         <div class="view-header">
-          <span class="view-title">Gestión de Tareas</span>
+          <span class="view-title">Gesti&oacute;n de Tareas</span>
           <button class="btn-primary" (click)="openTareaModal()">
             <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">add</mat-icon>
             Nueva Tarea
           </button>
         </div>
         <div class="table-filters">
+          <div class="field-group field-group--compact field-group--search">
+            <label class="field-label">Buscar</label>
+            <input class="field-input" type="search" [(ngModel)]="taskFilters.query" placeholder="Titulo, vinculo o responsable" />
+          </div>
           <div class="field-group field-group--compact">
             <label class="field-label">Estado</label>
             <select class="field-input" [(ngModel)]="taskFilters.status">
               <option value="all">Todos</option>
+              <option value="overdue">Vencidas</option>
               <option value="pending">Pendientes</option>
               <option value="in_progress">En progreso</option>
               <option value="done">Completadas</option>
@@ -347,6 +361,16 @@
               <option value="none">Sin vinculo</option>
             </select>
           </div>
+          <div class="field-group field-group--compact">
+            <label class="field-label">Prioridad</label>
+            <select class="field-input" [(ngModel)]="taskFilters.priority">
+              <option value="all">Todas</option>
+              <option value="high">Alta</option>
+              <option value="medium">Media</option>
+              <option value="low">Baja</option>
+            </select>
+          </div>
+          <button class="btn-secondary table-filters__reset" type="button" (click)="resetTaskFilters()">Limpiar</button>
         </div>
         <div class="table-card">
           <table class="data-table">
@@ -379,10 +403,11 @@
                 <td class="td-mono">{{ tarea.due_at | date:'dd/MM/yyyy' }}</td>
                 <td>
                   <span class="status-badge"
-                        [class.badge-warn]="tarea.status === 'pending'"
-                        [class.badge-blue]="tarea.status === 'in_progress'"
+                        [class.badge-red]="isTaskOverdue(tarea)"
+                        [class.badge-warn]="!isTaskOverdue(tarea) && tarea.status === 'pending'"
+                        [class.badge-blue]="!isTaskOverdue(tarea) && tarea.status === 'in_progress'"
                         [class.badge-green]="tarea.status === 'done'">
-                    {{ tarea.status === 'pending' ? 'Pendiente' : (tarea.status === 'in_progress' ? 'En Progreso' : 'Completada') }}
+                    {{ taskStatusLabel(tarea) }}
                   </span>
                 </td>
                 <td class="td-actions">
@@ -742,21 +767,54 @@
 
       <!-- View: Admisiones (Kanban) -->
       <div *ngIf="currentView === 'admisiones'" class="view-kanban mt-8" style="display: flex; flex-direction: column; height: 100%;">
-        <div class="view-header">
-          <span class="view-title">Pipeline de Admisiones</span>
-          <button class="btn-primary" (click)="openLeadModal()">
+        <div class="view-header view-header--kanban">
+          <div class="view-header__content">
+            <span class="view-title">Pipeline de Admisiones</span>
+            <p class="view-subtitle">
+              {{ filteredTotalKanbanLeads }} casos visibles en seguimiento.
+              {{ filteredFinalKanbanLeads }} ya llegaron a una salida final.
+            </p>
+          </div>
+          <button class="btn-primary btn-primary--kanban" (click)="openLeadModal()">
             <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">add</mat-icon>
             Nueva consulta
           </button>
+        </div>
+
+        <div class="table-filters table-filters--kanban">
+          <div class="field-group field-group--compact field-group--search">
+            <label class="field-label">Buscar</label>
+            <input class="field-input" type="search" [(ngModel)]="leadFilters.query" placeholder="Nombre, comuna o dependencia" />
+          </div>
+          <div class="field-group field-group--compact">
+            <label class="field-label">Etapa</label>
+            <select class="field-input" [(ngModel)]="leadFilters.status">
+              <option value="all">Todas</option>
+              <option value="nuevo">Nuevas</option>
+              <option value="contactado">Contactado</option>
+              <option value="evaluacion">Evaluacion</option>
+              <option value="match">Propuesta</option>
+              <option value="cerrado">Cerrado</option>
+              <option value="perdido">Perdido</option>
+            </select>
+          </div>
+          <div class="field-group field-group--compact">
+            <label class="field-label">Comuna</label>
+            <input class="field-input" type="search" [(ngModel)]="leadFilters.comuna" placeholder="Ej: Las Condes" />
+          </div>
+          <button class="btn-secondary table-filters__reset" type="button" (click)="resetLeadFilters()">Limpiar</button>
         </div>
         
         <!-- Tablero Kanban dinámico -->
         <div class="kanban-board" cdkDropListGroup>
           <!-- Itera sobre las columnas definidas en el TS -->
-          <div class="kanban-column" *ngFor="let column of kanbanColumns; trackBy: trackByKanbanColumn">
+          <div class="kanban-column" [class.kanban-column--final]="isTerminalKanbanColumn(column.id)" *ngFor="let column of filteredKanbanColumns; trackBy: trackByKanbanColumn">
             <div class="kanban-column-header">
-              <span>{{ column.label }}</span>
-              <span class="kanban-counter">{{ kanbanData[column.id]?.length || 0 }}</span>
+              <div class="kanban-column-heading">
+                <span>{{ column.label }}</span>
+                <small>{{ getKanbanColumnHint(column.id) }}</small>
+              </div>
+              <span class="kanban-counter">{{ getFilteredKanbanItems(column.id).length }}</span>
             </div>
             
             <!-- Esta es la zona donde se pueden soltar tarjetas -->
@@ -767,12 +825,14 @@
               [cdkDropListData]="kanbanData[column.id]"
               (cdkDropListDropped)="dropKanban($event)">
 
-              <div *ngIf="!kanbanData[column.id]?.length" class="kanban-empty">
-                Arrastra aquí
+              <div *ngIf="!getFilteredKanbanItems(column.id).length" class="kanban-empty">
+                <mat-icon>inbox</mat-icon>
+                <strong>{{ getKanbanEmptyTitle(column.id) }}</strong>
+                <span>{{ getKanbanEmptyHint(column.id) }}</span>
               </div>
 
               <!-- Itera sobre los leads (tarjetas) de esta columna -->
-              <div class="kanban-card" [class.kanban-card--selected]="isSelectedEntity('lead', lead.id)" *ngFor="let lead of kanbanData[column.id]; trackBy: trackByLead" cdkDrag [cdkDragData]="lead" cdkDragPreviewContainer="parent" role="button" tabindex="0" (click)="openLeadDetail(lead)" (keydown.enter)="openLeadDetail(lead)">
+              <div class="kanban-card" [class.kanban-card--selected]="isSelectedEntity('lead', lead.id)" *ngFor="let lead of getFilteredKanbanItems(column.id); trackBy: trackByLead" cdkDrag [cdkDragData]="lead" cdkDragPreviewContainer="parent" role="button" tabindex="0" (click)="openLeadDetail(lead)" (keydown.enter)="openLeadDetail(lead)">
                 <ng-template cdkDragPlaceholder>
                   <div class="kanban-card kanban-card--placeholder">
                     <div class="kanban-card-content"></div>
@@ -814,7 +874,7 @@
       </div>
       <div *ngIf="currentView === 'config'" class="erp-config-view">
         <div class="view-header">
-          <span class="view-title">{{ companyConfigMode ? 'Mi empresa' : 'Configuracion ERP' }}</span>
+          <span class="view-title">{{ companyConfigMode ? 'Mi empresa' : 'Configuración ERP' }}</span>
           <button *ngIf="!companyConfigMode" class="btn-ghost" (click)="exportConfigSnapshotToCSV()">
             <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">download</mat-icon>
             Exportar CSV
@@ -823,12 +883,12 @@
 
         <div class="erp-toolbar table-card">
           <div>
-            <h3>{{ companyConfigMode ? 'Centro de empresa' : 'Configuracion operativa' }}</h3>
-            <p>{{ companyConfigMode ? 'Administra datos de empresa, documentos, onboarding y mensajes de soporte.' : 'Ajustes que cambian el funcionamiento diario: flujos, reglas, documentos, mensajes y onboarding.' }}</p>
+            <h3>{{ companyConfigMode ? 'Centro de empresa' : 'Configuración operativa' }}</h3>
+            <p>{{ companyConfigMode ? 'Administra datos de empresa, documentos y mensajes de soporte.' : 'Ajustes que cambian el funcionamiento diario: flujos, reglas, documentos y mensajes.' }}</p>
           </div>
           <label class="erp-search" *ngIf="!companyConfigMode">
             <mat-icon>search</mat-icon>
-            <input type="search" [(ngModel)]="configSearch" placeholder="Buscar categoria, estado, SLA, documento..." />
+            <input type="search" [(ngModel)]="configSearch" placeholder="Buscar categoría, estado, SLA, documento..." />
           </label>
         </div>
 
@@ -841,12 +901,12 @@
           <button *ngIf="!companyConfigMode && !hideWorkflowConfig" type="button" class="erp-summary-card" (click)="setConfigSection('workflow')">
             <span>Flujos</span>
             <strong>{{ systemCategories.length + systemStatuses.length }}</strong>
-            <small>Categorias y estados</small>
+            <small>Categorías y estados</small>
           </button>
           <button *ngIf="!companyConfigMode" type="button" class="erp-summary-card" (click)="setConfigSection('business')">
             <span>Reglas</span>
             <strong>{{ businessParameters.length + planSlas.length }}</strong>
-            <small>Parametros y SLA</small>
+            <small>Parámetros y SLA</small>
           </button>
           <button type="button" class="erp-summary-card" (click)="setConfigSection('documents')">
             <span>Documentos</span>
@@ -857,11 +917,6 @@
             <span>Soporte</span>
             <strong>{{ entityComments.length }}</strong>
             <small>Mensajes enviados</small>
-          </button>
-          <button type="button" class="erp-summary-card" (click)="setConfigSection('onboarding')">
-            <span>Onboarding</span>
-            <strong>{{ onboardingProjects.length }}</strong>
-            <small>{{ completedOnboardingProjectsCount }} completados</small>
           </button>
         </div>
 
@@ -890,10 +945,6 @@
             <mat-icon>forum</mat-icon>
             {{ companyConfigMode ? 'Mensajes/soporte' : 'Mensajes' }}
           </button>
-          <button type="button" [class.active]="configSection === 'onboarding'" (click)="setConfigSection('onboarding')">
-            <mat-icon>rocket_launch</mat-icon>
-            Onboarding
-          </button>
         </div>
 
         <div class="erp-config-grid">
@@ -905,7 +956,7 @@
             <div class="erp-panel__header">
               <div>
                 <h3>Apariencia del ERP</h3>
-                <p>Personaliza esta empresa sin afectar a las demas: colores, botones, bordes, densidad y logo.</p>
+                <p>Personaliza esta empresa sin afectar a las demás: colores, botones, bordes, densidad y logo.</p>
               </div>
               <span>Por empresa</span>
             </div>
@@ -914,9 +965,9 @@
               <div class="appearance-controls">
                 <div class="theme-preset-row">
                   <button type="button" class="btn-secondary" (click)="applyThemePreset('care')">Company Care</button>
-                  <button type="button" class="btn-secondary" (click)="applyThemePreset('clinical')">Clinico</button>
+                  <button type="button" class="btn-secondary" (click)="applyThemePreset('clinical')">Clínico</button>
                   <button type="button" class="btn-secondary" (click)="applyThemePreset('corporate')">Corporativo</button>
-                  <button type="button" class="btn-secondary" (click)="applyThemePreset('warm')">Calido</button>
+                  <button type="button" class="btn-secondary" (click)="applyThemePreset('warm')">Cálido</button>
                 </div>
 
                 <div class="theme-control-group">
@@ -973,7 +1024,7 @@
                       <span>Densidad</span>
                       <select class="field-input" [(ngModel)]="brandingDraft.erp_density">
                         <option value="compact">Compacta</option>
-                        <option value="comfortable">Comoda</option>
+                        <option value="comfortable">Cómoda</option>
                         <option value="spacious">Amplia</option>
                       </select>
                     </label>
@@ -1064,18 +1115,18 @@
                 <h3>Flujos operativos</h3>
                 <p>Define las opciones que el equipo usa en solicitudes, tareas, documentos, proveedores y leads.</p>
               </div>
-              <span>{{ systemCategories.length }} categorias · {{ systemStatuses.length }} estados</span>
+              <span>{{ systemCategories.length }} categorías · {{ systemStatuses.length }} estados</span>
             </div>
 
             <div class="workflow-layout">
               <div class="workflow-block">
                 <div class="workflow-block__title">
-                  <strong>Categorias</strong>
+                  <strong>Categorías</strong>
                   <span>Clasifican registros y filtros.</span>
                 </div>
                 <div class="erp-form-grid erp-form-grid--action">
                   <label class="field-stack">
-                    <span>Modulo</span>
+                    <span>Módulo</span>
                     <select class="field-input" [(ngModel)]="categoryDraft.scope">
                       <option value="request">Solicitud</option>
                       <option value="task">Tarea</option>
@@ -1097,7 +1148,7 @@
                 <div class="erp-table-list" *ngIf="systemCategories.length; else emptyCategories">
                   <div class="erp-table-list__head">
                     <span>Modulo</span>
-                    <span>Categoria</span>
+                    <span>Categoría</span>
                     <span>Color</span>
                   </div>
                   <div class="erp-table-list__row" *ngFor="let category of systemCategories">
@@ -1110,7 +1161,7 @@
                   </div>
                 </div>
                 <ng-template #emptyCategories>
-                  <div class="erp-empty-state">No hay categorias todavia. Agrega las que realmente usara el equipo.</div>
+                  <div class="erp-empty-state">No hay categorías todavía. Agrega las que realmente usará el equipo.</div>
                 </ng-template>
               </div>
 
@@ -1127,11 +1178,10 @@
                       <option value="task">Tarea</option>
                       <option value="lead">Lead</option>
                       <option value="document">Documento</option>
-                      <option value="onboarding">Onboarding</option>
                     </select>
                   </label>
                   <label class="field-stack field-stack--compact">
-                    <span>Codigo</span>
+                    <span>Código</span>
                     <input class="field-input" [(ngModel)]="statusDraft.code" placeholder="en_revision">
                   </label>
                   <label class="field-stack">
@@ -1154,7 +1204,7 @@
                   </div>
                 </div>
                 <ng-template #emptyStatuses>
-                  <div class="erp-empty-state">No hay estados configurables. Parte por los estados que cambian mas seguido.</div>
+                  <div class="erp-empty-state">No hay estados configurables. Parte por los estados que cambian más seguido.</div>
                 </ng-template>
               </div>
             </div>
@@ -1199,7 +1249,6 @@
                 <option value="task">Tarea</option>
                 <option value="lead">Lead</option>
                 <option value="document">Documento</option>
-                <option value="onboarding">Onboarding</option>
               </select>
               <input class="field-input" [(ngModel)]="statusDraft.code" placeholder="codigo">
               <input class="field-input" [(ngModel)]="statusDraft.label" placeholder="Etiqueta">
@@ -1336,7 +1385,6 @@
                 <option value="task">Tarea</option>
                 <option value="lead">Lead</option>
                 <option value="document">Documento</option>
-                <option value="onboarding">Onboarding</option>
               </select>
               <select class="field-input" [(ngModel)]="commentDraft.visibility">
                 <option value="internal">Interno</option>
@@ -1349,55 +1397,6 @@
               <div class="erp-list-row" *ngFor="let comment of entityComments | slice:0:5">
                 <strong>{{ comment.author?.full_name || 'Usuario' }}</strong>
                 <span>{{ comment.body }}</span>
-              </div>
-            </div>
-          </section>
-
-          <section class="table-card erp-panel erp-panel--wide onboarding-panel" *ngIf="configSection === 'onboarding'">
-            <div class="onboarding-hero">
-              <div>
-                <span class="onboarding-kicker">Puesta en marcha</span>
-                <h3>Activación de empresa</h3>
-                <p>Checklist simple para dejar configurada la empresa antes de operar.</p>
-              </div>
-              <div class="onboarding-progress" aria-label="Progreso de activación">
-                <strong>{{ onboardingProgressPercent }}%</strong>
-                <span>{{ onboardingCompletedCount }} de {{ onboardingSteps.length || 0 }} tareas</span>
-              </div>
-            </div>
-
-            <div class="onboarding-progress-bar" aria-hidden="true">
-              <span [style.width.%]="onboardingProgressPercent"></span>
-            </div>
-
-            <div class="onboarding-main">
-              <div class="onboarding-actions">
-                <input class="field-input" [(ngModel)]="onboardingDraft.title" placeholder="Nombre de la activación">
-                <input class="field-input" type="date" [(ngModel)]="onboardingDraft.starts_at">
-                <button class="btn-primary" (click)="createOnboardingProject()">Crear checklist</button>
-              </div>
-
-              <div class="onboarding-add-task">
-                <select class="field-input" [(ngModel)]="onboardingStepDraft.project_id">
-                  <option [ngValue]="null">Selecciona una activación</option>
-                  <option *ngFor="let project of onboardingProjects" [ngValue]="project.id">{{ project.title }}</option>
-                </select>
-                <input class="field-input" [(ngModel)]="onboardingStepDraft.title" placeholder="Nueva tarea">
-                <button class="btn-secondary" (click)="addOnboardingStep()">Añadir</button>
-              </div>
-
-              <div class="erp-empty-state" *ngIf="!onboardingSteps.length">
-                Crea un checklist para ver las tareas base de activación.
-              </div>
-
-              <div class="onboarding-step-list" *ngIf="onboardingSteps.length">
-                <label class="onboarding-step" *ngFor="let step of onboardingSteps" [class.is-complete]="step.completed">
-                  <input type="checkbox" [checked]="step.completed" (change)="toggleOnboardingStep(step)">
-                  <span>
-                    {{ step.title }}
-                    <small *ngIf="step.project?.title">{{ step.project.title }}</small>
-                  </span>
-                </label>
               </div>
             </div>
           </section>
@@ -1453,6 +1452,38 @@
   </div>
 </div>
 
+<div class="toast-stack" *ngIf="toasts.length">
+  <article class="toast" *ngFor="let toast of toasts" [ngClass]="'toast--' + toast.tone">
+    <div class="toast__body">
+      <strong>{{ toast.tone === 'success' ? 'Listo' : (toast.tone === 'error' ? 'Atencion' : (toast.tone === 'warning' ? 'Revision' : 'Info')) }}</strong>
+      <p>{{ toast.message }}</p>
+    </div>
+    <button type="button" class="toast__close" (click)="dismissToast(toast.id)">
+      <mat-icon>close</mat-icon>
+    </button>
+  </article>
+</div>
+
+<div class="modal-backdrop" *ngIf="confirmState.open" (click)="resolveConfirmation(false)">
+  <div class="modal-box modal-box--confirm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">{{ confirmState.title }}</span>
+      <button class="modal-close" (click)="resolveConfirmation(false)">
+        <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body confirm-modal">
+      <div class="confirm-modal__icon" [ngClass]="'confirm-modal__icon--' + confirmState.tone">
+        <mat-icon>{{ confirmState.tone === 'error' ? 'warning' : (confirmState.tone === 'success' ? 'task_alt' : 'help') }}</mat-icon>
+      </div>
+      <p>{{ confirmState.message }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="resolveConfirmation(false)">{{ confirmState.cancelLabel }}</button>
+      <button class="btn-primary" (click)="resolveConfirmation(true)">{{ confirmState.confirmLabel }}</button>
+    </div>
+  </div>
+</div>
 <!-- Modal: Registrar Gasto -->
 <div class="modal-backdrop" *ngIf="showGastoModal" (click)="showGastoModal = false">
   <div class="modal-box" (click)="$event.stopPropagation()">
@@ -1518,7 +1549,7 @@
         <select class="field-input" [(ngModel)]="tareaDraft.employee_id">
           <option [ngValue]="null" disabled>Selecciona un empleado (Obligatorio)</option>
           <option *ngFor="let emp of empleados" [ngValue]="emp.id">
-            {{ emp.name }}{{ emp.email ? ' (' + emp.email + ')' : '' }}
+            {{ emp.displayName }}
           </option>
         </select>
       </div>
@@ -1536,9 +1567,10 @@
             <option value="cama">Cama</option>
             <option value="paciente">Paciente</option>
           </select>
+          <small class="field-help">Opcional: sirve para ligar la tarea a una solicitud, sede, cama o paciente.</small>
         </div>
         <div class="field-group">
-          <label class="field-label">Entidad relacionada</label>
+          <label class="field-label">Registro relacionado</label>
           <select class="field-input" [(ngModel)]="tareaDraft.entity_id" (ngModelChange)="onTaskEntitySelectionChange()" [disabled]="!tareaDraft.entity_type">
             <option [ngValue]="null">{{ tareaDraft.entity_type ? 'Selecciona una opción...' : 'Primero elige un tipo' }}</option>
             <option *ngFor="let option of getTaskEntityOptions()" [ngValue]="option.id">

@@ -157,13 +157,13 @@ export class CompanyPage implements OnInit, OnDestroy {
       id: 'empresa' as const,
       label: 'Plataforma',
       description: 'Portal, empleados, solicitudes, documentos y seguimiento.',
-      price: '$199.000',
+      price: '$49.000',
     },
     {
       id: 'premium' as const,
       label: 'Acompañamiento',
       description: 'Plataforma mas soporte prioritario y acompanamiento operativo.',
-      price: '$499.000',
+      price: '$149.000',
     },
   ];
 

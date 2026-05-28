@@ -2562,6 +2562,30 @@ ion-content.care-experts {
   height: 18px;
 }
 
+.ce-expert-app__card-action {
+  appearance: none;
+  border: 1px solid #d7e2f2;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ce-primary);
+  min-height: 34px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ce-expert-app__card-action mat-icon {
+  color: var(--ce-primary);
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
 .ce-expert-app__card-title {
   margin: 0;
   color: var(--ce-text-light);
@@ -2578,7 +2602,11 @@ ion-content.care-experts {
 
 .ce-expert-app__select--compact {
   min-height: 40px;
-  margin-top: 12px;
+  margin-top: 0;
+  padding-right: 36px;
+  color: var(--ce-text-main);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .ce-expert-app__appointments {
@@ -2618,6 +2646,70 @@ ion-content.care-experts {
   font-size: 13px;
 }
 
+.ce-expert-app__appointment-status {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: #eef6ff;
+  border: 1px solid #d6e8ff;
+}
+
+.ce-expert-app__appointment-status span,
+.ce-expert-app__appointment-field span {
+  color: var(--ce-text-light);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ce-expert-app__appointment-status strong {
+  color: var(--ce-primary);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ce-expert-app__appointment-field {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.ce-expert-app__appointment-url {
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid #d7e2f2;
+  border-radius: 12px;
+  background: #fff;
+  display: grid;
+  gap: 5px;
+}
+
+.ce-expert-app__appointment-url span {
+  color: var(--ce-text-light);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ce-expert-app__appointment-url a,
+.ce-expert-app__appointment-url strong {
+  color: var(--ce-primary);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ce-expert-app__appointment-url.is-pending strong {
+  color: #92400e;
+}
+
 .ce-expert-app__appointment-link {
   width: 100%;
   margin-top: 12px;
@@ -2628,9 +2720,27 @@ ion-content.care-experts {
   gap: 8px;
 }
 
+.ce-expert-app__appointment-link--secondary {
+  margin-top: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: var(--ce-primary);
+}
+
 .ce-expert-app__context {
   display: grid;
-  gap: 14px;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.ce-expert-app__context-item {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.ce-expert-app__context-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .ce-expert-app__context-item span {
@@ -3166,6 +3276,111 @@ ion-content.care-experts {
   }
 }
 
+.ce-context-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.ce-context-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.ce-context-sheet__panel {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  border: 1px solid #d7e2f2;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.26);
+}
+
+.ce-context-sheet__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 22px 24px;
+  border-bottom: 1px solid #e5edf8;
+  background: #fff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ce-context-sheet__head p {
+  margin: 0;
+  color: var(--ce-primary);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ce-context-sheet__head h3 {
+  margin: 6px 0 0;
+  color: var(--ce-text-main);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.ce-context-sheet__close {
+  appearance: none;
+  border: 1px solid #d7e2f2;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ce-text-main);
+  width: 40px;
+  height: 40px;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ce-context-sheet__grid {
+  padding: 22px 24px 26px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ce-context-sheet__item {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e5edf8;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.ce-context-sheet__item--wide {
+  grid-column: 1 / -1;
+}
+
+.ce-context-sheet__item span {
+  display: block;
+  color: var(--ce-text-light);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ce-context-sheet__item strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--ce-text-main);
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 /* Overrides finales para el flujo de usuario */
 .care-experts-page .ce-page {
   max-width: 1180px;
@@ -3271,3 +3486,4 @@ ion-content.care-experts {
   background: var(--ce-primary);
   box-shadow: none;
 }
+

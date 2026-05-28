@@ -93,6 +93,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   public async refresh(): Promise<void> {
     this.loading = true;
+    const preserveCareIntakeOpen = this.employeeCareIntakeOpen;
     this.companyName = null;
     this.stats = [];
     this.recentRequests = [];
@@ -101,8 +102,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.employeeCareIntakeId = null;
     this.employeeCompanyId = null;
     this.employeeCareIntakeUpdatedAt = null;
-    this.employeeCareIntakeOpen = false;
-    this.employeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
+    this.employeeCareIntakeOpen = preserveCareIntakeOpen;
 
     const { data: sessionData } = await this.supabase.client.auth.getSession();
     const user = sessionData.session?.user;
@@ -172,7 +172,7 @@ export class DashboardPage implements OnInit, OnDestroy {
       residential: 'Residencia',
       nursing:     'Enfermería',
       dementia:    'Demencia / Alzheimer',
-      respite:     'Cuidado de respiro',
+      respite:     'Apoyo temporal al cuidador',
     };
     return map[value ?? ''] ?? value ?? 'Sin perfil';
   }
@@ -345,7 +345,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.upcomingEvents    = (upcomingEvents.data   ?? []) as UpcomingEvent[];
 
     if (companyId) {
-      await this.loadEmployeeCareIntake(userId);
+      await this.loadEmployeeCareIntake(userId, this.employeeCareIntakeOpen);
     }
   }
 
@@ -413,7 +413,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.upcomingEvents    = (events     ?? []) as UpcomingEvent[];
   }
 
-  private async loadEmployeeCareIntake(userId: string): Promise<void> {
+  private async loadEmployeeCareIntake(userId: string, preserveDraft = false): Promise<void> {
     const { data, error } = await this.supabase.client
       .from('care_intakes')
       .select('id, payload, updated_at, created_at')
@@ -426,7 +426,9 @@ export class DashboardPage implements OnInit, OnDestroy {
     if (!data?.id) {
       this.employeeCareIntakeId = null;
       this.employeeCareIntakeUpdatedAt = null;
-      this.employeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
+      if (!preserveDraft) {
+        this.employeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
+      }
       return;
     }
 
@@ -435,23 +437,25 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.employeeCareIntakeUpdatedAt =
       (data.updated_at as string | undefined) ?? (data.created_at as string | undefined) ?? null;
 
-    this.employeeCareIntakeDraft = {
-      careType:         p?.care_type ?? p?.clinical_profile ?? 'guidance',
-      careReceiverAge:  p?.care_receiver?.age ?? p?.family?.age ?? null,
-      primaryCondition: p?.care_receiver?.primary_condition ?? '',
-      dependencyLevel:  p?.care_receiver?.dependency_level ?? 'medium',
-      city:             p?.location?.city ?? p?.location?.comuna ?? '',
-      postalCode:       p?.location?.postal_code ?? '',
-      supportNetwork:   p?.family_context?.support_network ?? '',
-      budgetMonthlyMax: p?.budget?.monthly_max ?? p?.budget?.weekly_max ?? null,
-      funding:          p?.budget?.funding ?? 'self_funder',
-      preferredContact: p?.preferences?.preferred_contact ?? 'chat',
-      urgency:          p?.urgency ?? 'immediate',
-      caregiverName:    p?.caregiver?.name ?? '',
-      caregiverRelation:p?.caregiver?.relation ?? '',
-      notes:            p?.notes ?? '',
-      amenities:        { ensuite: false, garden: false, library: false, pets: false },
-    };
+    if (!preserveDraft) {
+      this.employeeCareIntakeDraft = {
+        careType:         p?.care_type ?? p?.clinical_profile ?? 'guidance',
+        careReceiverAge:  p?.care_receiver?.age ?? p?.family?.age ?? null,
+        primaryCondition: p?.care_receiver?.primary_condition ?? '',
+        dependencyLevel:  p?.care_receiver?.dependency_level ?? 'medium',
+        city:             p?.location?.city ?? p?.location?.comuna ?? '',
+        postalCode:       p?.location?.postal_code ?? '',
+        supportNetwork:   p?.family_context?.support_network ?? '',
+        budgetMonthlyMax: p?.budget?.monthly_max ?? p?.budget?.weekly_max ?? null,
+        funding:          p?.budget?.funding ?? 'self_funder',
+        preferredContact: p?.preferences?.preferred_contact ?? 'chat',
+        urgency:          p?.urgency ?? 'immediate',
+        caregiverName:    p?.caregiver?.name ?? '',
+        caregiverRelation:p?.caregiver?.relation ?? '',
+        notes:            p?.notes ?? '',
+        amenities:        { ensuite: false, garden: false, library: false, pets: false },
+      };
+    }
   }
 
   private createDefaultCareIntakeDraft(): EmployeeCareIntakeDraft {

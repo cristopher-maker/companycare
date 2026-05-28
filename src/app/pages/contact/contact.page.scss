@@ -66,6 +66,9 @@
   border-radius: 32px;
   color: #fff;
   background:
+    linear-gradient(90deg, rgba(11, 40, 50, 0.94) 0%, rgba(11, 40, 50, 0.86) 36%, rgba(11, 40, 50, 0.54) 62%, rgba(11, 40, 50, 0.7) 100%),
+    radial-gradient(circle at 78% 46%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 22%),
+    url('../../../assets/img/carousel-3.webp') 72% 18% / cover no-repeat,
     linear-gradient(110deg, rgba(11, 40, 50, 0.97) 38%, rgba(18, 60, 74, 0.86) 100%),
     linear-gradient(135deg, #0b2832 0%, #123c4a 62%, #6ba6b8 100%);
   overflow: hidden;
@@ -103,6 +106,10 @@
 .contact-hero__visual {
   position: relative;
   z-index: 1;
+}
+
+.contact-hero__copy {
+  max-width: 640px;
 }
 
 .contact-hero__eyebrow {
@@ -156,42 +163,23 @@
 .contact-hero__visual {
   position: relative;
   min-height: 280px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
 }
 
 .contact-visual-card {
-  position: absolute;
   border-radius: 28px;
   overflow: hidden;
 }
 
-.contact-visual-card--main {
-  inset: 0 24px 18px 0;
-  border: 6px solid #fff;
-  box-sizing: border-box;
-  box-shadow: 0 20px 38px rgba(15, 36, 64, 0.2);
-}
-
-.contact-visual-card--main::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(15, 36, 64, 0.02) 0%, rgba(15, 36, 64, 0.26) 100%);
-}
-
-.contact-visual-card--main img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .contact-visual-card--floating {
-  right: 0;
-  bottom: 0;
-  width: 210px;
+  width: min(240px, 100%);
   padding: 18px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.96);
   color: var(--text-primary);
   box-shadow: 0 18px 34px rgba(15, 36, 64, 0.18);
+  backdrop-filter: blur(8px);
 }
 
 .contact-visual-card--floating strong {
@@ -465,6 +453,11 @@
 
   .contact-hero {
     grid-template-columns: 1fr;
+    background:
+      linear-gradient(180deg, rgba(11, 40, 50, 0.92) 0%, rgba(11, 40, 50, 0.76) 54%, rgba(11, 40, 50, 0.8) 100%),
+      radial-gradient(circle at 70% 28%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 24%),
+      url('../../../assets/img/carousel-3.webp') 64% 14% / cover no-repeat,
+      linear-gradient(135deg, #0b2832 0%, #123c4a 72%, #6ba6b8 100%);
   }
 }
 
@@ -492,11 +485,7 @@
   }
 
   .contact-hero__visual {
-    min-height: 240px;
-  }
-
-  .contact-visual-card--main {
-    inset: 0 0 18px 0;
+    min-height: 160px;
   }
 
   .contact-form__submit {

@@ -176,7 +176,6 @@
 <div
   class="care-intake-backdrop"
   *ngIf="employeeCareIntakeOpen"
-  (click)="closeEmployeeCareIntake()"
 >
   <div class="care-intake-modal" (click)="$event.stopPropagation()">
     <header class="care-intake-modal__head">
@@ -204,7 +203,7 @@
                 <option value="residential">Residencia</option>
                 <option value="nursing">Enfermería</option>
                 <option value="dementia">Demencia / Alzheimer</option>
-                <option value="respite">Cuidado de respiro</option>
+                <option value="respite">Apoyo temporal al cuidador</option>
               </select>
             </div>
             <div class="form-field">

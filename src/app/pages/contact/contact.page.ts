@@ -35,8 +35,6 @@ export class ContactPage {
     this.error = null;
     this.success = null;
 
-    // Placeholder for actual submission logic
-    console.log('Form submitted:', this.form.value);
     this.success = 'Gracias por tu mensaje. Te contactaremos pronto.';
     this.form.reset();
     this.loading = false;

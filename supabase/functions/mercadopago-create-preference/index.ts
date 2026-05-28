@@ -245,7 +245,7 @@ function normalizePlanTier(value: unknown): 'empresa' | 'premium' {
 function normalizeAmount(value: unknown, planTier: 'empresa' | 'premium'): number {
   const amount = Number(value);
   if (Number.isFinite(amount) && amount > 0) return Math.round(amount);
-  return planTier === 'premium' ? 499000 : 199000;
+  return planTier === 'premium' ? 149000 : 49000;
 }
 
 function planLabel(planTier: 'empresa' | 'premium'): string {

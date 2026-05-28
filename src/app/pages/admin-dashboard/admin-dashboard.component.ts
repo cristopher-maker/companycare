@@ -6,9 +6,12 @@ import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/dr
 import { ChartConfiguration } from 'chart.js';
 
 type LeadStatus = 'nuevo' | 'contactado' | 'evaluacion' | 'match' | 'cerrado' | 'perdido';
-type ConfigSection = 'company' | 'appearance' | 'workflow' | 'business' | 'documents' | 'messages' | 'onboarding';
+type ConfigSection = 'company' | 'appearance' | 'workflow' | 'business' | 'documents' | 'messages';
 type DashboardView = 'metricas' | 'sedes' | 'camas' | 'pacientes' | 'admisiones' | 'tareas' | 'empleados' | 'vouchers' | 'config' | 'facturacion' | 'gastos';
 type SummaryTone = 'primary' | 'blue' | 'green' | 'warn' | 'danger' | 'neutral';
+type DashboardNavItem = { view: DashboardView; label: string; icon: string; locked?: boolean };
+type ToastTone = 'info' | 'success' | 'warning' | 'error';
+type DashboardToast = { id: number; tone: ToastTone; message: string };
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -21,6 +24,16 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   // Controla qué tabla/vista se está mostrando actualmente
   currentView: DashboardView = 'metricas';
+  mobileNavOpen = false;
+  toasts: DashboardToast[] = [];
+  confirmState = {
+    open: false,
+    title: 'Confirmar accion',
+    message: '',
+    tone: 'warning' as ToastTone,
+    confirmLabel: 'Confirmar',
+    cancelLabel: 'Cancelar'
+  };
 
   loading = true;
   hasLoadedOnce = false;
@@ -44,6 +57,47 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   savingTarea = false;
   savingGasto = false;
   showGastoModal = false;
+  private toastCounter = 0;
+  private readonly toastTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
+  private confirmResolver: ((value: boolean) => void) | null = null;
+
+  readonly dashboardViewLabels: Record<DashboardView, string> = {
+    metricas: 'M\u00e9tricas',
+    sedes: 'Mis sedes',
+    camas: 'Camas y vacantes',
+    pacientes: 'Pacientes',
+    admisiones: 'Admisiones',
+    tareas: 'Tareas',
+    empleados: 'Empleados',
+    vouchers: 'Vouchers',
+    config: 'Configuraci\u00f3n',
+    facturacion: 'Facturaci\u00f3n',
+    gastos: 'Gastos y finanzas'
+  };
+
+  readonly mobileNavSections: Array<{ label: string; items: DashboardNavItem[] }> = [
+    {
+      label: 'Gesti\u00f3n',
+      items: [
+        { view: 'metricas', label: 'M\u00e9tricas', icon: 'monitoring' },
+        { view: 'admisiones', label: 'Admisiones', icon: 'view_kanban', locked: true },
+        { view: 'tareas', label: 'Tareas', icon: 'checklist', locked: true },
+        { view: 'sedes', label: 'Mis sedes', icon: 'business', locked: true },
+        { view: 'camas', label: 'Camas y vacantes', icon: 'bed', locked: true },
+        { view: 'pacientes', label: 'Pacientes', icon: 'people', locked: true },
+        { view: 'facturacion', label: 'Facturaci\u00f3n', icon: 'receipt_long', locked: true },
+        { view: 'gastos', label: 'Gastos y finanzas', icon: 'account_balance_wallet', locked: true }
+      ]
+    },
+    {
+      label: 'Configuraci\u00f3n',
+      items: [
+        { view: 'empleados', label: 'Empleados', icon: 'badge', locked: true },
+        { view: 'vouchers', label: 'Vouchers', icon: 'local_activity', locked: true },
+        { view: 'config', label: 'Configuraci\u00f3n', icon: 'settings' }
+      ]
+    }
+  ];
 
   // Modal de Historial de Cobros
   showInvoicesModal = false;
@@ -164,8 +218,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   selectedEntityType: 'lead' | 'sede' | 'cama' | 'paciente' | null = null;
   selectedEntityId: string | null = null;
   taskFilters = {
+    query: '',
     status: 'all',
-    entityType: 'all'
+    entityType: 'all',
+    priority: 'all'
+  };
+  leadFilters = {
+    query: '',
+    status: 'all',
+    comuna: ''
   };
   configSearch = '';
   configSection: ConfigSection = 'appearance';
@@ -222,20 +283,23 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   get dashboardGreeting() {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Buenos días';
+    if (hour < 12) return 'Buenos d\u00edas';
     if (hour < 20) return 'Buenas tardes';
     return 'Buenas noches';
+  }
+
+  get currentViewLabel(): string {
+    return this.dashboardViewLabels[this.currentView] || 'Dashboard';
   }
 
   get dashboardSummaryCards(): Array<{ label: string; value: string | number; detail: string; icon: string; tone: SummaryTone }> {
     const pendingTasks = this.tareas.filter((task) => task.status === 'pending').length;
     const openLeads = this.leads.filter((lead) => !['cerrado', 'perdido'].includes(lead.estado)).length;
-    const pendingInvoices = this.patientInvoices.filter((invoice) => invoice.status !== 'paid').length;
-    const pendingInvitations = this.companyInvitations.filter((invite) => invite.status === 'pending').length;
+    const activeAlerts = this.operationalAlerts.filter((alert) => alert.level !== 'info').length;
 
     return [
       {
-        label: 'Solicitudes abiertas',
+        label: 'Admisiones abiertas',
         value: openLeads,
         detail: `${this.totalLeads} admisiones totales`,
         icon: 'view_kanban',
@@ -249,32 +313,18 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         tone: pendingTasks > 0 ? 'warn' : 'green'
       },
       {
-        label: 'Ocupación',
-        value: `${this.porcentajeOcupacion}%`,
-        detail: `${this.camasDisponibles} camas libres`,
+        label: 'Camas libres',
+        value: this.camasDisponibles,
+        detail: this.camasTotales > 0 ? `${this.porcentajeOcupacion}% de ocupaci\u00f3n` : 'Sin camas registradas',
         icon: 'bed',
         tone: this.camasDisponibles === 0 && this.camasTotales > 0 ? 'danger' : 'primary'
       },
       {
-        label: 'Colaboradores',
-        value: this.empleados.length,
-        detail: `${pendingInvitations} invitaciones pendientes`,
-        icon: 'badge',
-        tone: pendingInvitations > 0 ? 'blue' : 'neutral'
-      },
-      {
-        label: 'Ingresos pagados',
-        value: this.formatMoney(this.totalIngresos),
-        detail: `${pendingInvoices} cobros por revisar`,
-        icon: 'payments',
-        tone: this.totalIngresos > 0 ? 'green' : 'neutral'
-      },
-      {
-        label: 'Gastos',
-        value: this.formatMoney(this.totalGastos),
-        detail: `${this.formatMoney(this.totalIngresos - this.totalGastos)} neto`,
-        icon: 'account_balance_wallet',
-        tone: this.totalGastos > this.totalIngresos ? 'danger' : 'neutral'
+        label: 'Alertas activas',
+        value: activeAlerts,
+        detail: activeAlerts > 0 ? 'Requieren revisi\u00f3n' : 'Sin alertas cr\u00edticas',
+        icon: 'notification_important',
+        tone: activeAlerts > 0 ? 'warn' : 'green'
       }
     ];
   }
@@ -283,10 +333,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const now = new Date();
     const overdueTasks = this.tareas.filter((task) => task.due_at && task.status !== 'done' && new Date(task.due_at) < now).length;
     const newLeads = this.kanbanData['nuevo']?.length || 0;
-    const pendingInvoices = this.patientInvoices.filter((invoice) => invoice.status !== 'paid').length;
-    const pendingInvitations = this.companyInvitations.filter((invite) => invite.status === 'pending').length;
-    const incompleteOnboarding = this.onboardingSteps.filter((step) => !step.completed).length;
-
     const items: Array<{ title: string; detail: string; icon: string; view: DashboardView; tone: SummaryTone }> = [];
 
     if (overdueTasks > 0) {
@@ -298,23 +344,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (this.camasTotales > 0 && this.camasDisponibles <= 2) {
       items.push({ title: 'Revisar disponibilidad', detail: `${this.camasDisponibles} camas libres registradas`, icon: 'bed', view: 'camas', tone: this.camasDisponibles === 0 ? 'danger' : 'warn' });
     }
-    if (pendingInvoices > 0) {
-      items.push({ title: 'Revisar cobros pendientes', detail: `${pendingInvoices} facturas no pagadas`, icon: 'receipt_long', view: 'facturacion', tone: 'warn' });
-    }
-    if (pendingInvitations > 0) {
-      items.push({ title: 'Seguimiento de invitaciones', detail: `${pendingInvitations} empleados aun no aceptan`, icon: 'mail', view: 'empleados', tone: 'blue' });
-    }
-    if (incompleteOnboarding > 0) {
-      items.push({ title: 'Completar onboarding', detail: `${incompleteOnboarding} tareas de activación abiertas`, icon: 'rocket_launch', view: 'config', tone: 'primary' });
-    }
-
     return items.slice(0, 5);
   }
 
   get latestOperationalEvents(): Array<{ title: string; detail: string; icon: string; created_at: string }> {
     const taskEvents = this.tareas.slice(0, 3).map((task) => ({
       title: task.title || 'Tarea sin titulo',
-      detail: this.statusLabel(task.status),
+      detail: this.taskStatusLabel(task),
       icon: 'checklist',
       created_at: task.created_at
     }));
@@ -324,25 +360,54 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       icon: 'view_kanban',
       created_at: lead.created_at
     }));
-    const invoiceEvents = this.patientInvoices.slice(0, 2).map((invoice) => ({
-      title: `Cobro ${this.formatMoney(invoice.amount || 0)}`,
-      detail: invoice.status === 'paid' ? 'Pagado' : 'Pendiente',
-      icon: 'receipt_long',
-      created_at: invoice.created_at
-    }));
-
-    return [...taskEvents, ...leadEvents, ...invoiceEvents]
+    return [...taskEvents, ...leadEvents]
       .filter((event) => !!event.created_at)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 6);
   }
 
   get filteredTareas() {
+    const query = this.taskFilters.query.trim().toLowerCase();
     return this.tareas.filter((tarea) => {
-      const matchesStatus = this.taskFilters.status === 'all' || tarea.status === this.taskFilters.status;
+      const matchesStatus =
+        this.taskFilters.status === 'all'
+        || (this.taskFilters.status === 'overdue' && this.isTaskOverdue(tarea))
+        || (this.taskFilters.status !== 'overdue' && tarea.status === this.taskFilters.status);
       const matchesEntity = this.taskFilters.entityType === 'all' || (tarea.entity_type || 'none') === this.taskFilters.entityType;
-      return matchesStatus && matchesEntity;
+      const matchesPriority = this.taskFilters.priority === 'all' || (tarea.priority || 'medium') === this.taskFilters.priority;
+      const haystack = [
+        tarea.title,
+        tarea.entity_label,
+        tarea.assigned?.full_name,
+        tarea.assigned?.email
+      ].join(' ').toLowerCase();
+      const matchesQuery = !query || haystack.includes(query);
+      return matchesStatus && matchesEntity && matchesPriority && matchesQuery;
     });
+  }
+
+  isTaskOverdue(tarea: any): boolean {
+    if (!tarea?.due_at || tarea.status === 'done') return false;
+    const deadline = this.taskDueDeadline(tarea.due_at);
+    return !!deadline && deadline.getTime() < Date.now();
+  }
+
+  taskStatusLabel(tarea: any): string {
+    if (this.isTaskOverdue(tarea)) return 'Vencida';
+    return this.statusLabel(tarea?.status);
+  }
+
+  get filteredKanbanColumns() {
+    if (this.leadFilters.status === 'all') return this.kanbanColumns;
+    return this.kanbanColumns.filter((column) => column.id === this.leadFilters.status);
+  }
+
+  get filteredTotalKanbanLeads(): number {
+    return this.filteredKanbanColumns.reduce((total, column) => total + this.getFilteredKanbanItems(column.id).length, 0);
+  }
+
+  get filteredFinalKanbanLeads(): number {
+    return ['cerrado', 'perdido'].reduce((total, status) => total + this.getFilteredKanbanItems(status as LeadStatus).length, 0);
   }
 
   get adminThemeVars() {
@@ -457,6 +522,83 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     nuevo: [], contactado: [], evaluacion: [], match: [], cerrado: [], perdido: []
   };
 
+  get totalKanbanLeads(): number {
+    return this.kanbanColumns.reduce((total, column) => total + (this.kanbanData[column.id]?.length || 0), 0);
+  }
+
+  isTerminalKanbanColumn(columnId: LeadStatus): boolean {
+    return columnId === 'cerrado' || columnId === 'perdido';
+  }
+
+  getKanbanColumnHint(columnId: LeadStatus): string {
+    const hints: Record<LeadStatus, string> = {
+      nuevo: 'Entrada del pipeline',
+      contactado: 'Primer seguimiento',
+      evaluacion: 'Validacion clinica',
+      match: 'Definicion comercial',
+      cerrado: 'Resultado favorable',
+      perdido: 'Salida no concretada'
+    };
+    return hints[columnId];
+  }
+
+  getKanbanEmptyTitle(columnId: LeadStatus): string {
+    return this.isTerminalKanbanColumn(columnId)
+      ? `Sin casos ${columnId === 'cerrado' ? 'cerrados' : 'perdidos'}`
+      : `Sin casos en ${this.leadStatusLabel(columnId).toLowerCase()}`;
+  }
+
+  getKanbanEmptyHint(columnId: LeadStatus): string {
+    if (this.hasActiveLeadFilters()) {
+      return 'Prueba con otro texto, comuna o etapa para ampliar el resultado.';
+    }
+    const hints: Record<LeadStatus, string> = {
+      nuevo: 'Las nuevas consultas apareceran aqui.',
+      contactado: 'Arrastra una consulta cuando ya exista contacto inicial.',
+      evaluacion: 'Mueve aqui los casos que requieran evaluacion clinica.',
+      match: 'Usa esta etapa para propuestas o ajuste de oferta.',
+      cerrado: 'Los ingresos concretados quedan agrupados aqui.',
+      perdido: 'Marca aqui los casos que no avanzaron.'
+    };
+    return hints[columnId];
+  }
+
+  getFilteredKanbanItems(columnId: LeadStatus) {
+    const query = this.leadFilters.query.trim().toLowerCase();
+    const comuna = this.leadFilters.comuna.trim().toLowerCase();
+    return (this.kanbanData[columnId] || []).filter((lead) => {
+      const haystack = [
+        lead.nombre,
+        lead.comuna,
+        lead.dependencia
+      ].join(' ').toLowerCase();
+      const matchesQuery = !query || haystack.includes(query);
+      const matchesComuna = !comuna || String(lead.comuna || '').toLowerCase().includes(comuna);
+      return matchesQuery && matchesComuna;
+    });
+  }
+
+  resetTaskFilters() {
+    this.taskFilters = {
+      query: '',
+      status: 'all',
+      entityType: 'all',
+      priority: 'all'
+    };
+  }
+
+  resetLeadFilters() {
+    this.leadFilters = {
+      query: '',
+      status: 'all',
+      comuna: ''
+    };
+  }
+
+  hasActiveLeadFilters(): boolean {
+    return this.leadFilters.query.trim().length > 0 || this.leadFilters.comuna.trim().length > 0 || this.leadFilters.status !== 'all';
+  }
+
   private realtimeChannel: any;
 
   constructor(
@@ -485,6 +627,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.realtimeChannel) {
       this.supabase.client.removeChannel(this.realtimeChannel);
+    }
+    this.toastTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+    this.toastTimeouts.clear();
+    if (this.confirmResolver) {
+      this.confirmResolver(false);
+      this.confirmResolver = null;
     }
   }
 
@@ -720,15 +868,46 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       // 8. Cargar Empleados para selectores
       const { data: membersData, error: membersError } = await this.supabase.client
         .from('company_members')
-        .select('user_id, profiles(full_name, email)')
+        .select('user_id')
         .eq('company_id', companyId);
       
       if (membersError) console.warn('No se pudieron cargar los empleados:', membersError.message);
-      this.empleados = (membersData || []).map(m => ({
-        id: m.user_id,
-        name: (m.profiles as any)?.full_name || (m.profiles as any)?.email || m.user_id,
-        email: (m.profiles as any)?.email || ''
-      }));
+      const memberIds = Array.from(new Set((membersData || []).map((member: any) => member.user_id).filter(Boolean)));
+      let profileMap = new Map<string, { full_name: string | null; email: string | null }>();
+      if (memberIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await this.supabase.client
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', memberIds);
+        if (profilesError) {
+          console.warn('No se pudieron cargar los perfiles de empleados:', profilesError.message);
+        }
+        profileMap = new Map(
+          (profilesData || []).map((profile: any) => [
+            profile.id,
+            { full_name: profile.full_name || null, email: profile.email || null }
+          ])
+        );
+      }
+      const employeeMap = new Map<string, { id: string; name: string; email: string; displayName: string }>();
+      (membersData || []).forEach((member: any) => {
+        const profile = profileMap.get(member.user_id);
+        const fullName = profile?.full_name?.trim() || '';
+        const email = profile?.email?.trim() || '';
+        const inferredName = email ? email.split('@')[0].replace(/[._-]+/g, ' ').trim() : '';
+        const resolvedName = fullName || inferredName;
+        const displayName = fullName
+          ? `${fullName}${email ? ' (' + email + ')' : ''}`
+          : (email || resolvedName || 'Empleado sin correo');
+
+        employeeMap.set(member.user_id, {
+          id: member.user_id,
+          name: resolvedName,
+          email,
+          displayName
+        });
+      });
+      this.empleados = Array.from(employeeMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName, 'es'));
 
       // 9. Cargar Tareas
       const employeeIds = this.empleados.map(e => e.id);
@@ -801,7 +980,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
       if (error) {
         console.error('Error actualizando el estado del lead:', error);
-        alert('No se pudo mover el lead. Revisa la consola para más detalles.');
+        this.flash('No se pudo mover el lead. Revisa la consola para más detalles.');
         // No hacemos el transfer si falla la BD para mantener la UI consistente con la data.
         return;
       }
@@ -816,7 +995,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       
       // 3. Flujo automático: Si pasó a Cerrado (Admitido), sugerir crear paciente
       if (newStatus === 'cerrado' && event.previousContainer.id !== 'cerrado') {
-        if (confirm('El prospecto ha sido cerrado con éxito. ¿Deseas ingresarlo como paciente activo y configurar su tarifa mensual ahora?')) {
+        if (await this.confirmAction('El prospecto ha sido cerrado con éxito. ¿Deseas ingresarlo como paciente activo y configurar su tarifa mensual ahora?')) {
            this.openNewPacienteFromLead(movedItem);
         }
       }
@@ -834,11 +1013,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     let interval = Math.floor(seconds / 31536000);
-    if (interval >= 1) return `Hace ${interval} año${interval === 1 ? '' : 's'}`;
+    if (interval >= 1) return `Hace ${interval} a\u00f1o${interval === 1 ? '' : 's'}`;
     interval = Math.floor(seconds / 2592000);
     if (interval >= 1) return `Hace ${interval} mes${interval === 1 ? '' : 'es'}`;
     interval = Math.floor(seconds / 86400);
-    if (interval >= 1) return `Hace ${interval} día${interval === 1 ? '' : 's'}`;
+    if (interval >= 1) return `Hace ${interval} d\u00eda${interval === 1 ? '' : 's'}`;
     interval = Math.floor(seconds / 3600);
     if (interval >= 1) return `Hace ${interval} hora${interval === 1 ? '' : 's'}`;
     interval = Math.floor(seconds / 60);
@@ -864,11 +1043,21 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return labels[status || ''] || 'Sin estado';
   }
 
+  private taskDueDeadline(value: string): Date | null {
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Date(year, month - 1, day, 23, 59, 59, 999);
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
   leadStatusLabel(status: string | null | undefined): string {
     const labels: Record<string, string> = {
       nuevo: 'Nuevo',
       contactado: 'Contactado',
-      evaluacion: 'En evaluación',
+      evaluacion: 'En evaluaci\u00f3n',
       match: 'Propuesta',
       cerrado: 'Cerrado',
       perdido: 'Perdido'
@@ -878,12 +1067,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   careTypeLabel(value: string | null | undefined): string {
     const labels: Record<string, string> = {
-      guidance: 'OrientaciÃ³n general',
+      guidance: 'Orientaci\u00f3n general',
       home_care: 'Cuidados a domicilio',
       residential: 'Residencia',
-      nursing: 'EnfermerÃ­a',
+      nursing: 'Enfermer\u00eda',
       dementia: 'Demencia / Alzheimer',
-      respite: 'Cuidado de respiro'
+      respite: 'Apoyo temporal al cuidador'
     };
     return labels[value || ''] || value || 'Sin dato';
   }
@@ -910,7 +1099,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   fundingLabel(value: string | null | undefined): string {
     const labels: Record<string, string> = {
       self_funder: 'Pago privado',
-      local_authority: 'Ayuda pÃºblica'
+      local_authority: 'Ayuda pública'
     };
     return labels[value || ''] || value || 'Sin dato';
   }
@@ -946,7 +1135,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       if (error) throw error;
       this.selectedLeadIntake = data || null;
     } catch (error) {
-      console.warn('No se pudo cargar la ficha de la admisiÃ³n:', error);
+      console.warn('No se pudo cargar la ficha de la admisión:', error);
     } finally {
       this.loadingLeadDetail = false;
     }
@@ -961,7 +1150,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   exportActivityToCSV() {
     if (!this.recentActivity || this.recentActivity.length === 0) {
-      alert('No hay datos de actividad para exportar.');
+      this.flash('No hay datos de actividad para exportar.');
       return;
     }
 
@@ -993,28 +1182,129 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   setView(view: DashboardView) {
     if (this.isPlanLockedView(view)) {
-      alert('Necesitas un plan activo para usar este modulo.');
+      this.notifyWarning('Necesitas un plan activo para usar este modulo.');
       return;
     }
     this.currentView = view;
+    this.mobileNavOpen = false;
     this.clearSelectedEntity();
+  }
+
+  toggleMobileNav() {
+    this.mobileNavOpen = !this.mobileNavOpen;
+  }
+
+  closeMobileNav() {
+    this.mobileNavOpen = false;
+  }
+
+  dismissToast(id: number) {
+    this.toasts = this.toasts.filter((toast) => toast.id !== id);
+    const timeoutId = this.toastTimeouts.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      this.toastTimeouts.delete(id);
+    }
+  }
+
+  resolveConfirmation(confirmed: boolean) {
+    const resolver = this.confirmResolver;
+    this.confirmResolver = null;
+    this.confirmState.open = false;
+    if (resolver) resolver(confirmed);
+  }
+
+  private showToast(message: string, tone: ToastTone = 'info', duration = 4200) {
+    const id = ++this.toastCounter;
+    this.toasts = [...this.toasts, { id, message, tone }];
+    const timeoutId = setTimeout(() => this.dismissToast(id), duration);
+    this.toastTimeouts.set(id, timeoutId);
+  }
+
+  private notifySuccess(message: string) {
+    this.showToast(message, 'success');
+  }
+
+  private notifyInfo(message: string) {
+    this.showToast(message, 'info');
+  }
+
+  private notifyWarning(message: string) {
+    this.showToast(message, 'warning');
+  }
+
+  private notifyError(message: string) {
+    this.showToast(message, 'error', 5200);
+  }
+
+  private flash(message: string) {
+    const normalized = message.toLowerCase();
+    if (normalized.includes('guardado correctamente') || normalized.includes('apariencia guardada') || normalized.includes('correctamente')) {
+      this.notifySuccess(message);
+      return;
+    }
+    if (normalized.includes('obligatorio') || normalized.includes('necesitas') || normalized.includes('no hay') || normalized.includes('selecciona')) {
+      this.notifyWarning(message);
+      return;
+    }
+    if (normalized.includes('error') || normalized.includes('no se pudo') || normalized.includes('no tiene') || normalized.includes('supera') || normalized.includes('no es v')) {
+      this.notifyError(message);
+      return;
+    }
+    this.notifyInfo(message);
+  }
+
+  private requestConfirmation(options: {
+    title?: string;
+    message: string;
+    tone?: ToastTone;
+    confirmLabel?: string;
+    cancelLabel?: string;
+  }) {
+    if (this.confirmResolver) {
+      this.confirmResolver(false);
+    }
+
+    this.confirmState = {
+      open: true,
+      title: options.title || 'Confirmar accion',
+      message: options.message,
+      tone: options.tone || 'warning',
+      confirmLabel: options.confirmLabel || 'Confirmar',
+      cancelLabel: options.cancelLabel || 'Cancelar'
+    };
+
+    return new Promise<boolean>((resolve) => {
+      this.confirmResolver = resolve;
+    });
+  }
+
+  private confirmAction(message: string, options?: {
+    title?: string;
+    tone?: ToastTone;
+    confirmLabel?: string;
+    cancelLabel?: string;
+  }) {
+    return this.requestConfirmation({
+      message,
+      title: options?.title,
+      tone: options?.tone,
+      confirmLabel: options?.confirmLabel,
+      cancelLabel: options?.cancelLabel
+    });
   }
 
   private ensureOperationalAccess(): boolean {
     if (this.hasOperationalAccess) return true;
-    alert('Necesitas un plan activo para realizar esta accion.');
+    this.notifyWarning('Necesitas un plan activo para realizar esta accion.');
     return false;
   }
 
   private buildOperationalSummary() {
-    const now = new Date();
     const pendingTasks = this.tareas.filter(t => t.status === 'pending');
     const inProgressTasks = this.tareas.filter(t => t.status === 'in_progress');
     const doneTasks = this.tareas.filter(t => t.status === 'done');
-    const overdueTasks = this.tareas.filter(t => {
-      if (!t.due_at || t.status === 'done') return false;
-      return new Date(t.due_at) < now;
-    });
+    const overdueTasks = this.tareas.filter(t => this.isTaskOverdue(t));
 
     this.taskSummaryCards = [
       { label: 'Tareas pendientes', value: pendingTasks.length, tone: 'warn' },
@@ -1029,7 +1319,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       alerts.push({
         level: 'high',
         title: 'Tareas vencidas',
-        detail: `${overdueTasks.length} tarea${overdueTasks.length === 1 ? '' : 's'} requiere${overdueTasks.length === 1 ? '' : 'n'} atención inmediata.`
+        detail: `${overdueTasks.length} tarea${overdueTasks.length === 1 ? '' : 's'} requiere${overdueTasks.length === 1 ? '' : 'n'} atenci\u00f3n inmediata.`
       });
     }
 
@@ -1037,13 +1327,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       alerts.push({
         level: 'high',
         title: 'Sin camas disponibles',
-        detail: 'La ocupación está al máximo y no hay vacantes libres para nuevas admisiones.'
+        detail: 'La ocupaci\u00f3n est\u00e1 al m\u00e1ximo y no hay vacantes libres para nuevas admisiones.'
       });
     } else if (this.camasTotales > 0 && this.camasDisponibles <= 2) {
       alerts.push({
         level: 'medium',
         title: 'Disponibilidad baja',
-        detail: `Quedan ${this.camasDisponibles} camas disponibles en toda la operación.`
+        detail: `Quedan ${this.camasDisponibles} camas disponibles en toda la operaci\u00f3n.`
       });
     }
 
@@ -1060,7 +1350,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       alerts.push({
         level: 'info',
         title: 'Camas fuera de servicio',
-        detail: `${this.camasEnMantenimiento} cama${this.camasEnMantenimiento === 1 ? '' : 's'} está${this.camasEnMantenimiento === 1 ? '' : 'n'} en limpieza o mantención.`
+        detail: `${this.camasEnMantenimiento} cama${this.camasEnMantenimiento === 1 ? '' : 's'} est\u00e1${this.camasEnMantenimiento === 1 ? '' : 'n'} en limpieza o mantenci\u00f3n.`
       });
     }
 
@@ -1068,8 +1358,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       ? alerts
       : [{
           level: 'info',
-          title: 'Operación estable',
-          detail: 'No hay alertas críticas. La operación se ve dentro de parámetros normales.'
+          title: 'Operaci\u00f3n estable',
+          detail: 'No hay alertas cr\u00edticas. La operaci\u00f3n se ve dentro de par\u00e1metros normales.'
         }];
   }
 
@@ -1094,7 +1384,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   async saveLead() {
     if (!this.ensureOperationalAccess()) return;
     if (!this.companyId || !this.leadDraft.nombre?.trim()) {
-      alert('El nombre del prospecto es obligatorio.');
+      this.flash('El nombre del prospecto es obligatorio.');
       return;
     }
     this.savingLead = true;
@@ -1120,7 +1410,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       await this.loadData();
     } catch (error) {
       console.error('Error guardando la consulta/lead:', error);
-      alert('No se pudo guardar la consulta. Revisa la consola para más detalles.');
+      this.flash('No se pudo guardar la consulta. Revisa la consola para más detalles.');
     } finally {
       this.savingLead = false;
     }
@@ -1162,7 +1452,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       await this.loadData();
     } catch (error) {
       console.error('Error guardando sede:', error);
-      alert('Error al guardar la sede. Revisa la conexión con Supabase.');
+      this.flash('Error al guardar la sede. Revisa la conexión con Supabase.');
     } finally {
       this.savingSede = false;
     }
@@ -1170,14 +1460,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   async deleteSede(sede: any) {
     if (!this.ensureOperationalAccess()) return;
-    if (!confirm(`¿Estás seguro de eliminar la sede "${sede.nombre}"?`)) return;
+    if (!await this.confirmAction(`¿Estás seguro de eliminar la sede "${sede.nombre}"?`)) return;
     try {
       const { error } = await this.supabase.client.from('providers').delete().eq('id', sede.id);
       if (error) throw error;
       await this.loadData();
     } catch (error: any) {
       console.error('Error eliminando sede:', error);
-      alert('Error al eliminar la sede. Verifica que no tenga camas asociadas.');
+      this.flash('Error al eliminar la sede. Verifica que no tenga camas asociadas.');
     }
   }
 
@@ -1206,7 +1496,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   async saveCama() {
     if (!this.ensureOperationalAccess()) return;
     if (!this.companyId || !this.camaDraft.resource_code || !this.camaDraft.provider_id) {
-      alert('Por favor ingresa un ID y selecciona una sede.');
+      this.flash('Por favor ingresa un ID y selecciona una sede.');
       return;
     }
     this.savingCama = true;
@@ -1252,9 +1542,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     } catch (error: any) {
       console.error('Error guardando cama:', error);
       if (error?.code === '23505') {
-        alert('Ya existe una cama con ese ID / Código. Por favor, ingresa uno diferente.');
+        this.flash('Ya existe una cama con ese ID / Código. Por favor, ingresa uno diferente.');
       } else {
-        alert('Error al guardar la cama. Revisa la consola para más detalles.');
+        this.flash('Error al guardar la cama. Revisa la consola para más detalles.');
       }
     } finally {
       this.savingCama = false;
@@ -1263,14 +1553,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   async deleteCama(cama: any) {
     if (!this.ensureOperationalAccess()) return;
-    if (!confirm(`¿Estás seguro de eliminar la cama/vacante "${cama.id}"?`)) return;
+    if (!await this.confirmAction(`¿Estás seguro de eliminar la cama/vacante "${cama.id}"?`)) return;
     try {
       const { error } = await this.supabase.client.from('care_resources').delete().eq('id', cama.dbId);
       if (error) throw error;
       await this.loadData();
     } catch (error: any) {
       console.error('Error eliminando cama:', error);
-      alert('Error al eliminar la cama.');
+      this.flash('Error al eliminar la cama.');
     }
   }
 
@@ -1294,12 +1584,72 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.showPacienteModal = true;
   }
 
-  openNewPacienteFromLead(lead: any) {
+  async openNewPacienteFromLead(lead: any) {
     this.openNewPacienteModal();
-    const parts = (lead.nombre || '').split(' ');
+    const leadName = String(lead.nombre || '').trim();
+    const canUseLeadNameAsPatient = leadName && !leadName.toLowerCase().startsWith('solicitud:');
+    const parts = canUseLeadNameAsPatient ? leadName.split(' ') : [];
     this.pacienteDraft.first_name = parts[0] || '';
     this.pacienteDraft.last_name = parts.slice(1).join(' ') || '';
+    this.pacienteDraft.emergency_contact_phone = lead.telefono || '';
     this.pacienteDraft.monthly_fee = lead.presupuesto || null;
+
+    const [intake, employeeProfile] = await Promise.all([
+      this.loadLatestCareIntakeForLead(lead),
+      this.loadEmployeeProfile(lead.employee_id)
+    ]);
+    this.pacienteDraft.guarantor_email = employeeProfile?.email || this.pacienteDraft.guarantor_email;
+    if (!intake?.payload) return;
+
+    const payload = intake.payload;
+    const careReceiverName = payload.care_receiver?.name?.trim() || '';
+    const caregiverName = payload.caregiver?.name?.trim() || '';
+    const caregiverRelation = payload.caregiver?.relation?.trim() || '';
+    const supportNetwork = payload.family_context?.support_network?.trim() || '';
+    const budget = payload.budget?.monthly_max;
+
+    if (!this.pacienteDraft.first_name && careReceiverName) {
+      const receiverParts = careReceiverName.split(' ');
+      this.pacienteDraft.first_name = receiverParts[0] || '';
+      this.pacienteDraft.last_name = receiverParts.slice(1).join(' ') || '';
+    }
+
+    this.pacienteDraft.emergency_contact_name = caregiverName || caregiverRelation || supportNetwork || this.pacienteDraft.emergency_contact_name;
+    this.pacienteDraft.guarantor_name = caregiverName || this.pacienteDraft.guarantor_name;
+    this.pacienteDraft.monthly_fee = this.pacienteDraft.monthly_fee || budget || null;
+  }
+
+  private async loadLatestCareIntakeForLead(lead: any): Promise<any | null> {
+    if (!lead?.employee_id || !lead?.company_id) return null;
+    const { data, error } = await this.supabase.client
+      .from('care_intakes')
+      .select('id, payload, created_at, updated_at')
+      .eq('company_id', lead.company_id)
+      .eq('employee_id', lead.employee_id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('No se pudo cargar la ficha para autocompletar paciente:', error);
+      return null;
+    }
+    return data || null;
+  }
+
+  private async loadEmployeeProfile(employeeId: string | null | undefined): Promise<{ full_name: string | null; email: string | null } | null> {
+    if (!employeeId) return null;
+    const { data, error } = await this.supabase.client
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', employeeId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('No se pudo cargar el perfil del empleado para autocompletar paciente:', error);
+      return null;
+    }
+    return data || null;
   }
 
   openPacienteModal(pacienteView: any) {
@@ -1326,7 +1676,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   async savePaciente() {
     if (!this.ensureOperationalAccess()) return;
     if (!this.pacienteDraft.first_name?.trim() || !this.pacienteDraft.last_name?.trim()) {
-      alert('El nombre y los apellidos son obligatorios.');
+      this.flash('El nombre y los apellidos son obligatorios.');
       return;
     }
     this.savingPaciente = true;
@@ -1387,7 +1737,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           .upsert(contractPayload, { onConflict: 'patient_id' });
         if (contractError && !this.isMissingRelationError(contractError, 'patient_contracts')) throw contractError;
         if (contractError && this.isMissingRelationError(contractError, 'patient_contracts')) {
-          alert('Paciente guardado, pero la sección de tutor/facturación no está disponible porque falta la tabla de contratos en esta base de datos.');
+          this.flash('Paciente guardado, pero la sección de tutor/facturación no está disponible porque falta la tabla de contratos en esta base de datos.');
         }
       }
 
@@ -1395,7 +1745,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       await this.loadData();
     } catch (error: any) {
       console.error('Error guardando paciente:', error);
-      alert(`Error al guardar los datos del paciente.${error?.message ? ' ' + error.message : ''}`);
+      this.flash(`Error al guardar los datos del paciente.${error?.message ? ' ' + error.message : ''}`);
     } finally {
       this.savingPaciente = false;
     }
@@ -1411,10 +1761,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   async emitirCobro(pacienteView: any) {
     if (!this.ensureOperationalAccess()) return;
     if (!pacienteView.contract_id || !pacienteView.monthly_fee) {
-      alert('Primero debes configurar la tarifa mensual (editar paciente) para emitir cobros.');
+      this.flash('Primero debes configurar la tarifa mensual (editar paciente) para emitir cobros.');
       return;
     }
-    if (confirm(`¿Generar un recordatorio de cobro (boleta) por ${pacienteView.monthly_fee} para ${pacienteView.nombreCompleto}?`)) {
+    if (await this.confirmAction(`¿Generar un recordatorio de cobro (boleta) por ${pacienteView.monthly_fee} para ${pacienteView.nombreCompleto}?`)) {
       const payload = {
         company_id: this.companyId,
         patient_id: pacienteView.id,
@@ -1426,9 +1776,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       };
       const { error } = await this.supabase.client.from('patient_invoices').insert(payload);
       if (error) {
-        alert('Error al generar cobro.');
+        this.flash('Error al generar cobro.');
       } else {
-        alert('Cobro generado correctamente. (En una siguiente etapa podrás enviarlo por email o PDF).');
+        this.flash('Cobro generado correctamente. (En una siguiente etapa podrás enviarlo por email o PDF).');
         await this.loadData(); // Recargamos para que aparezca en el historial
       }
     }
@@ -1438,7 +1788,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!this.ensureOperationalAccess()) return;
     const { error } = await this.supabase.client.from('patient_invoices').update({ status }).eq('id', invoice.id);
     if (error) {
-      alert('Error al actualizar el estado.');
+      this.flash('Error al actualizar el estado.');
     } else {
       invoice.status = status;
     }
@@ -1446,7 +1796,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   exportExpensesToCSV() {
     if (!this.gastos || this.gastos.length === 0) {
-      alert('No hay gastos para exportar.');
+      this.flash('No hay gastos para exportar.');
       return;
     }
 
@@ -1485,7 +1835,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   async saveGasto() {
     if (!this.ensureOperationalAccess()) return;
     if (!this.companyId || !this.gastoDraft.amount || !this.gastoDraft.expense_date) {
-      alert('El monto y la fecha del gasto son obligatorios.');
+      this.flash('El monto y la fecha del gasto son obligatorios.');
       return;
     }
     this.savingGasto = true;
@@ -1513,7 +1863,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       await this.loadData();
     } catch (error) {
       console.error('Error guardando gasto:', error);
-      alert('Error al guardar el gasto.');
+      this.flash('Error al guardar el gasto.');
     } finally {
       this.savingGasto = false;
     }
@@ -1521,9 +1871,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   async deleteGasto(gasto: any) {
     if (!this.ensureOperationalAccess()) return;
-    if (!confirm('¿Estás seguro de eliminar este registro de gasto?')) return;
+    if (!await this.confirmAction('¿Estás seguro de eliminar este registro de gasto?')) return;
     const { error } = await this.supabase.client.from('company_expenses').delete().eq('id', gasto.id);
-    if (error) alert('Error al eliminar el gasto.');
+    if (error) this.flash('Error al eliminar el gasto.');
     else await this.loadData();
   }
 
@@ -1562,7 +1912,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   async saveTarea() {
     if (!this.ensureOperationalAccess()) return;
     if (!this.tareaDraft.title?.trim() || !this.tareaDraft.employee_id) {
-      alert('El título de la tarea y el empleado asignado son obligatorios.');
+      this.flash('El título de la tarea y el empleado asignado son obligatorios.');
       return;
     }
     this.savingTarea = true;
@@ -1594,7 +1944,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       await this.loadData();
     } catch (error) {
       console.error('Error guardando la tarea:', error);
-      alert(`No se pudo guardar la tarea. Revisa la consola para más detalles. Error: ${(error as any).message}`);
+      this.flash(`No se pudo guardar la tarea. Revisa la consola para más detalles. Error: ${(error as any).message}`);
     } finally {
       this.savingTarea = false;
     }
@@ -1602,9 +1952,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   async deleteTarea(tarea: any) {
     if (!this.ensureOperationalAccess()) return;
-    if (!confirm(`¿Estás seguro de eliminar esta tarea?`)) return;
+    if (!await this.confirmAction(`¿Estás seguro de eliminar esta tarea?`)) return;
     const { error } = await this.supabase.client.from('care_tasks').delete().eq('id', tarea.id);
-    if (error) alert('Error al eliminar la tarea.');
+    if (error) this.flash('Error al eliminar la tarea.');
     else await this.loadData();
   }
   onTaskEntityTypeChange() {
@@ -1669,6 +2019,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   get completedOnboardingProjectsCount() {
     return this.onboardingProjects.filter((project) => project.status === 'completed').length;
+  }
+
+  get onboardingPendingCount() {
+    return this.onboardingSteps.filter((step) => !step.completed).length;
+  }
+
+  get onboardingSummaryLabel() {
+    if (!this.onboardingSteps.length) return 'Sin tareas creadas';
+    return `${this.onboardingPendingCount} pendiente${this.onboardingPendingCount === 1 ? '' : 's'} de ${this.onboardingSteps.length}`;
   }
 
   async loadErpOperationalModules(companyId = this.companyId) {
@@ -1812,9 +2171,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       erp_font_family: this.brandingDraft.erp_font_family || 'dm_sans'
     };
     const { error } = await this.supabase.client.from('company_branding').upsert(payload, { onConflict: 'company_id' });
-    if (error) return alert('No se pudo guardar la apariencia del ERP.');
+    if (error) return this.flash('No se pudo guardar la apariencia del ERP.');
     this.brandingDraft = { ...this.brandingDraft, ...payload };
-    alert('Apariencia guardada.');
+    this.flash('Apariencia guardada.');
   }
 
   async addCategory() {
@@ -1826,7 +2185,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       color: this.categoryDraft.color || null,
       created_by: this.auth.user?.id
     });
-    if (error) return alert('No se pudo crear la categoría.');
+    if (error) return this.flash('No se pudo crear la categoría.');
     this.categoryDraft.name = '';
     await this.loadErpOperationalModules();
   }
@@ -1842,7 +2201,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       is_terminal: !!this.statusDraft.is_terminal,
       created_by: this.auth.user?.id
     });
-    if (error) return alert('No se pudo crear el estado.');
+    if (error) return this.flash('No se pudo crear el estado.');
     this.statusDraft.code = '';
     this.statusDraft.label = '';
     this.statusDraft.is_terminal = false;
@@ -1859,7 +2218,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       body_html: this.emailTemplateDraft.body_html || '<p></p>',
       created_by: this.auth.user?.id
     });
-    if (error) return alert('No se pudo crear la plantilla.');
+    if (error) return this.flash('No se pudo crear la plantilla.');
     this.emailTemplateDraft = { code: '', name: '', subject: '', body_html: '' };
     await this.loadErpOperationalModules();
   }
@@ -1874,7 +2233,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       escalation_hours: Number(this.planSlaDraft.escalation_hours) || 96,
       created_by: this.auth.user?.id
     });
-    if (error) return alert('No se pudo crear el SLA.');
+    if (error) return this.flash('No se pudo crear el SLA.');
     this.planSlaDraft = { plan_tier: '', request_response_hours: 24, task_due_hours: 72, escalation_hours: 96 };
     await this.loadErpOperationalModules();
   }
@@ -1888,7 +2247,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       try {
         value = JSON.parse(value || '{}');
       } catch {
-        alert('El valor JSON no es válido.');
+        this.flash('El valor JSON no es válido.');
         return;
       }
     }
@@ -1901,7 +2260,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       description: this.parameterDraft.description || null,
       created_by: this.auth.user?.id
     });
-    if (error) return alert('No se pudo guardar el parámetro.');
+    if (error) return this.flash('No se pudo guardar el parámetro.');
     this.parameterDraft = { key: '', label: '', value: '', value_type: 'text', description: '' };
     await this.loadErpOperationalModules();
   }
@@ -1923,12 +2282,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       if (!allowedTypes.has(file.type)) {
         input.value = '';
         this.selectedDocumentFile = null;
-        return alert('Tipo de archivo no permitido. Usa PDF, Excel, Word, PNG o JPG.');
+        return this.flash('Tipo de archivo no permitido. Usa PDF, Excel, Word, PNG o JPG.');
       }
       if (file.size > maxBytes) {
         input.value = '';
         this.selectedDocumentFile = null;
-        return alert('El archivo supera 12 MB.');
+        return this.flash('El archivo supera 12 MB.');
       }
     }
     this.selectedDocumentFile = file;
@@ -1940,7 +2299,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   async addDocumentRecord() {
     if (!this.companyId || !this.documentDraft.title?.trim()) return;
     if (this.companyConfigMode && !this.selectedDocumentFile) {
-      return alert('Selecciona un archivo para subir.');
+      return this.flash('Selecciona un archivo para subir.');
     }
     this.uploadingDocument = true;
 
@@ -1965,7 +2324,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
       if (uploadError) {
         this.uploadingDocument = false;
-        return alert('No se pudo subir el archivo.');
+        return this.flash('No se pudo subir el archivo.');
       }
     }
 
@@ -1981,7 +2340,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       uploaded_by: this.auth.user?.id
     });
     this.uploadingDocument = false;
-    if (error) return alert('No se pudo registrar el documento.');
+    if (error) return this.flash('No se pudo registrar el documento.');
     this.documentDraft = { document_type: 'company_file', title: '', entity_type: 'company', storage_path: '' };
     this.selectedDocumentFile = null;
     await this.loadErpOperationalModules();
@@ -1990,14 +2349,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   async openCompanyDocument(doc: any) {
     const bucket = doc?.storage_bucket || 'company-documents';
     const path = doc?.storage_path;
-    if (!path) return alert('Este documento no tiene archivo adjunto.');
+    if (!path) return this.flash('Este documento no tiene archivo adjunto.');
 
     const { data, error } = await this.supabase.client.storage
       .from(bucket)
       .createSignedUrl(path, 60);
 
     if (error || !data?.signedUrl) {
-      return alert('No se pudo abrir el documento.');
+      return this.flash('No se pudo abrir el documento.');
     }
 
     window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
@@ -2008,25 +2367,25 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       .from('company_documents')
       .update({ status })
       .eq('id', doc.id);
-    if (error) return alert('No se pudo actualizar el documento.');
+    if (error) return this.flash('No se pudo actualizar el documento.');
     doc.status = status;
     await this.loadErpOperationalModules();
   }
 
   async deleteCompanyDocument(doc: any) {
-    if (!confirm(`Eliminar "${doc.title}"? Esta accion no se puede deshacer.`)) return;
+    if (!await this.confirmAction(`Eliminar "${doc.title}"? Esta accion no se puede deshacer.`)) return;
     const bucket = doc?.storage_bucket || 'company-documents';
     const path = doc?.storage_path;
 
     if (path) {
       const { error: storageError } = await this.supabase.client.storage.from(bucket).remove([path]);
       if (storageError) {
-        return alert('No se pudo borrar el archivo del storage.');
+        return this.flash('No se pudo borrar el archivo del storage.');
       }
     }
 
     const { error } = await this.supabase.client.from('company_documents').delete().eq('id', doc.id);
-    if (error) return alert('No se pudo eliminar el documento.');
+    if (error) return this.flash('No se pudo eliminar el documento.');
     await this.loadErpOperationalModules();
   }
 
@@ -2046,7 +2405,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       visibility: this.commentDraft.visibility,
       created_by: this.auth.user?.id
     });
-    if (error) return alert('No se pudo agregar el comentario.');
+    if (error) return this.flash('No se pudo agregar el comentario.');
     this.commentDraft.body = '';
     await this.loadErpOperationalModules();
   }
@@ -2065,7 +2424,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       })
       .select('id')
       .single();
-    if (error) return alert('No se pudo crear el onboarding.');
+    if (error) return this.flash('No se pudo crear el onboarding.');
 
     const defaultSteps = [
       { step_key: 'company_profile', title: 'Completar ficha empresa', sort_order: 1 },
@@ -2090,7 +2449,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       description: this.onboardingStepDraft.description || null,
       sort_order: this.onboardingSteps.length + 1
     });
-    if (error) return alert('No se pudo crear el paso.');
+    if (error) return this.flash('No se pudo crear el paso.');
     this.onboardingStepDraft = { project_id: this.onboardingStepDraft.project_id, title: '', description: '', step_key: '' };
     await this.loadErpOperationalModules();
   }
@@ -2102,7 +2461,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       completed_by: completed ? this.auth.user?.id : null,
       completed_at: completed ? new Date().toISOString() : null
     }).eq('id', step.id);
-    if (error) return alert('No se pudo actualizar el paso.');
+    if (error) return this.flash('No se pudo actualizar el paso.');
     await this.syncOnboardingProjectStatus(step.project_id);
     await this.loadErpOperationalModules();
   }
@@ -2170,9 +2529,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   setConfigSection(section: ConfigSection) {
-    const companySections: ConfigSection[] = ['company', 'appearance', 'documents', 'messages', 'onboarding'];
+    const companySections: ConfigSection[] = ['company', 'appearance', 'documents', 'messages'];
     if (this.companyConfigMode && !companySections.includes(section)) {
       this.configSection = 'company';
+      return;
+    }
+    if ((section as string) === 'onboarding') {
+      this.configSection = this.companyConfigMode ? 'company' : 'messages';
       return;
     }
     if (section === 'workflow' && (this.hideWorkflowConfig || this.companyConfigMode)) {

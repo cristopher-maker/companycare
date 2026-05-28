@@ -66,13 +66,34 @@
           <div class="request-card__meta">
             <span>{{ item.channel }}</span>
             <span class="request-card__dot" aria-hidden="true"></span>
-            <span>{{ item.created_at | date: 'dd/MM/yyyy' }}</span>
+            <span>{{ displayDate(item) | date: 'dd/MM/yyyy' }}</span>
+            <ng-container *ngIf="item.appointment">
+              <span class="request-card__dot" aria-hidden="true"></span>
+              <span>{{ item.appointment.scheduled_for | date: 'HH:mm' }}</span>
+            </ng-container>
           </div>
         </div>
 
-        <span class="request-card__status" [ngClass]="statusClass(item.status)">
-          {{ statusLabel(item.status) }}
-        </span>
+        <div class="request-card__actions">
+          <button
+            *ngIf="hasVideoMeeting(item)"
+            type="button"
+            class="request-card__meeting"
+            (click)="openMeeting($event, item.appointment?.meeting_url)"
+          >
+            <mat-icon>videocam</mat-icon>
+            <span>Unirse</span>
+          </button>
+
+          <span *ngIf="isPendingVideoMeeting(item)" class="request-card__meeting request-card__meeting--pending">
+            <mat-icon>pending</mat-icon>
+            <span>Enlace pendiente</span>
+          </span>
+
+          <span class="request-card__status" [ngClass]="statusClass(item.status)">
+            {{ statusLabel(item.status) }}
+          </span>
+        </div>
       </a>
     </section>
 
