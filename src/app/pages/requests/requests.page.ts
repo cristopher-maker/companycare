@@ -16,6 +16,7 @@ type AppointmentSummary = {
   request_id: string | null;
   kind: 'Videollamada' | 'Llamada';
   scheduled_for: string;
+  notes: string | null;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   meeting_url: string | null;
 };
@@ -76,7 +77,7 @@ export class RequestsPage implements OnInit, OnDestroy {
       if (requestIds.length) {
         const { data: appointments, error: appointmentsError } = await this.supabase.client
           .from('appointments')
-          .select('id, request_id, kind, scheduled_for, status, meeting_url')
+          .select('id, request_id, kind, scheduled_for, notes, status, meeting_url')
           .in('request_id', requestIds)
           .order('scheduled_for', { ascending: true });
 
@@ -96,10 +97,12 @@ export class RequestsPage implements OnInit, OnDestroy {
           }, new Map<string, AppointmentSummary>());
       }
 
-      this.items = requests.map((item) => ({
-        ...item,
-        appointment: appointmentsByRequestId.get(item.id) ?? null,
-      }));
+      this.items = requests
+        .map((item) => ({
+          ...item,
+          appointment: appointmentsByRequestId.get(item.id) ?? null,
+        }))
+        .filter((item) => item.channel === 'Chat' || !!item.appointment);
       const totalPages = this.totalPages;
       if (this.currentPage > totalPages) this.currentPage = totalPages;
     } catch (err: any) {
@@ -137,6 +140,17 @@ export class RequestsPage implements OnInit, OnDestroy {
 
   public isPendingVideoMeeting(item: CareRequestRow): boolean {
     return item.appointment?.kind === 'Videollamada' && !item.appointment.meeting_url;
+  }
+
+  public appointmentDetails(item: CareRequestRow): string | null {
+    const notes = item.appointment?.notes?.trim();
+    if (!notes) return null;
+
+    return notes
+      .split('\n')
+      .map((line) => line.replace(/^(Contexto|Notas|Telefono de contacto):\s*/i, '').trim())
+      .filter(Boolean)
+      .join(' · ');
   }
 
   public get openRequestsCount(): number {

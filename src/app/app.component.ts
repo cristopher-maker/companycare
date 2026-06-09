@@ -66,7 +66,7 @@ export class AppComponent implements OnDestroy {
     private readonly router: Router,
     public readonly ui: UiService
   ) {
-    this.auth.session$.subscribe(() => void this.refreshRole());
+    this.auth.session$.subscribe(() => void this.handleSessionChange());
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.ui.closeMenu();
@@ -147,6 +147,18 @@ export class AppComponent implements OnDestroy {
       this.profileRole = null;
       this.hasBenefitAccess = false;
     }
+  }
+
+  private async handleSessionChange(): Promise<void> {
+    if (this.auth.user) {
+      try {
+        await this.auth.completePendingRegistrationIfAny();
+      } catch {
+        // Keep navigation usable; the user can retry by signing in again.
+      }
+    }
+
+    await this.refreshRole();
   }
 
   private async loadBenefitAccess(): Promise<boolean> {

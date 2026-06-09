@@ -18,166 +18,6 @@
   --ce-text-light: #94a3b8;
 }
 
-/* Empresa: flujo de solicitud más operativo y menos visual-marketing */
-.care-experts-page {
-  background: #f7fafb;
-}
-
-.care-experts-page .ce-page {
-  max-width: 1180px;
-  padding: 20px 0 0;
-}
-
-.care-experts-page .ce-advisor-shell {
-  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
-  gap: 16px;
-}
-
-.care-experts-page .ce-panel {
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-}
-
-.care-experts-page .ce-advisor-panel {
-  padding: 28px 32px;
-}
-
-.care-experts-page .ce-advisor-step__title {
-  max-width: 680px;
-  font-size: 26px;
-  letter-spacing: 0;
-}
-
-.care-experts-page .ce-advisor-step__lead {
-  max-width: 660px;
-}
-
-.care-experts-page .ce-hero__icon,
-.care-experts-page .ce-channel__icon-wrapper {
-  border-radius: 8px;
-}
-
-.care-experts-page .ce-hero__icon mat-icon,
-.care-experts-page .ce-channel__icon-wrapper mat-icon {
-  color: var(--ce-primary);
-}
-
-.care-experts-page .ce-channel {
-  min-height: 120px;
-  border-radius: 8px;
-}
-
-.care-experts-page .ce-channel.is-active .ce-channel__icon-wrapper mat-icon {
-  color: #fff;
-}
-
-.care-experts-page .ce-topic-pill,
-.care-experts-page .ce-advisor-actions__secondary,
-.care-experts-page .ce-advisor-actions__primary {
-  border-radius: 8px;
-}
-
-.care-experts-page .ce-advisor-actions__primary {
-  background: var(--ce-primary);
-  box-shadow: none;
-}
-
-.care-experts-page .ce-advisor-visual {
-  padding: 24px;
-  overflow: visible;
-  color: var(--ce-text-main);
-  background: #ffffff;
-  border-color: var(--ce-border);
-}
-
-.care-experts-page .ce-advisor-visual::before,
-.care-experts-page .ce-advisor-visual::after {
-  display: none;
-}
-
-.care-experts-page .ce-advisor-visual__badge {
-  background: var(--ce-primary-bg);
-  color: var(--ce-primary);
-}
-
-.care-experts-page .ce-advisor-visual__title {
-  margin-top: 14px;
-  font-size: 22px;
-  letter-spacing: 0;
-}
-
-.care-experts-page .ce-advisor-visual__body {
-  color: var(--ce-text-muted);
-}
-
-.care-experts-page .ce-advisor-visual__stage {
-  min-height: 0;
-  margin-top: 20px;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  backdrop-filter: none;
-}
-
-.care-experts-page .ce-visual-chat {
-  gap: 10px;
-}
-
-.care-experts-page .ce-visual-step {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-  padding: 14px;
-  border: 1px solid var(--ce-border);
-  border-radius: 8px;
-  background: #f8fafc;
-}
-
-.care-experts-page .ce-visual-step mat-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  background: var(--ce-primary-bg);
-  color: var(--ce-primary);
-  font-size: 18px;
-}
-
-.care-experts-page .ce-visual-step strong,
-.care-experts-page .ce-visual-card strong {
-  display: block;
-  color: var(--ce-text-main);
-  font-size: 13px;
-}
-
-.care-experts-page .ce-visual-step span,
-.care-experts-page .ce-visual-card p {
-  color: var(--ce-text-muted);
-  font-size: 12px;
-}
-
-.care-experts-page .ce-visual-card {
-  position: static;
-  margin-top: 12px;
-  border: 1px solid var(--ce-border);
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.care-experts-page .ce-visual-card mat-icon,
-.care-experts-page .ce-advisor-visual__note mat-icon {
-  color: var(--ce-primary);
-}
-
-.care-experts-page .ce-advisor-visual__note {
-  border: 1px solid var(--ce-border);
-  border-radius: 8px;
-  background: #f8fafc;
-  color: var(--ce-text-muted);
-}
-
 mat-icon {
   font-family: 'Material Icons', 'Material Symbols Outlined', sans-serif !important;
   font-weight: normal;
@@ -248,7 +88,7 @@ ion-content.care-experts {
 .care-experts-page {
   min-height: calc(100vh - 64px);
   padding: 104px 20px 48px;
-  background: var(--ce-surface); /* Usar fondo blanco unificado */
+  background: var(--ce-bg-page);
 }
 
 .ce-feedback {
@@ -310,9 +150,8 @@ ion-content.care-experts {
 }
 
 .ce-expert--app {
-  background: linear-gradient(180deg, rgba(120, 155, 255, 0.12), rgba(125, 122, 255, 0.05));
+  background: linear-gradient(180deg, rgba(18, 60, 74, 0.06), rgba(242, 122, 94, 0.03));
   border-radius: 32px;
-  /* El padding se gestiona ahora en .ce-expert para evitar redundancia y reducir el "marco" */
   min-height: calc(100vh - 130px);
 }
 
@@ -320,10 +159,9 @@ ion-content.care-experts {
 .ce-panel {
   background: var(--ce-surface);
   border: 1px solid var(--ce-border);
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 40px;
-  /* Sombra moderna: más difuminada y elegante */
-  box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.02);
+  box-shadow: 0 8px 30px -8px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
 }
 
 .ce-panel--sidebar,
@@ -341,17 +179,17 @@ ion-content.care-experts {
 }
 
 .ce-hero__icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
   background: var(--ce-primary-bg);
   color: var(--ce-primary);
   flex-shrink: 0;
   
-  ion-icon {
-    font-size: 32px;
+  mat-icon, ion-icon {
+    font-size: 28px;
   }
 }
 
@@ -428,22 +266,28 @@ ion-content.care-experts {
   text-align: center;
   gap: 12px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
+  position: relative;
+  overflow: hidden;
 
   .ce-channel__icon-wrapper {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
     background: var(--ce-bg-page);
     display: grid;
     place-items: center;
-    transition: background 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     
-    ion-icon {
-      font-size: 22px;
+    mat-icon, ion-icon {
+      font-size: 24px;
       color: var(--ce-text-muted);
     }
+  }
+
+  .ce-channel__info {
+    flex: 1;
   }
 
   .ce-channel__title {
@@ -459,6 +303,20 @@ ion-content.care-experts {
     font-weight: 500;
   }
 
+  .ce-channel__check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    mat-icon, ion-icon {
+      font-size: 20px;
+      color: var(--ce-primary);
+    }
+  }
+
   &:hover {
     border-color: var(--ce-border-focus);
     transform: translateY(-2px);
@@ -467,12 +325,17 @@ ion-content.care-experts {
 
   &.is-active {
     border-color: var(--ce-primary);
-    background: var(--ce-surface);
-    box-shadow: 0 0 0 1px var(--ce-primary); /* Borde crisp estilo Stripe/Apple */
+    background: var(--ce-primary-bg);
+    box-shadow: 0 0 0 1.5px var(--ce-primary), 0 8px 20px -8px rgba(18, 60, 74, 0.15);
     
     .ce-channel__icon-wrapper {
       background: var(--ce-primary);
-      ion-icon { color: white; }
+      mat-icon, ion-icon { color: white; }
+    }
+    
+    .ce-channel__check {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 }
@@ -522,6 +385,69 @@ ion-content.care-experts {
 
 .ce-appointment-form .ce-item--textarea {
   grid-column: 1 / -1;
+}
+
+.ce-selected-channel {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--ce-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.ce-schedule-block,
+.ce-call-details {
+  padding: 18px;
+  border: 1px solid var(--ce-border);
+  border-radius: 14px;
+  background: #fbfdff;
+}
+
+.ce-schedule-block .ce-appointment-form {
+  margin-top: 14px;
+}
+
+.ce-call-details {
+  display: grid;
+  gap: 14px;
+}
+
+.ce-call-details__grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.55fr);
+  gap: 12px;
+}
+
+.ce-call-details label,
+.ce-field {
+  display: grid;
+  gap: 8px;
+}
+
+.ce-call-details label span,
+.ce-field span {
+  color: var(--ce-text-main);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ce-contact-locked {
+  margin-top: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #e5edf8;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.ce-contact-locked mat-icon {
+  color: #123c4a;
+  font-size: 20px;
 }
 
 .ce-appointment-calendar {
@@ -603,8 +529,24 @@ ion-content.care-experts {
 
 .ce-time-slot.is-active {
   border-color: var(--ce-primary);
-  background: rgba(74, 107, 255, 0.1);
+  background: var(--ce-primary-bg);
   color: var(--ce-primary);
+}
+
+.ce-time-slot.is-booked,
+.ce-time-slot:disabled {
+  border-color: #e5e7eb;
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.ce-time-slot small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .ce-appointments-list {
@@ -622,9 +564,9 @@ ion-content.care-experts {
 .ce-next-appointment {
   margin-bottom: 14px;
   padding: 16px 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(74, 107, 255, 0.18);
-  background: linear-gradient(135deg, rgba(74, 107, 255, 0.1), rgba(125, 122, 255, 0.05));
+  border-radius: 16px;
+  border: 1px solid var(--ce-primary-bg);
+  background: linear-gradient(135deg, rgba(18, 60, 74, 0.06), rgba(242, 122, 94, 0.04));
 }
 
 .ce-next-appointment__eyebrow {
@@ -653,13 +595,14 @@ ion-content.care-experts {
   margin-top: 12px;
   appearance: none;
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--ce-primary);
   color: #fff;
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .ce-next-appointment__link:hover {
@@ -770,7 +713,7 @@ ion-content.care-experts {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #3158ff;
+  color: var(--ce-primary);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -781,15 +724,10 @@ ion-content.care-experts {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--ce-text-light);
   font-size: 12px;
   font-weight: 500;
-
-  ion-icon {
-    font-size: 16px;
-    color: #10b981; /* Un verde sutil para seguridad */
-  }
 }
 
 /* --- CHAT INTERFACE (Estilo iMessage / WhatsApp moderno) --- */
@@ -821,11 +759,11 @@ ion-content.care-experts {
     margin-top: 2px;
   }
   .ce-chat__status-indicator {
-    width: 10px;
-    height: 10px;
-    background: #4a6bff;
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
     border-radius: 50%;
-    box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.18);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
   }
 }
 
@@ -865,8 +803,8 @@ ion-content.care-experts {
   background: var(--ce-primary);
   color: white;
   border: none;
-  border-radius: 16px 16px 4px 16px; /* Cola a la derecha */
-  box-shadow: 0 4px 12px rgba(74, 107, 255, 0.18);
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 4px 12px rgba(18, 60, 74, 0.18);
 }
 
 .ce-msg.is-internal {
@@ -1022,7 +960,7 @@ ion-content.care-experts {
     color: var(--ce-text-muted);
     margin-bottom: 12px;
     
-    ion-icon { font-size: 14px; }
+    mat-icon, ion-icon { font-size: 14px; }
   }
 
   .ce-request-card__foot {
@@ -1040,7 +978,7 @@ ion-content.care-experts {
       display: flex;
       align-items: center;
       gap: 4px;
-      ion-icon { color: var(--ce-text-muted); }
+      mat-icon, ion-icon { color: var(--ce-text-muted); }
     }
   }
 
@@ -1124,7 +1062,7 @@ ion-content.care-experts {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #5d6cff, #8b5cf6);
+  background: linear-gradient(135deg, var(--ce-primary), var(--ce-accent));
   color: #fff;
   font-weight: 800;
 }
@@ -1177,9 +1115,9 @@ ion-content.care-experts {
 .ce-detail__appointment-banner {
   margin-bottom: 18px;
   padding: 16px 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(27, 77, 255, 0.14);
-  background: linear-gradient(135deg, rgba(27, 77, 255, 0.06), rgba(139, 92, 246, 0.05));
+  border-radius: 16px;
+  border: 1px solid var(--ce-primary-bg);
+  background: linear-gradient(135deg, rgba(18, 60, 74, 0.05), rgba(242, 122, 94, 0.03));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1434,7 +1372,7 @@ ion-content.care-experts {
   padding: 64px 24px;
   color: var(--ce-text-light);
 
-  ion-icon {
+  mat-icon, ion-icon {
     font-size: 48px;
     margin-bottom: 16px;
     opacity: 0.5;
@@ -1484,7 +1422,7 @@ ion-content.care-experts {
 }
 
 .ce-advisor-panel__meter {
-  height: 8px;
+  height: 6px;
   border-radius: 999px;
   background: #e8eef8;
   overflow: hidden;
@@ -1494,7 +1432,27 @@ ion-content.care-experts {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #6ba8ff, #8b7dff);
+  background: var(--ce-primary);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ce-step-content {
+  position: relative;
+}
+
+.ce-step {
+  animation: ceFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ceFadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ce-hero--advisor {
@@ -1537,22 +1495,24 @@ ion-content.care-experts {
 }
 
 .ce-topic-pill:hover {
-  border-color: var(--ce-accent-soft);
+  border-color: var(--ce-primary);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(18, 60, 74, 0.08);
 }
 
 .ce-topic-pill.is-active {
-  border-color: var(--ce-accent);
-  background: var(--ce-accent-bg);
-  color: #5146c8;
+  border-color: var(--ce-primary);
+  background: var(--ce-primary-bg);
+  color: var(--ce-primary);
 }
 
 .ce-summary {
   margin-top: 22px;
   border: 1px solid var(--ce-border);
-  border-radius: 20px;
-  background: linear-gradient(180deg, #ffffff, #fbfcff);
-  padding: 8px 18px;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 6px 18px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
 }
 
 .ce-summary__row {
@@ -1605,232 +1565,186 @@ ion-content.care-experts {
 
 .ce-advisor-actions__primary {
   border: 0;
-  background: linear-gradient(90deg, #5e8fff, #7d7aff);
+  background: var(--ce-primary);
   color: #fff;
   min-width: 220px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  box-shadow: 0 14px 30px rgba(94, 143, 255, 0.26);
+  box-shadow: 0 8px 20px rgba(18, 60, 74, 0.2);
 }
 
 .ce-advisor-actions__primary:hover {
+  background: var(--ce-primary-hover);
   transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(18, 60, 74, 0.28);
 }
 
 .ce-advisor-visual {
-  padding: 34px;
-  color: #fff;
-  background: linear-gradient(180deg, #6f8fff, #7c7dff 48%, #7fc8ff);
-  border-color: rgba(255, 255, 255, 0.22);
-  position: relative;
-  overflow: hidden;
-}
-
-.ce-advisor-visual::before,
-.ce-advisor-visual::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.09);
-  pointer-events: none;
-}
-
-.ce-advisor-visual::before {
-  width: 260px;
-  height: 260px;
-  top: -80px;
-  right: -80px;
-}
-
-.ce-advisor-visual::after {
-  width: 180px;
-  height: 180px;
-  bottom: -60px;
-  left: -30px;
+  padding: 24px;
+  color: var(--ce-text-main);
+  background: #ffffff;
+  border-color: var(--ce-border);
+  position: sticky;
+  top: 92px;
 }
 
 .ce-advisor-visual__badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
+  min-height: 28px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  font-size: 12px;
+  background: var(--ce-primary-bg);
+  color: var(--ce-primary);
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .ce-advisor-visual__title {
-  margin: 18px 0 0;
-  font-size: 32px;
-  line-height: 1.08;
-  letter-spacing: -0.04em;
+  margin: 14px 0 0;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   font-weight: 800;
+  color: var(--ce-text-main);
 }
 
 .ce-advisor-visual__body {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   max-width: 460px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 15px;
-  line-height: 1.65;
+  color: var(--ce-text-muted);
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 .ce-advisor-visual__stage {
   position: relative;
-  margin-top: 28px;
-  min-height: 420px;
-  border-radius: 28px;
-  padding: 28px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
+  margin-top: 20px;
+  min-height: 0;
+  border-radius: 12px;
+  padding: 0;
+  background: transparent;
 }
 
 .ce-visual-chat {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .ce-visual-chat__bubble {
-  max-width: 280px;
+  max-width: 260px;
   padding: 14px 16px;
   border-radius: 18px 18px 18px 8px;
   background: rgba(255, 255, 255, 0.94);
   color: #334164;
   font-size: 14px;
   line-height: 1.5;
-  box-shadow: 0 12px 30px rgba(45, 61, 119, 0.14);
-}
-
-.ce-visual-chat__bubble.is-own {
-  justify-self: end;
-  border-radius: 18px 18px 8px 18px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: 0 8px 24px rgba(45, 61, 119, 0.1);
 }
 
 .ce-visual-device {
   display: grid;
   place-items: center;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 
 .ce-visual-device__screen {
-  width: 260px;
-  min-height: 360px;
-  border-radius: 34px;
-  padding: 22px 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 255, 0.94));
-  box-shadow: 0 24px 50px rgba(60, 76, 148, 0.24);
+  width: 220px;
+  min-height: 300px;
+  border-radius: 28px;
+  padding: 18px 16px;
+  background: linear-gradient(180deg, rgba(18, 60, 74, 0.04), rgba(242, 122, 94, 0.06));
+  box-shadow: 0 16px 40px rgba(60, 76, 148, 0.12);
   display: grid;
   align-content: start;
-  gap: 14px;
+  gap: 12px;
 }
 
 .ce-visual-device__avatar {
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 28px;
-  background: linear-gradient(135deg, #d7e7ff, #d7d2ff);
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--ce-primary-bg), var(--ce-accent-bg));
   position: relative;
 }
 
-.ce-visual-device__avatar::before {
-  content: '';
-  position: absolute;
-  inset: 18% 24% 32%;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-}
-
-.ce-visual-device__avatar::after {
-  content: '';
-  position: absolute;
-  left: 20%;
-  right: 20%;
-  bottom: 16%;
-  height: 28%;
-  border-radius: 999px 999px 18px 18px;
-  background: rgba(255, 255, 255, 0.85);
-}
-
 .ce-visual-device__line {
-  height: 12px;
+  height: 10px;
   border-radius: 999px;
-  background: #bfd4ff;
+  background: var(--ce-border);
 }
 
 .ce-visual-device__line.is-strong {
-  width: 72%;
-  background: #6f8fff;
+  width: 68%;
+  background: var(--ce-primary);
 }
 
 .ce-visual-device__actions {
   margin-top: auto;
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .ce-visual-device__actions span {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #111827;
+  background: var(--ce-primary);
   color: #fff;
 }
 
 .ce-visual-card {
-  position: absolute;
-  left: 24px;
-  right: 24px;
-  bottom: 24px;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #34415d;
+  border: 1px solid var(--ce-border);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--ce-text-main);
 }
 
-.ce-visual-card ion-icon {
+.ce-visual-card mat-icon, .ce-visual-card ion-icon {
   font-size: 20px;
-  color: #6d7dff;
+  color: var(--ce-primary);
 }
 
 .ce-visual-card strong {
   display: block;
   font-size: 14px;
   font-weight: 800;
+  color: var(--ce-text-main);
 }
 
 .ce-visual-card p {
   margin: 2px 0 0;
-  color: #7281a3;
+  color: var(--ce-text-muted);
   font-size: 12px;
 }
 
 .ce-advisor-visual__note {
-  margin-top: 22px;
+  margin-top: 20px;
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  color: #415072;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--ce-border);
+  border-radius: 10px;
+  background: var(--ce-bg-page);
+  color: var(--ce-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
-.ce-advisor-visual__note ion-icon {
+.ce-advisor-visual__note mat-icon, .ce-advisor-visual__note ion-icon {
   flex-shrink: 0;
   margin-top: 2px;
   font-size: 18px;
@@ -1842,8 +1756,23 @@ ion-content.care-experts {
 }
 
 .ce-followup-panel,
-.ce-chat-panel {
+.ce-chat-panel,
+.ce-confirmation-panel {
   margin-top: 28px;
+}
+
+.ce-confirmation-panel--primary {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 30px;
+}
+
+.ce-confirmation-panel--primary .ce-followup-panel__head h3 {
+  font-size: 26px;
+}
+
+.ce-confirmation-panel--primary .ce-followup-card__action {
+  margin-top: 18px;
 }
 
 .ce-followup-panel__head h3 {
@@ -1868,9 +1797,10 @@ ion-content.care-experts {
 
 .ce-followup-card {
   padding: 20px;
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid var(--ce-border);
-  background: linear-gradient(180deg, #ffffff, #f9fbff);
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
 }
 
 .ce-followup-card__eyebrow {
@@ -1899,13 +1829,18 @@ ion-content.care-experts {
   margin-top: 14px;
   appearance: none;
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--ce-primary);
   color: #fff;
   padding: 11px 14px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.ce-followup-card__action:hover {
+  background: var(--ce-primary-hover);
 }
 
 .ce-hero__icon-img {
@@ -1937,11 +1872,21 @@ ion-content.care-experts {
   line-height: 1.55;
 }
 
+.ce-textarea--compact {
+  min-height: 96px;
+}
+
 .ce-input:focus,
 .ce-textarea:focus,
 .ce-chat__input:focus {
   border-color: var(--ce-primary);
   box-shadow: 0 0 0 3px var(--ce-primary-bg);
+}
+
+.ce-input::placeholder,
+.ce-textarea::placeholder,
+.ce-chat__input::placeholder {
+  color: var(--ce-text-light);
 }
 
 .ce-channels--compact {
@@ -1951,7 +1896,7 @@ ion-content.care-experts {
 .ce-btn-send-text {
   appearance: none;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--ce-primary);
   color: #fff;
   padding: 0 18px;
@@ -1959,7 +1904,12 @@ ion-content.care-experts {
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(74, 107, 255, 0.18);
+  box-shadow: 0 8px 20px rgba(18, 60, 74, 0.18);
+  transition: background 0.2s ease;
+}
+
+.ce-btn-send-text:hover {
+  background: var(--ce-primary-hover);
 }
 
 .care-experts-expert {
@@ -2080,7 +2030,7 @@ ion-content.care-experts {
   padding: 22px 20px 18px;
   border-bottom: 1px solid var(--ce-border);
   background:
-    linear-gradient(180deg, rgba(74, 107, 255, 0.08), rgba(74, 107, 255, 0))
+    linear-gradient(180deg, rgba(18, 60, 74, 0.06), rgba(18, 60, 74, 0))
     #fff;
 }
 
@@ -2274,7 +2224,7 @@ ion-content.care-experts {
 
 .ce-expert-app__badge.is-assigned {
   background: #dbeafe;
-  color: #2563eb;
+  color: #1d4ed8;
 }
 
 .ce-expert-app__badge--attention {
@@ -2417,8 +2367,8 @@ ion-content.care-experts {
   justify-items: center;
   gap: 14px;
   padding: 20px;
-  border: 1px solid #c7d2fe;
-  border-radius: 18px;
+  border: 1px solid var(--ce-primary-bg);
+  border-radius: 16px;
   background: #eef2ff;
   text-align: center;
 }
@@ -2653,9 +2603,9 @@ ion-content.care-experts {
   justify-content: space-between;
   gap: 10px;
   padding: 9px 10px;
-  border-radius: 12px;
-  background: #eef6ff;
-  border: 1px solid #d6e8ff;
+  border-radius: 10px;
+  background: var(--ce-primary-bg);
+  border: 1px solid rgba(18, 60, 74, 0.12);
 }
 
 .ce-expert-app__appointment-status span,
@@ -2722,7 +2672,7 @@ ion-content.care-experts {
 
 .ce-expert-app__appointment-link--secondary {
   margin-top: 8px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ce-border);
   background: #fff;
   color: var(--ce-primary);
 }
@@ -2997,8 +2947,8 @@ ion-content.care-experts {
     min-height: calc(100vh - 194px);
     padding: 24px 0;
     border-radius: 24px;
-    background: linear-gradient(180deg, #5d6cff, #4338ca);
-    box-shadow: 0 14px 34px rgba(67, 56, 202, 0.24);
+    background: linear-gradient(180deg, var(--ce-primary), #0a2a34);
+    box-shadow: 0 14px 34px rgba(18, 60, 74, 0.24);
   }
 
   .ce-rail-btn {
@@ -3050,7 +3000,7 @@ ion-content.care-experts {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 2px solid #4338ca;
+    border: 2px solid var(--ce-primary-hover);
     background: #22c55e;
   }
 
@@ -3485,5 +3435,94 @@ ion-content.care-experts {
 .care-experts-page .ce-advisor-actions__primary {
   background: var(--ce-primary);
   box-shadow: none;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling {
+  display: block;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-advisor-panel {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 26px 30px 28px;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-advisor-visual {
+  display: none;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-schedule-block {
+  margin-top: 0;
+  padding: 0 0 18px;
+  border: 0;
+  border-bottom: 1px solid #e5edf8;
+  border-radius: 0;
+  background: transparent;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-call-details {
+  margin-top: 0;
+  padding: 22px 0 0;
+  border: 0;
+  border-top: 1px solid #e5edf8;
+  border-radius: 0;
+  background: transparent;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-appointment-form {
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-selected-channel,
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-input {
+  min-height: 50px;
+  border-radius: 10px;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-selected-channel {
+  gap: 10px;
+  padding: 0 14px;
+  background: #fff;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-selected-channel .ce-channel__icon-wrapper {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #eef6f8;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-selected-channel .ce-channel__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-appointment-time {
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-appointment-time__label,
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-label {
+  margin-bottom: 8px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-appointment-time__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.care-experts-page .ce-advisor-shell.is-scheduling .ce-time-slot {
+  min-height: 38px;
+  border-radius: 9px;
+  background: #fff;
 }
 

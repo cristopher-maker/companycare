@@ -37,7 +37,12 @@ type UpcomingEvent = {
 
 type EmployeeCareIntakeDraft = {
   careType: string;
+  careReceiverFullName: string;
+  careReceiverRut: string;
+  careReceiverBirthDate: string;
   careReceiverAge: number | null;
+  careReceiverPhone: string;
+  careReceiverHealthCoverage: string;
   primaryCondition: string;
   dependencyLevel: string;
   city: string;
@@ -210,7 +215,12 @@ export class DashboardPage implements OnInit, OnDestroy {
       const payload = {
         care_type: this.employeeCareIntakeDraft.careType,
         care_receiver: {
+          full_name: this.employeeCareIntakeDraft.careReceiverFullName.trim() || null,
+          rut: this.employeeCareIntakeDraft.careReceiverRut.trim() || null,
+          birth_date: this.employeeCareIntakeDraft.careReceiverBirthDate || null,
           age: this.employeeCareIntakeDraft.careReceiverAge,
+          phone: this.employeeCareIntakeDraft.careReceiverPhone.trim() || null,
+          health_coverage: this.employeeCareIntakeDraft.careReceiverHealthCoverage.trim() || null,
           primary_condition: this.employeeCareIntakeDraft.primaryCondition.trim() || null,
           dependency_level: this.employeeCareIntakeDraft.dependencyLevel,
         },
@@ -236,17 +246,25 @@ export class DashboardPage implements OnInit, OnDestroy {
         },
         notes: this.employeeCareIntakeDraft.notes.trim() || null,
       };
+      const receiverColumns = {
+        care_receiver_full_name: this.employeeCareIntakeDraft.careReceiverFullName.trim() || null,
+        care_receiver_rut: this.employeeCareIntakeDraft.careReceiverRut.trim() || null,
+        care_receiver_birth_date: this.employeeCareIntakeDraft.careReceiverBirthDate || null,
+        care_receiver_phone: this.employeeCareIntakeDraft.careReceiverPhone.trim() || null,
+        care_receiver_health_coverage: this.employeeCareIntakeDraft.careReceiverHealthCoverage.trim() || null,
+      };
 
       const query = this.employeeCareIntakeId
         ? this.supabase.client
             .from('care_intakes')
-            .update({ payload })
+            .update({ payload, ...receiverColumns })
             .eq('id', this.employeeCareIntakeId)
         : this.supabase.client.from('care_intakes').insert({
             company_id: this.employeeCompanyId,
             employee_id: userId,
             created_by: userId,
             payload,
+            ...receiverColumns,
           } as any);
 
       const { error } = await query;
@@ -416,7 +434,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   private async loadEmployeeCareIntake(userId: string, preserveDraft = false): Promise<void> {
     const { data, error } = await this.supabase.client
       .from('care_intakes')
-      .select('id, payload, updated_at, created_at')
+      .select('id, payload, updated_at, created_at, care_receiver_full_name, care_receiver_rut, care_receiver_birth_date, care_receiver_phone, care_receiver_health_coverage')
       .eq('employee_id', userId)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -440,7 +458,12 @@ export class DashboardPage implements OnInit, OnDestroy {
     if (!preserveDraft) {
       this.employeeCareIntakeDraft = {
         careType:         p?.care_type ?? p?.clinical_profile ?? 'guidance',
+        careReceiverFullName: (data as any).care_receiver_full_name ?? p?.care_receiver?.full_name ?? p?.care_receiver?.name ?? '',
+        careReceiverRut:  (data as any).care_receiver_rut ?? p?.care_receiver?.rut ?? p?.care_receiver?.national_id ?? '',
+        careReceiverBirthDate: (data as any).care_receiver_birth_date ?? p?.care_receiver?.birth_date ?? '',
         careReceiverAge:  p?.care_receiver?.age ?? p?.family?.age ?? null,
+        careReceiverPhone:(data as any).care_receiver_phone ?? p?.care_receiver?.phone ?? '',
+        careReceiverHealthCoverage: (data as any).care_receiver_health_coverage ?? p?.care_receiver?.health_coverage ?? '',
         primaryCondition: p?.care_receiver?.primary_condition ?? '',
         dependencyLevel:  p?.care_receiver?.dependency_level ?? 'medium',
         city:             p?.location?.city ?? p?.location?.comuna ?? '',
@@ -461,7 +484,12 @@ export class DashboardPage implements OnInit, OnDestroy {
   private createDefaultCareIntakeDraft(): EmployeeCareIntakeDraft {
     return {
       careType:         'guidance',
+      careReceiverFullName: '',
+      careReceiverRut:  '',
+      careReceiverBirthDate: '',
       careReceiverAge:  null,
+      careReceiverPhone:'',
+      careReceiverHealthCoverage: '',
       primaryCondition: '',
       dependencyLevel:  'medium',
       city:             '',

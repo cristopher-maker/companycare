@@ -460,43 +460,55 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:22%">Sede</th>
-                <th style="width:18%">Ubicación</th>
-                <th style="width:10%">Camas</th>
-                <th style="width:22%">Disponibles</th>
-                <th style="width:14%">Estado</th>
-                <th style="width:14%"></th>
+                <th style="width:16%">Sede</th>
+                <th style="width:12%">Tipo</th>
+                <th style="width:12%">Ubicación</th>
+                <th style="width:10%">Teléfono</th>
+                <th style="width:10%">Encargado</th>
+                <th style="width:7%">Camas</th>
+                <th style="width:8%">Pacientes</th>
+                <th style="width:8%">Disponibles</th>
+                <th style="width:9%">Estado</th>
+                <th style="width:8%"></th>
               </tr>
             </thead>
             <tbody *ngIf="sedes.length > 0">
               <tr *ngFor="let sede of sedes" [class.row-highlight]="isSelectedEntity('sede', sede.id)">
                 <td class="td-primary">{{ sede.nombre }}</td>
+                <td>{{ sedeTypeLabel(sede.tipo) }}</td>
                 <td>{{ sede.ubicacion }}</td>
+                <td class="td-mono">{{ sede.telefono || '-' }}</td>
+                <td>{{ sede.encargadoNombre || '-' }}</td>
                 <td class="td-mono">{{ sede.camasTotales }}</td>
+                <td class="td-mono">{{ sede.pacientesCount }}</td>
                 <td>
                   <div class="progress-row">
                     <span class="td-mono" style="min-width:22px">{{ sede.camasDisponibles }}</span>
                     <div class="progress-track">
                       <div class="progress-fill"
-                           [style.width.%]="(sede.camasDisponibles / sede.camasTotales) * 100"
-                           [class.fill-green]="sede.camasDisponibles > 10"
-                           [class.fill-warn]="sede.camasDisponibles <= 10 && sede.camasDisponibles > 3"
-                           [class.fill-red]="sede.camasDisponibles <= 3">
+                           [style.width.%]="sede.camasTotales > 0 ? (sede.camasDisponibles / sede.camasTotales) * 100 : 0"
+                           [class.fill-green]="sede.estado === 'Normal'"
+                           [class.fill-warn]="sede.estado === 'Atención'"
+                           [class.fill-red]="sede.estado === 'Crítico'">
                       </div>
                     </div>
-                    <span class="pct-label">{{ ((sede.camasDisponibles / sede.camasTotales) * 100) | number:'1.0-0' }}%</span>
+                    <span class="pct-label" *ngIf="sede.camasTotales > 0">{{ ((sede.camasDisponibles / sede.camasTotales) * 100) | number:'1.0-0' }}%</span>
+                    <span class="pct-label" *ngIf="sede.camasTotales === 0">-</span>
                   </div>
                 </td>
                 <td>
                   <span class="status-badge"
-                        [class.badge-green]="sede.estado === 'Normal'"
-                        [class.badge-warn]="sede.estado === 'Atención'"
-                        [class.badge-red]="sede.estado === 'Crítico'">
-                    {{ sede.estado }}
+                        [class.badge-green]="sede.estadoSede === 'activa'"
+                        [class.badge-warn]="sede.estadoSede === 'mantencion'"
+                        [class.badge-red]="sede.estadoSede === 'inactiva'">
+                    {{ sedeStatusLabel(sede.estadoSede) }}
                   </span>
                 </td>
                 <td class="td-actions">
-                  <button class="btn-ghost" style="margin-right: 6px;" (click)="openSedeModal(sede)">
+                  <button class="btn-ghost" style="margin-right: 4px;" (click)="openSedeDetail(sede)" title="Ver detalle">
+                    <mat-icon style="font-size:14px;width:14px;height:14px">visibility</mat-icon>
+                  </button>
+                  <button class="btn-ghost" style="margin-right: 4px;" (click)="openSedeModal(sede)">
                     Editar
                   </button>
                   <button class="btn-ghost" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);" (click)="deleteSede(sede)">
@@ -507,7 +519,7 @@
             </tbody>
             <tbody *ngIf="sedes.length === 0">
               <tr>
-                <td colspan="6" class="td-empty">
+                <td colspan="10" class="td-empty">
                   No hay sedes registradas. Usa "Añadir sede" para comenzar.
                 </td>
               </tr>
@@ -1424,23 +1436,83 @@
  
 </div><!-- /admin-shell -->
  
-<!-- Modal: Añadir Sede -->
+<!-- Modal: Añadir / Editar Sede -->
 <div class="modal-backdrop" *ngIf="showSedeModal" (click)="showSedeModal = false">
-  <div class="modal-box" (click)="$event.stopPropagation()">
+  <div class="modal-box" style="max-width: 600px;" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <span class="modal-title">Añadir sede</span>
+      <span class="modal-title">{{ sedeDraft.id ? 'Editar sede' : 'Añadir sede' }}</span>
       <button class="modal-close" (click)="showSedeModal = false">
         <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
       </button>
     </div>
     <div class="modal-body">
       <div class="field-group">
-        <label class="field-label">Nombre de la sede</label>
+        <label class="field-label">Nombre de la sede <span class="text-danger">*</span></label>
         <input class="field-input" type="text" [(ngModel)]="sedeDraft.nombre" placeholder="Ej: Sede Central">
       </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="field-group" style="flex:1;">
+          <label class="field-label">Tipo</label>
+          <select class="field-input" [(ngModel)]="sedeDraft.tipo">
+            <option value="residencia">Residencia</option>
+            <option value="domicilio">Cuidados a domicilio</option>
+            <option value="clinica">Clínica</option>
+            <option value="centro_dia">Centro de día</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="field-group" style="flex:1;">
+          <label class="field-label">Estado</label>
+          <select class="field-input" [(ngModel)]="sedeDraft.estado">
+            <option value="activa">Activa</option>
+            <option value="inactiva">Inactiva</option>
+            <option value="mantencion">En mantención</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="field-group" style="flex:1;">
+          <label class="field-label">Comuna / Ubicación</label>
+          <input class="field-input" type="text" [(ngModel)]="sedeDraft.ubicacion" placeholder="Ej: Providencia">
+        </div>
+        <div class="field-group" style="flex:1;">
+          <label class="field-label">Región</label>
+          <input class="field-input" type="text" [(ngModel)]="sedeDraft.region" placeholder="Ej: Región Metropolitana">
+        </div>
+      </div>
       <div class="field-group">
-        <label class="field-label">Ubicación / comuna</label>
-        <input class="field-input" type="text" [(ngModel)]="sedeDraft.ubicacion" placeholder="Ej: Providencia, Santiago">
+        <label class="field-label">Dirección</label>
+        <input class="field-input" type="text" [(ngModel)]="sedeDraft.direccion" placeholder="Ej: Av. Providencia 1234">
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="field-group" style="flex:1;">
+          <label class="field-label">Teléfono</label>
+          <input class="field-input" type="tel" [(ngModel)]="sedeDraft.telefono" placeholder="+56 2 2345 6789">
+        </div>
+        <div class="field-group" style="flex:1;">
+          <label class="field-label">Email</label>
+          <input class="field-input" type="email" [(ngModel)]="sedeDraft.email" placeholder="sede@empresa.cl">
+        </div>
+      </div>
+      <div class="section-divider" style="border-top:1px solid var(--border);margin:16px 0;"></div>
+      <p style="font-size:13px;font-weight:600;color:var(--text);margin:0 0 12px 0;">Encargado de la sede</p>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="field-group" style="flex:1;">
+          <label class="field-label">Nombre</label>
+          <input class="field-input" type="text" [(ngModel)]="sedeDraft.encargadoNombre" placeholder="Nombre del encargado">
+        </div>
+        <div class="field-group" style="flex:1;">
+          <label class="field-label">Teléfono</label>
+          <input class="field-input" type="tel" [(ngModel)]="sedeDraft.encargadoTelefono" placeholder="+56 9 1234 5678">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Email del encargado</label>
+        <input class="field-input" type="email" [(ngModel)]="sedeDraft.encargadoEmail" placeholder="encargado@empresa.cl">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Notas</label>
+        <textarea class="field-input" rows="2" [(ngModel)]="sedeDraft.notas" placeholder="Información adicional..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -1448,6 +1520,106 @@
       <button class="btn-primary" (click)="saveSede()" [disabled]="savingSede">
         {{ savingSede ? 'Guardando...' : 'Guardar sede' }}
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de Sede -->
+<div class="modal-backdrop" *ngIf="showSedeDetailModal" (click)="closeSedeDetail()">
+  <div class="modal-box modal-box--wide" style="max-width: 700px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">{{ selectedSedeForDetail?.nombre }}</span>
+      <button class="modal-close" (click)="closeSedeDetail()">
+        <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body" *ngIf="selectedSedeForDetail">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div class="lead-detail__item">
+          <span>Tipo</span>
+          <strong>{{ sedeTypeLabel(selectedSedeForDetail.tipo) }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Estado</span>
+          <strong>{{ sedeStatusLabel(selectedSedeForDetail.estadoSede) }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Comuna</span>
+          <strong>{{ selectedSedeForDetail.ubicacion || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Región</span>
+          <strong>{{ selectedSedeForDetail.region || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Dirección</span>
+          <strong>{{ selectedSedeForDetail.direccion || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Teléfono</span>
+          <strong>{{ selectedSedeForDetail.telefono || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Email</span>
+          <strong>{{ selectedSedeForDetail.email || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Encargado</span>
+          <strong>{{ selectedSedeForDetail.encargadoNombre || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Tel. encargado</span>
+          <strong>{{ selectedSedeForDetail.encargadoTelefono || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Email encargado</span>
+          <strong>{{ selectedSedeForDetail.encargadoEmail || 'Sin dato' }}</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Camas</span>
+          <strong>{{ selectedSedeForDetail.camasTotales }} ({{ selectedSedeForDetail.camasOcupadas }} ocupadas, {{ selectedSedeForDetail.camasDisponibles }} disponibles)</strong>
+        </div>
+        <div class="lead-detail__item">
+          <span>Pacientes</span>
+          <strong>{{ selectedSedeForDetail.pacientesCount }}</strong>
+        </div>
+      </div>
+
+      <div *ngIf="selectedSedeForDetail.notas" class="lead-detail__notes" style="margin-bottom:16px;">
+        <span>Notas</span>
+        <p>{{ selectedSedeForDetail.notas }}</p>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;">
+        <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:600;">Pacientes en esta sede</h4>
+        <table class="data-table" *ngIf="selectedSedePatients.length > 0">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>RUT</th>
+              <th>Cama</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of selectedSedePatients">
+              <td class="td-primary">{{ p.first_name + ' ' + p.last_name }}</td>
+              <td class="td-mono">{{ p.document_id || '-' }}</td>
+              <td class="td-mono">{{ getPatientBedCode(p.id) || '-' }}</td>
+              <td class="td-actions">
+                <button class="btn-ghost" (click)="closeSedeDetail(); openPacienteModal({raw: p})">Ver</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="selectedSedePatients.length === 0" style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">
+          No hay pacientes asignados a esta sede.
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeSedeDetail()">Cerrar</button>
+      <button class="btn-primary" (click)="closeSedeDetail(); openSedeModal(selectedSedeForDetail)">Editar sede</button>
     </div>
   </div>
 </div>
@@ -1661,12 +1833,32 @@
           <h4>Ficha de cuidado</h4>
           <div class="lead-detail__grid">
             <div class="lead-detail__item">
+              <span>Nombre persona cuidada</span>
+              <strong>{{ intake.care_receiver?.full_name || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
               <span>Tipo de apoyo</span>
               <strong>{{ careTypeLabel(intake.care_type) }}</strong>
             </div>
             <div class="lead-detail__item">
+              <span>RUT</span>
+              <strong>{{ intake.care_receiver?.rut || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Fecha de nacimiento</span>
+              <strong>{{ intake.care_receiver?.birth_date ? (intake.care_receiver.birth_date | date:'dd/MM/yyyy') : 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
               <span>Edad persona cuidada</span>
               <strong>{{ intake.care_receiver?.age || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Telefono</span>
+              <strong>{{ intake.care_receiver?.phone || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Prevision / Cobertura</span>
+              <strong>{{ intake.care_receiver?.health_coverage || 'Sin dato' }}</strong>
             </div>
             <div class="lead-detail__item">
               <span>Condicion principal</span>
@@ -1693,6 +1885,10 @@
               <strong>{{ fundingLabel(intake.budget?.funding) }}</strong>
             </div>
             <div class="lead-detail__item">
+              <span>Presupuesto mensual max.</span>
+              <strong>{{ intake.budget?.monthly_max ? (intake.budget.monthly_max | currency:'CLP':'symbol-narrow':'1.0-0') : 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
               <span>Contacto preferido</span>
               <strong>{{ preferredContactLabel(intake.preferences?.preferred_contact) }}</strong>
             </div>
@@ -1707,6 +1903,10 @@
             <div class="lead-detail__item">
               <span>Relacion</span>
               <strong>{{ intake.caregiver?.relation || 'Sin dato' }}</strong>
+            </div>
+            <div class="lead-detail__item">
+              <span>Empresa del cuidador</span>
+              <strong>{{ intake.caregiver?.company || 'Sin dato' }}</strong>
             </div>
           </div>
         </div>

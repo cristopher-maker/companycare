@@ -174,13 +174,23 @@ Deno.serve(async (request) => {
     meeting_space_name: meetPayload.name ?? null,
   };
 
-  const { error: updateError } = await supabaseAdmin
-    .from('appointments')
-    .update(updatePayload)
-    .eq('id', typedAppointment.id);
+  const { error: updateError } = await supabaseAdmin.rpc('set_appointment_meeting_details', {
+    target_appointment_id: typedAppointment.id,
+    target_meeting_provider: updatePayload.meeting_provider,
+    target_meeting_url: updatePayload.meeting_url,
+    target_meeting_code: updatePayload.meeting_code,
+    target_meeting_space_name: updatePayload.meeting_space_name,
+  });
 
   if (updateError) {
-    return jsonResponse({ error: 'Google Meet space was created but the appointment could not be updated.' }, 500);
+    return jsonResponse(
+      {
+        error: 'Google Meet space was created but the appointment could not be updated.',
+        detail: updateError.message,
+        code: updateError.code ?? null,
+      },
+      500
+    );
   }
 
   return jsonResponse({

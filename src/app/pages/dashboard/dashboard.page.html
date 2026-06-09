@@ -6,17 +6,17 @@
       <section class="dash-hero">
         <div class="dash-hero__left">
           <p class="dash-hero__mode-label" *ngIf="mode === 'employee'">Portal de beneficios</p>
-          <p class="dash-hero__mode-label" *ngIf="mode === 'company'">Panel empresa<span *ngIf="companyName"> · {{ companyName }}</span></p>
+          <p class="dash-hero__mode-label" *ngIf="mode === 'company'">Panel empresa<span *ngIf="companyName"> - {{ companyName }}</span></p>
           <p class="dash-hero__mode-label" *ngIf="mode === 'public'">Acceso</p>
           <h1 class="dash-hero__title">Hola, <em>{{ displayName }}</em></h1>
-          <p class="dash-hero__subtitle" *ngIf="mode === 'employee'">Tu portal de beneficios: apoyo experto, proveedores, recursos y formación.</p>
-          <p class="dash-hero__subtitle" *ngIf="mode === 'company'">Métricas, co-branding y herramientas de RR.HH.</p>
-          <p class="dash-hero__subtitle" *ngIf="mode === 'public'">Inicia sesión para ver tu portal y seguimiento.</p>
+          <p class="dash-hero__subtitle" *ngIf="mode === 'employee'">Tu portal de beneficios: apoyo experto, proveedores, recursos y formacion.</p>
+          <p class="dash-hero__subtitle" *ngIf="mode === 'company'">Metricas, co-branding y herramientas de RR.HH.</p>
+          <p class="dash-hero__subtitle" *ngIf="mode === 'public'">Inicia sesion para ver tu portal y seguimiento.</p>
         </div>
 
         <div class="dash-hero__actions" *ngIf="mode !== 'public'">
           <ng-container *ngIf="mode === 'employee'">
-            <a class="btn-primary" routerLink="/care-experts">Solicitar asesoría</a>
+            <a class="btn-primary" routerLink="/care-experts">Solicitar asesoria</a>
             <a class="btn-ghost" routerLink="/requests">Ver solicitudes</a>
           </ng-container>
           <ng-container *ngIf="mode === 'company'">
@@ -62,11 +62,15 @@
           <div class="intake-summary" *ngIf="employeeCareIntakeId; else noIntake">
             <div class="intake-summary__grid">
               <div class="intake-summary__item">
+                <span class="intake-summary__key">Persona cuidada</span>
+                <span class="intake-summary__val">{{ employeeCareIntakeDraft.careReceiverFullName || 'Sin dato' }}</span>
+              </div>
+              <div class="intake-summary__item">
                 <span class="intake-summary__key">Tipo de apoyo</span>
                 <span class="intake-summary__val">{{ careTypeLabel(employeeCareIntakeDraft.careType) }}</span>
               </div>
               <div class="intake-summary__item">
-                <span class="intake-summary__key">Relación</span>
+                <span class="intake-summary__key">Relacion</span>
                 <span class="intake-summary__val">{{ employeeCareIntakeDraft.caregiverRelation || 'Sin dato' }}</span>
               </div>
               <div class="intake-summary__item">
@@ -100,7 +104,7 @@
 
           <div class="dash-card__empty" *ngIf="!recentRequests.length && !loading">
             <mat-icon>forum</mat-icon>
-            <p>Aún no hay solicitudes.</p>
+            <p>Aun no hay solicitudes.</p>
           </div>
 
           <ul class="request-list" *ngIf="recentRequests.length">
@@ -108,7 +112,7 @@
               <a routerLink="/requests">
                 <div class="request-list__main">
                   <span class="request-list__topic">{{ r.topic }}</span>
-                  <span class="request-list__meta">{{ r.channel }} · {{ r.status }}</span>
+                  <span class="request-list__meta">{{ r.channel }} - {{ r.status }}</span>
                 </div>
                 <span class="request-list__date">{{ r.created_at | date:'dd/MM' }}</span>
               </a>
@@ -138,13 +142,13 @@
 
         <section class="dash-card dash-card--wide">
           <div class="dash-card__head">
-            <h2 class="dash-card__title">Próximos eventos</h2>
-            <a class="dash-card__action" routerLink="/training">Formación</a>
+            <h2 class="dash-card__title">Proximos eventos</h2>
+            <a class="dash-card__action" routerLink="/training">Formacion</a>
           </div>
 
           <div class="dash-card__empty" *ngIf="!upcomingEvents.length && !loading">
             <mat-icon>event</mat-icon>
-            <p>No hay eventos próximos.</p>
+            <p>No hay eventos proximos.</p>
           </div>
 
           <div class="event-list" *ngIf="upcomingEvents.length">
@@ -155,7 +159,7 @@
               </div>
               <div class="event-list__info">
                 <h3 class="event-list__title">{{ e.title }}</h3>
-                <p class="event-list__meta">{{ e.format }}<span *ngIf="e.location"> · {{ e.location }}</span></p>
+                <p class="event-list__meta">{{ e.format }}<span *ngIf="e.location"> - {{ e.location }}</span></p>
               </div>
             </div>
           </div>
@@ -164,7 +168,7 @@
 
       <div class="dash-public" *ngIf="mode === 'public' && !loading">
         <h2>Acceso al portal</h2>
-        <p>Inicia sesión con tu cuenta para ver tu dashboard como empleado o empresa.</p>
+        <p>Inicia sesion con tu cuenta para ver tu dashboard como empleado o empresa.</p>
         <a class="btn-primary" routerLink="/login">Ingresar</a>
       </div>
     </div>
@@ -188,7 +192,7 @@
     <div class="care-intake-modal__body">
       <div class="care-intake-modal__intro">
         <h3>Completa tu contexto una sola vez</h3>
-        <p>Esto ayuda a que la asesoría, el chat y las citas partan con información útil sobre tu situación.</p>
+        <p>Esto ayuda a que la asesoria, el chat y las citas partan con informacion util sobre tu situacion.</p>
       </div>
 
       <form class="intake-form" (ngSubmit)="saveEmployeeCareIntake()">
@@ -196,12 +200,32 @@
           <span class="intake-form__section-label">Sobre la persona cuidada</span>
           <div class="intake-form__row">
             <div class="form-field">
+              <label for="careReceiverFullName">Nombre de la persona cuidada</label>
+              <input id="careReceiverFullName" type="text" [(ngModel)]="employeeCareIntakeDraft.careReceiverFullName" name="careReceiverFullName" placeholder="Nombre y apellido" />
+            </div>
+            <div class="form-field">
+              <label for="careReceiverRut">RUT o identificacion</label>
+              <input id="careReceiverRut" type="text" [(ngModel)]="employeeCareIntakeDraft.careReceiverRut" name="careReceiverRut" placeholder="Ej. 12.345.678-9" />
+            </div>
+          </div>
+          <div class="intake-form__row">
+            <div class="form-field">
+              <label for="careReceiverBirthDate">Fecha de nacimiento</label>
+              <input id="careReceiverBirthDate" type="date" [(ngModel)]="employeeCareIntakeDraft.careReceiverBirthDate" name="careReceiverBirthDate" />
+            </div>
+            <div class="form-field">
+              <label for="careReceiverPhone">Telefono de contacto</label>
+              <input id="careReceiverPhone" type="tel" [(ngModel)]="employeeCareIntakeDraft.careReceiverPhone" name="careReceiverPhone" placeholder="+56 9 1234 5678" />
+            </div>
+          </div>
+          <div class="intake-form__row">
+            <div class="form-field">
               <label for="careType">Tipo de apoyo</label>
               <select id="careType" [(ngModel)]="employeeCareIntakeDraft.careType" name="careType">
-                <option value="guidance">Orientación general</option>
+                <option value="guidance">Orientacion general</option>
                 <option value="home_care">Cuidados a domicilio</option>
                 <option value="residential">Residencia</option>
-                <option value="nursing">Enfermería</option>
+                <option value="nursing">Enfermeria</option>
                 <option value="dementia">Demencia / Alzheimer</option>
                 <option value="respite">Apoyo temporal al cuidador</option>
               </select>
@@ -213,7 +237,13 @@
           </div>
           <div class="intake-form__row">
             <div class="form-field">
-              <label for="primaryCondition">Condición principal</label>
+              <label for="careReceiverHealthCoverage">Prevision o cobertura</label>
+              <input id="careReceiverHealthCoverage" type="text" [(ngModel)]="employeeCareIntakeDraft.careReceiverHealthCoverage" name="careReceiverHealthCoverage" placeholder="Ej. Fonasa, Isapre, seguro privado" />
+            </div>
+          </div>
+          <div class="intake-form__row">
+            <div class="form-field">
+              <label for="primaryCondition">Condicion principal</label>
               <input id="primaryCondition" type="text" [(ngModel)]="employeeCareIntakeDraft.primaryCondition" name="primaryCondition" placeholder="Ej. Parkinson, Alzheimer..." />
             </div>
             <div class="form-field">
@@ -229,14 +259,14 @@
         </div>
 
         <div class="intake-form__section">
-          <span class="intake-form__section-label">Ubicación y contexto</span>
+          <span class="intake-form__section-label">Ubicacion y contexto</span>
           <div class="intake-form__row">
             <div class="form-field">
               <label for="city">Ciudad o comuna</label>
               <input id="city" type="text" [(ngModel)]="employeeCareIntakeDraft.city" name="city" placeholder="Ej. Santiago, Providencia..." />
             </div>
             <div class="form-field">
-              <label for="postalCode">Código postal</label>
+              <label for="postalCode">Codigo postal</label>
               <input id="postalCode" type="text" [(ngModel)]="employeeCareIntakeDraft.postalCode" name="postalCode" />
             </div>
           </div>
@@ -250,14 +280,14 @@
           <span class="intake-form__section-label">Presupuesto y financiamiento</span>
           <div class="intake-form__row">
             <div class="form-field">
-              <label for="budgetMonthlyMax">Presupuesto mensual máximo</label>
+              <label for="budgetMonthlyMax">Presupuesto mensual maximo</label>
               <input id="budgetMonthlyMax" type="number" [(ngModel)]="employeeCareIntakeDraft.budgetMonthlyMax" name="budgetMonthlyMax" placeholder="CLP" />
             </div>
             <div class="form-field">
               <label for="funding">Financiamiento</label>
               <select id="funding" [(ngModel)]="employeeCareIntakeDraft.funding" name="funding">
                 <option value="self_funder">Pago privado</option>
-                <option value="local_authority">Ayuda pública</option>
+                <option value="local_authority">Ayuda publica</option>
               </select>
             </div>
           </div>
@@ -294,8 +324,8 @@
               <input id="caregiverName" type="text" [(ngModel)]="employeeCareIntakeDraft.caregiverName" name="caregiverName" />
             </div>
             <div class="form-field">
-              <label for="caregiverRelation">Relación con la persona cuidada</label>
-              <input id="caregiverRelation" type="text" [(ngModel)]="employeeCareIntakeDraft.caregiverRelation" name="caregiverRelation" placeholder="Ej. Hijo/a, cónyuge..." />
+              <label for="caregiverRelation">Relacion con la persona cuidada</label>
+              <input id="caregiverRelation" type="text" [(ngModel)]="employeeCareIntakeDraft.caregiverRelation" name="caregiverRelation" placeholder="Ej. Hijo/a, conyuge..." />
             </div>
           </div>
           <div class="form-field">

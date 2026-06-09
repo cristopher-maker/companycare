@@ -77,6 +77,14 @@ type AppointmentRow = {
   meeting_space_name?: string | null;
 };
 
+type AppointmentConfirmation = {
+  kind: 'Videollamada' | 'Llamada';
+  topic: string;
+  scheduledFor: string;
+  phone: string | null;
+  notes: string | null;
+};
+
 type CareTaskStatus = 'pending' | 'in_progress' | 'done';
 
 type CareTaskRow = {
@@ -139,6 +147,11 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public appointmentTime = '';
   public appointmentKind: 'Videollamada' | 'Llamada' = 'Videollamada';
   public appointmentNotes = '';
+  public appointmentPhone = '';
+  public appointmentConfirmation: AppointmentConfirmation | null = null;
+  public appointmentDetailsStep = false;
+  public bookedAppointmentSlots = new Set<string>();
+  public loadingAppointmentSlots = false;
   public taskDraftTitle = '';
   public taskDraftDueDate = '';
   public readonly minAppointmentDate = new Date().toISOString().slice(0, 10);
@@ -243,6 +256,29 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     return this.appointmentKind === 'Llamada' ? this.appointmentCallSlots : this.appointmentVideoSlots;
   }
 
+  public get visibleAppointmentTimeSlots(): string[] {
+    return this.appointmentTimeSlots.filter((slot) => !this.isAppointmentSlotPast(slot));
+  }
+
+  public isAppointmentSlotBooked(slot: string): boolean {
+    return this.bookedAppointmentSlots.has(slot);
+  }
+
+  public isAppointmentSlotPast(slot: string): boolean {
+    if (!this.appointmentDate) return false;
+    const scheduledFor = new Date(`${this.appointmentDate}T${slot}:00`);
+    return Number.isNaN(scheduledFor.getTime()) || scheduledFor.getTime() <= Date.now();
+  }
+
+  public isAppointmentSlotUnavailable(slot: string): boolean {
+    return this.isAppointmentSlotBooked(slot) || this.isAppointmentSlotPast(slot);
+  }
+
+  public appointmentSlotStatus(slot: string): string | null {
+    if (this.isAppointmentSlotBooked(slot)) return 'Ocupado';
+    return null;
+  }
+
   public get canScheduleAppointment(): boolean {
     return this.channel === 'Videollamada' || this.channel === 'Llamada';
   }
@@ -266,7 +302,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public get advisorPrimaryButtonLabel(): string {
     if (this.advisorStep < this.totalAdvisorSteps) return 'Continuar';
     if (this.channel === 'Chat') return this.loading ? 'Creando chat...' : 'Iniciar chat';
-    return this.loading ? 'Agendando...' : `Agendar ${this.channel === 'Videollamada' ? 'videollamada' : 'llamada'}`;
+    return this.loading ? 'Confirmando...' : `Confirmar ${this.channel === 'Videollamada' ? 'videollamada' : 'llamada'}`;
   }
 
   public get advisorVisualTitle(): string {
@@ -403,11 +439,14 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
   public selectChannel(channel: SupportChannel): void {
     this.channel = channel;
+    this.appointmentConfirmation = null;
+    this.appointmentDetailsStep = false;
     if (channel === 'Videollamada' || channel === 'Llamada') {
       this.appointmentKind = channel;
       if (this.appointmentTime && !this.appointmentTimeSlots.includes(this.appointmentTime)) {
         this.appointmentTime = '';
       }
+      void this.loadBookedAppointmentSlots();
     }
   }
 
@@ -416,12 +455,21 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   }
 
   public previousAdvisorStep(): void {
+    if (this.advisorStep === 2 && this.appointmentDetailsStep) {
+      this.appointmentDetailsStep = false;
+      return;
+    }
+
     this.advisorStep = Math.max(1, this.advisorStep - 1);
   }
 
   public async advanceAdvisorStep(): Promise<void> {
     if (this.advisorStep < this.totalAdvisorSteps) {
       if (!this.canAdvanceFromCurrentStep()) return;
+      if (this.advisorStep === 2 && this.canScheduleAppointment && !this.appointmentDetailsStep) {
+        this.appointmentDetailsStep = true;
+        return;
+      }
       this.advisorStep += 1;
       return;
     }
@@ -437,14 +485,22 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public onAppointmentKindChange(kind: 'Videollamada' | 'Llamada'): void {
     this.appointmentKind = kind;
     this.channel = kind;
+    this.appointmentDetailsStep = false;
     if (this.appointmentTime && !this.appointmentTimeSlots.includes(this.appointmentTime)) {
       this.appointmentTime = '';
     }
+    void this.loadBookedAppointmentSlots();
   }
 
   public onAppointmentDateChange(value: string | null | undefined): void {
     this.appointmentDate = value ? String(value).slice(0, 10) : '';
     this.appointmentTime = '';
+    this.appointmentDetailsStep = false;
+    void this.loadBookedAppointmentSlots();
+  }
+
+  public dismissAppointmentConfirmation(): void {
+    this.appointmentConfirmation = null;
   }
 
   public appointmentStatusLabel(status: AppointmentStatus): string {
@@ -631,6 +687,20 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       return;
     }
 
+    const phone = this.appointmentPhone.trim();
+    if (this.appointmentKind === 'Llamada' && !phone) {
+      alert('Ingresa un telefono de contacto para la llamada.');
+      return;
+    }
+
+    await this.loadBookedAppointmentSlots();
+    if (this.isAppointmentSlotBooked(this.appointmentTime)) {
+      alert('Ese horario ya fue reservado. Elige otra hora.');
+      this.appointmentTime = '';
+      this.appointmentDetailsStep = false;
+      return;
+    }
+
     const scheduledFor = new Date(`${this.appointmentDate}T${this.appointmentTime}:00`);
     if (Number.isNaN(scheduledFor.getTime()) || scheduledFor.getTime() <= Date.now()) {
       alert('La cita debe quedar agendada en una fecha futura.');
@@ -639,7 +709,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
     this.loading = true;
     try {
-      const requestSummary = this.details.trim() || `Solicitud para ${this.appointmentKind.toLowerCase()}`;
+      const notes = this.buildAppointmentNotes(phone);
+      const requestSummary = this.details.trim() || this.appointmentNotes.trim() || `Solicitud para ${this.appointmentKind.toLowerCase()}`;
       const { data: requestRow, error: requestError } = await this.supabase.client
         .from('care_requests')
         .insert({
@@ -664,7 +735,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
           expert_id: null,
           kind: this.appointmentKind,
           scheduled_for: scheduledFor.toISOString(),
-          notes: this.appointmentNotes.trim() || this.details.trim() || null,
+          notes,
           created_by: user.id,
         })
         .select('id')
@@ -678,22 +749,72 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         }
       }
 
+      this.appointmentConfirmation = {
+        kind: this.appointmentKind,
+        topic: this.topic,
+        scheduledFor: scheduledFor.toISOString(),
+        phone: this.appointmentKind === 'Llamada' ? phone : null,
+        notes,
+      };
       this.appointmentDate = '';
       this.appointmentTime = '';
       this.appointmentNotes = '';
+      this.appointmentPhone = '';
+      this.appointmentDetailsStep = false;
       this.details = '';
       this.advisorStep = 1;
       await this.loadEmployeeAppointments();
-      await this.router.navigate(['/requests']);
     } catch (err: any) {
-      alert(err?.message ?? 'No se pudo agendar la hora.');
+      const message = typeof err?.message === 'string' ? err.message : '';
+      if (message.includes('uq_appointments_active_kind_slot') || message.includes('duplicate key')) {
+        alert('Ese horario acaba de ser reservado. Elige otra hora.');
+        await this.loadBookedAppointmentSlots();
+        this.appointmentTime = '';
+        this.appointmentDetailsStep = false;
+      } else {
+        alert(err?.message ?? 'No se pudo agendar la hora.');
+      }
     } finally {
       this.loading = false;
     }
   }
 
   public selectAppointmentTime(slot: string): void {
+    if (this.isAppointmentSlotUnavailable(slot)) return;
     this.appointmentTime = slot;
+    this.appointmentDetailsStep = false;
+  }
+
+  private async loadBookedAppointmentSlots(): Promise<void> {
+    this.bookedAppointmentSlots = new Set<string>();
+    if (!this.appointmentDate || !this.canScheduleAppointment) return;
+
+    this.loadingAppointmentSlots = true;
+    try {
+      const { data, error } = await this.supabase.client.rpc('get_booked_appointment_slots', {
+        target_date: this.appointmentDate,
+        target_kind: this.appointmentKind,
+      });
+
+      if (error) throw error;
+      const slots = ((data ?? []) as Array<{ slot?: string | null }>)
+        .map((row) => row.slot)
+        .filter((slot): slot is string => !!slot);
+      this.bookedAppointmentSlots = new Set(slots);
+
+      if (this.appointmentTime && this.bookedAppointmentSlots.has(this.appointmentTime)) {
+        this.appointmentTime = '';
+        this.appointmentDetailsStep = false;
+      }
+      if (this.appointmentTime && this.isAppointmentSlotPast(this.appointmentTime)) {
+        this.appointmentTime = '';
+        this.appointmentDetailsStep = false;
+      }
+    } catch {
+      this.bookedAppointmentSlots = new Set<string>();
+    } finally {
+      this.loadingAppointmentSlots = false;
+    }
   }
 
   public openMeeting(appointment: AppointmentRow): void {
@@ -718,7 +839,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.showContextSheet = false;
   }
 
-  public advisorSummaryValue(field: 'channel' | 'topic' | 'details' | 'date' | 'time'): string {
+  public advisorSummaryValue(field: 'channel' | 'topic' | 'details' | 'date' | 'time' | 'phone'): string {
     switch (field) {
       case 'channel':
         return this.channel;
@@ -730,9 +851,21 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         return this.appointmentDate || 'No seleccionado';
       case 'time':
         return this.appointmentTime || 'No seleccionado';
+      case 'phone':
+        return this.appointmentPhone.trim() || 'No ingresado';
       default:
         return '';
     }
+  }
+
+  private buildAppointmentNotes(phone: string): string | null {
+    const parts = [
+      this.appointmentKind === 'Llamada' && phone ? `Telefono de contacto: ${phone}` : '',
+      this.details.trim() ? `Contexto: ${this.details.trim()}` : '',
+      this.appointmentNotes.trim() ? `Notas: ${this.appointmentNotes.trim()}` : '',
+    ].filter(Boolean);
+
+    return parts.length ? parts.join('\n') : null;
   }
 
   public async sendMessage(): Promise<void> {
@@ -1064,6 +1197,34 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
     if (this.advisorStep === 2 && this.canScheduleAppointment && (!this.appointmentDate || !this.appointmentTime)) {
       alert('Selecciona día y hora para continuar con la reserva.');
+      return false;
+    }
+
+    if (this.advisorStep === 2 && this.canScheduleAppointment && this.isAppointmentSlotPast(this.appointmentTime)) {
+      alert('Ese horario ya paso. Elige una hora futura.');
+      this.appointmentTime = '';
+      this.appointmentDetailsStep = false;
+      return false;
+    }
+
+    if (this.advisorStep === 2 && this.canScheduleAppointment && this.isAppointmentSlotBooked(this.appointmentTime)) {
+      alert('Ese horario ya fue reservado. Elige otra hora.');
+      this.appointmentTime = '';
+      this.appointmentDetailsStep = false;
+      return false;
+    }
+
+    if (this.advisorStep === 2 && this.canScheduleAppointment && !this.appointmentDetailsStep) {
+      return true;
+    }
+
+    if (this.advisorStep === 2 && this.channel === 'Llamada' && this.appointmentDetailsStep && !this.appointmentPhone.trim()) {
+      alert('Ingresa un telefono de contacto para la llamada.');
+      return false;
+    }
+
+    if (this.advisorStep === 2 && this.channel === 'Llamada' && this.appointmentDetailsStep && !this.details.trim()) {
+      alert('Agrega el contexto de la llamada para que el experto llegue preparado.');
       return false;
     }
 
@@ -1828,7 +1989,9 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         try {
           const payload = await context.json();
           if (payload?.error) {
-            return { error: String(payload.error) };
+            const detail = payload?.detail ? ` ${String(payload.detail)}` : '';
+            const code = payload?.code ? ` (${String(payload.code)})` : '';
+            return { error: `${String(payload.error)}${code}${detail}` };
           }
         } catch {
           try {

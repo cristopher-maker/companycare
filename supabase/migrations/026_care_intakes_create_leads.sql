@@ -77,6 +77,7 @@ begin
     comuna,
     dependencia,
     presupuesto,
+    telefono,
     estado
   )
   values (
@@ -86,6 +87,7 @@ begin
     city,
     dependency,
     budget,
+    nullif(trim(coalesce(new.payload #>> '{care_receiver,phone}', '')), ''),
     'nuevo'
   );
 
@@ -105,6 +107,7 @@ insert into public.leads (
   comuna,
   dependencia,
   presupuesto,
+  telefono,
   estado,
   created_at,
   updated_at
@@ -120,6 +123,7 @@ select
       then (ci.payload #>> '{budget,monthly_max}')::numeric
     else null
   end,
+  nullif(trim(coalesce(ci.payload #>> '{care_receiver,phone}', '')), ''),
   'nuevo',
   ci.created_at,
   ci.updated_at

@@ -12,6 +12,17 @@
     <span>{{ error }}</span>
   </div>
 
+  <div *ngIf="!loading && success" class="company-payment-return is-success" role="status">
+    <mat-icon>check_circle</mat-icon>
+    <div>
+      <strong>Empleado invitado</strong>
+      <span>{{ success }}</span>
+    </div>
+    <button type="button" (click)="dismissSuccess()" aria-label="Cerrar aviso">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
   <div *ngIf="!loading && !error && !company" class="company-state">
     <mat-icon>business</mat-icon>
     <h3>No se encontro la empresa</h3>
@@ -139,6 +150,52 @@
           <small>{{ item.detail }}</small>
         </article>
       </div>
+
+      <section class="company-subpanel company-intake-panel">
+        <div class="company-panel__header">
+          <div>
+            <h2>Fichas de cuidado</h2>
+            <p>{{ careIntakes.length }} fichas completadas por empleados de {{ company.name }}.</p>
+          </div>
+        </div>
+
+        <div class="company-table-wrap">
+          <table class="company-table">
+            <thead>
+              <tr>
+                <th>Persona cuidada</th>
+                <th>Empleado</th>
+                <th>Contexto</th>
+                <th>Actualizada</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let intake of careIntakes">
+                <td>
+                  <strong>{{ careIntakeReceiverName(intake) }}</strong>
+                  <small>{{ careIntakeReceiverRut(intake) }} - {{ careIntakeAge(intake) }} anos</small>
+                </td>
+                <td>
+                  <strong>{{ careIntakeEmployee(intake)?.full_name || 'Usuario sin nombre' }}</strong>
+                  <small>{{ careIntakeEmployee(intake)?.email || 'Sin email' }}</small>
+                </td>
+                <td>
+                  <strong>{{ careIntakeCondition(intake) }}</strong>
+                  <small>{{ careIntakeCity(intake) }} - {{ careIntakeDependency(intake) }}</small>
+                </td>
+                <td>{{ (intake.updated_at || intake.created_at) | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="company-table__actions">
+                  <button type="button" (click)="openIntakeModal(intake)">Ver ficha</button>
+                </td>
+              </tr>
+              <tr *ngIf="careIntakes.length === 0">
+                <td colspan="5" class="company-empty">Aun no hay fichas completadas.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <article class="company-plan-summary">
         <div>
@@ -457,6 +514,74 @@
           </button>
         </footer>
       </form>
+    </div>
+  </div>
+
+  <div *ngIf="selectedIntake" class="company-modal-backdrop" (click)="closeIntakeModal()">
+    <div class="company-modal company-modal--intake" (click)="$event.stopPropagation()">
+      <header>
+        <h2>Ficha de cuidado</h2>
+        <button type="button" (click)="closeIntakeModal()" aria-label="Cerrar ficha">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+      <div class="company-modal__body company-intake-detail">
+        <section>
+          <span class="company-kicker">Persona cuidada</span>
+          <h3>{{ careIntakeReceiverName(selectedIntake) }}</h3>
+          <div class="company-intake-detail__grid">
+            <div>
+              <span>RUT</span>
+              <strong>{{ careIntakeReceiverRut(selectedIntake) }}</strong>
+            </div>
+            <div>
+              <span>Edad</span>
+              <strong>{{ careIntakeAge(selectedIntake) }}</strong>
+            </div>
+            <div>
+              <span>Telefono</span>
+              <strong>{{ careIntakeReceiverPhone(selectedIntake) }}</strong>
+            </div>
+            <div>
+              <span>Cobertura</span>
+              <strong>{{ careIntakeHealthCoverage(selectedIntake) }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <span class="company-kicker">Contexto de cuidado</span>
+          <div class="company-intake-detail__grid">
+            <div>
+              <span>Condicion principal</span>
+              <strong>{{ careIntakeCondition(selectedIntake) }}</strong>
+            </div>
+            <div>
+              <span>Dependencia</span>
+              <strong>{{ careIntakeDependency(selectedIntake) }}</strong>
+            </div>
+            <div>
+              <span>Comuna</span>
+              <strong>{{ careIntakeCity(selectedIntake) }}</strong>
+            </div>
+            <div>
+              <span>Red de apoyo</span>
+              <strong>{{ careIntakeSupportNetwork(selectedIntake) }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <span class="company-kicker">Empleado responsable</span>
+          <h3>{{ careIntakeCaregiver(selectedIntake) }}</h3>
+          <p>{{ careIntakeEmployee(selectedIntake)?.email || 'Sin email asociado' }}</p>
+        </section>
+
+        <section>
+          <span class="company-kicker">Notas</span>
+          <p>{{ careIntakeNotes(selectedIntake) }}</p>
+        </section>
+      </div>
     </div>
   </div>
 

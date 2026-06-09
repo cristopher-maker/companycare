@@ -22,6 +22,7 @@ export class AuthService {
   public readonly session$: Observable<Session | null> = this.sessionSubject.asObservable();
 
   private readonly pendingRegistrationKey = 'companycare:pendingRegistration:v1';
+  private pendingRegistrationPromise: Promise<void> | null = null;
 
   constructor(private readonly supabase: SupabaseService) {
     void this.initSessionTracking();
@@ -135,18 +136,27 @@ export class AuthService {
   }
 
   public async completePendingRegistrationIfAny(): Promise<void> {
+    if (this.pendingRegistrationPromise) {
+      return this.pendingRegistrationPromise;
+    }
+
     const pending = this.loadPendingRegistration();
     if (!pending) return;
 
-    try {
+    this.pendingRegistrationPromise = (async () => {
       await this.completeRegistration({
         role: pending.role,
         fullName: pending.fullName,
         companyName: pending.companyName,
         companyTaxId: pending.companyTaxId,
       });
-    } finally {
       this.clearPendingRegistration();
+    })();
+
+    try {
+      await this.pendingRegistrationPromise;
+    } finally {
+      this.pendingRegistrationPromise = null;
     }
   }
 

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -16,11 +16,14 @@ type DashboardToast = { id: number; tone: ToastTone; message: string };
 @Component({
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.component.html',
-  styleUrl: './admin-dashboard.component.scss'
+  styleUrl: './admin-dashboard.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   @Input() hideWorkflowConfig = false;
   @Input() companyConfigMode = false;
+
+  private cdr: ChangeDetectorRef;
 
   // Controla qué tabla/vista se está mostrando actualmente
   currentView: DashboardView = 'metricas';
@@ -57,6 +60,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   savingTarea = false;
   savingGasto = false;
   showGastoModal = false;
+  showSedeDetailModal = false;
+  selectedSedeForDetail: any = null;
+  selectedSedePatients: any[] = [];
   private toastCounter = 0;
   private readonly toastTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
   private confirmResolver: ((value: boolean) => void) | null = null;
@@ -106,7 +112,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   selectedLead: any = null;
   selectedLeadIntake: any = null;
 
-  sedeDraft: any = { id: null, nombre: '', ubicacion: '' };
+  sedeDraft: any = { id: null, nombre: '', ubicacion: '', tipo: 'residencia', direccion: '', region: '', telefono: '', email: '', encargadoNombre: '', encargadoTelefono: '', encargadoEmail: '', estado: 'activa', notas: '' };
   camaDraft: any = { db_id: null, resource_code: '', provider_id: '', care_type: 'Básico', status: 'Disponible', notes: '' };
   pacienteDraft: any = { id: null, first_name: '', last_name: '', document_id: '', emergency_contact_name: '', emergency_contact_phone: '', resource_id: null, monthly_fee: null, guarantor_name: '', guarantor_document_id: '', guarantor_email: '' };
   leadDraft: any = { id: null, nombre: '', comuna: '', dependencia: '', presupuesto: null };
@@ -604,8 +610,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private supabase: SupabaseService,
     private auth: AuthService,
-    private route: ActivatedRoute
-  ) {}
+    private route: ActivatedRoute,
+    cdr: ChangeDetectorRef
+  ) { this.cdr = cdr; }
 
   async ngOnInit() {
     if (this.companyConfigMode) {
@@ -630,46 +637,48 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     }
     this.toastTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
     this.toastTimeouts.clear();
+    if (this.reloadTimeout) clearTimeout(this.reloadTimeout);
     if (this.confirmResolver) {
       this.confirmResolver(false);
       this.confirmResolver = null;
     }
   }
 
+  private reloadTimeout: ReturnType<typeof setTimeout> | null = null;
+
   setupRealtimeSubscriptions() {
     // Suscribirse a cambios en Leads para la misma empresa
     this.realtimeChannel = this.supabase.client
       .channel('leads-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
-        // Recargamos los datos para reflejar el estado actual
-        this.loadData();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+        // Debounce: evitar múltiples recargas en cambios rápidos
+        if (this.reloadTimeout) clearTimeout(this.reloadTimeout);
+        this.reloadTimeout = setTimeout(() => {
+          this.loadData();
+          this.reloadTimeout = null;
+        }, 800);
       })
       .subscribe();
   }
 
   async loadData() {
     this.loading = true;
+    this.cdr.markForCheck();
     try {
       // 1. Obtener la sesión y usuario actual
       const { data: sessionData } = await this.supabase.client.auth.getSession();
       const userId = sessionData?.session?.user?.id;
       if (!userId) return;
 
-      const { data: profileData } = await this.supabase.client
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
-      this.profileRole = (profileData?.role as string | undefined) ?? null;
+      // Profile + company_members corren en paralelo (dependen de userId)
+      const [profileResult, memberResult] = await Promise.all([
+        this.supabase.client.from('profiles').select('role').eq('id', userId).maybeSingle(),
+        this.supabase.client.from('company_members').select('company_id').eq('user_id', userId).maybeSingle()
+      ]);
 
-      // 2. Obtener el company_id del usuario (para mostrar solo lo de su empresa)
-      const { data: memberData } = await this.supabase.client
-        .from('company_members')
-        .select('company_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      const companyId = memberData?.company_id;
+      this.profileRole = (profileResult.data?.role as string | undefined) ?? null;
+
+      const companyId = memberResult.data?.company_id;
       if (!companyId) {
         this.companyId = null;
         this.hasActivePlan = false;
@@ -680,56 +689,60 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       }
       this.companyId = companyId;
 
-      const { data: activeSubscription } = await this.supabase.client
-        .from('company_subscriptions')
-        .select('plan_tier,status,current_period_end')
-        .eq('company_id', companyId)
-        .eq('status', 'active')
-        .or(`current_period_end.is.null,current_period_end.gte.${new Date().toISOString()}`)
-        .order('current_period_end', { ascending: false, nullsFirst: false })
-        .limit(1)
-        .maybeSingle();
-      this.hasActivePlan = !!activeSubscription;
-      this.activePlanTier = (activeSubscription?.plan_tier as string | undefined) ?? null;
+      // 2. Todas las queries de datos corren en paralelo una vez que tenemos companyId
+      const [
+        subscriptionResult,
+        providersResult,
+        patientsResult,
+        contractsResult,
+        invoicesResult,
+        gastosResult,
+        resourcesResult,
+        leadsResult,
+        membersResult
+      ] = await Promise.all([
+        this.supabase.client
+          .from('company_subscriptions')
+          .select('plan_tier,status,current_period_end')
+          .eq('company_id', companyId)
+          .eq('status', 'active')
+          .or(`current_period_end.is.null,current_period_end.gte.${new Date().toISOString()}`)
+          .order('current_period_end', { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle(),
+        this.supabase.client.from('providers').select('*').eq('company_id', companyId),
+        this.supabase.client.from('patients').select('*').eq('company_id', companyId),
+        this.supabase.client.from('patient_contracts').select('*').eq('company_id', companyId),
+        this.supabase.client.from('patient_invoices').select('*').eq('company_id', companyId),
+        this.supabase.client.from('company_expenses').select('*').eq('company_id', companyId).order('expense_date', { ascending: false }),
+        this.supabase.client.from('care_resources').select('*, provider:providers(id, name, area), patient:patients(id, first_name, last_name)').eq('company_id', companyId),
+        this.supabase.client.from('leads').select('*').eq('company_id', companyId),
+        this.supabase.client.from('company_members').select('user_id').eq('company_id', companyId)
+      ]);
+
+      // Procesar resultados
+      this.hasActivePlan = !!subscriptionResult.data;
+      this.activePlanTier = (subscriptionResult.data?.plan_tier as string | undefined) ?? null;
 
       if (this.isPlanLockedView(this.currentView)) {
         this.currentView = 'metricas';
       }
 
-      // Cargar sedes (providers) de la empresa para que aparezcan en el selector, 
-      // incluso si aún no tienen camas asignadas.
-      const { data: providersData } = await this.supabase.client
-        .from('providers')
-        .select('*')
-        .eq('company_id', companyId);
-      this.rawProviders = providersData || [];
+      this.rawProviders = providersResult.data || [];
+      this.pacientes = patientsResult.data || [];
 
-      // Cargar tabla de Pacientes
-      const { data: patientsData } = await this.supabase.client.from('patients').select('*').eq('company_id', companyId);
-      this.pacientes = patientsData || [];
+      if (contractsResult.error && !this.isMissingRelationError(contractsResult.error, 'patient_contracts')) throw contractsResult.error;
+      this.patientContracts = contractsResult.data || [];
 
-      const { data: contractsData, error: contractsError } = await this.supabase.client
-        .from('patient_contracts')
-        .select('*')
-        .eq('company_id', companyId);
-      if (contractsError && !this.isMissingRelationError(contractsError, 'patient_contracts')) throw contractsError;
-      this.patientContracts = contractsData || [];
+      if (invoicesResult.error && !this.isMissingRelationError(invoicesResult.error, 'patient_invoices')) throw invoicesResult.error;
+      this.patientInvoices = invoicesResult.data || [];
 
-      const { data: invoicesData, error: invoicesError } = await this.supabase.client
-        .from('patient_invoices')
-        .select('*')
-        .eq('company_id', companyId);
-      if (invoicesError && !this.isMissingRelationError(invoicesError, 'patient_invoices')) throw invoicesError;
-      this.patientInvoices = invoicesData || [];
+      this.gastos = gastosResult.data || [];
 
-      const { data: gastosData } = await this.supabase.client.from('company_expenses').select('*').eq('company_id', companyId).order('expense_date', { ascending: false });
-      this.gastos = gastosData || [];
-
-      // Calcular balance financiero (Ingresos pagados vs Gastos totales)
+      // Procesar balance financiero
       this.totalIngresos = this.patientInvoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + Number(i.amount || 0), 0);
       this.totalGastos = this.gastos.reduce((sum, g) => sum + Number(g.amount || 0), 0);
 
-      // Procesar datos para el gráfico de gastos
       const gastosPorCategoria = this.gastos.reduce((acc, gasto) => {
         const category = gasto.category || 'Otros';
         acc[category] = (acc[category] || 0) + Number(gasto.amount || 0);
@@ -737,22 +750,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       }, {} as Record<string, number>);
 
       this.expensesChartLabels = Object.keys(gastosPorCategoria);
-      this.expensesChartDatasets = [
-        {
-          data: Object.values(gastosPorCategoria),
-          backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#3b82f6']
-        }
-      ];
+      this.expensesChartDatasets = [{
+        data: Object.values(gastosPorCategoria),
+        backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#3b82f6']
+      }];
 
-      // 3. Obtener los cupos/camas de la empresa junto a la info de su sede (provider)
-      const { data: resources } = await this.supabase.client
-        .from('care_resources')
-        .select('*, provider:providers(id, name, area), patient:patients(id, first_name, last_name)')
-        .eq('company_id', companyId);
-
-      const resArray = resources || [];
-
-      // 4. Mapear care_resources para la tabla "Camas y Vacantes"
+      // Procesar camas/sedes
+      const resArray = resourcesResult.data || [];
       this.camasDetalle = resArray.map(r => ({
         dbId: r.id,
         provider_id: r.provider_id,
@@ -760,159 +764,122 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         sede: (r.provider as any)?.name || r.location_label || 'Sede no especificada',
         tipo: r.care_type,
         estado: r.status,
-          paciente_id: r.patient_id,
-          paciente: r.patient ? `${r.patient.first_name} ${r.patient.last_name}` : '-'
+        paciente_id: r.patient_id,
+        paciente: r.patient ? `${r.patient.first_name} ${r.patient.last_name}` : '-'
       }));
 
-      // 5. Agrupar las camas por Proveedor/Sede para armar la tabla "Mis Sedes"
       const sedesMap = new Map<string, any>();
-      
-      // Inicializar el mapa con las sedes vacías
+      const pacientesPorProvider = new Map<string, Set<string>>();
+
       this.rawProviders.forEach(p => {
+        const bc = p.branch_status || 'activa';
         sedesMap.set(p.id, {
-          id: p.id,
-          nombre: p.name,
-          ubicacion: p.area || 'Sin ubicación',
-          camasTotales: 0,
-          camasDisponibles: 0
+          id: p.id, nombre: p.name, ubicacion: p.area || 'Sin ubicación',
+          tipo: p.type || 'Residencia', direccion: p.address || '', region: p.region || '',
+          telefono: p.phone || '', email: p.email || '',
+          encargadoNombre: p.encargado_name || '', encargadoTelefono: p.encargado_phone || '',
+          encargadoEmail: p.encargado_email || '', estadoSede: bc, notas: p.notes || '',
+          camasTotales: 0, camasDisponibles: 0, camasOcupadas: 0, pacientesCount: 0
         });
+        pacientesPorProvider.set(p.id, new Set());
       });
 
       resArray.forEach(r => {
         const provId = r.provider_id || r.location_label || 'unknown';
         if (!sedesMap.has(provId)) {
+          const bc = (r.provider as any)?.branch_status || 'activa';
           sedesMap.set(provId, {
-            id: provId,
-            nombre: (r.provider as any)?.name || r.location_label || 'Sede sin nombre',
+            id: provId, nombre: (r.provider as any)?.name || r.location_label || 'Sede sin nombre',
             ubicacion: (r.provider as any)?.area || 'Sin ubicación',
-            camasTotales: 0,
-            camasDisponibles: 0
+            tipo: (r.provider as any)?.type || 'Residencia', direccion: (r.provider as any)?.address || '',
+            region: (r.provider as any)?.region || '', telefono: (r.provider as any)?.phone || '',
+            email: (r.provider as any)?.email || '',
+            encargadoNombre: (r.provider as any)?.encargado_name || '',
+            encargadoTelefono: (r.provider as any)?.encargado_phone || '',
+            encargadoEmail: (r.provider as any)?.encargado_email || '', estadoSede: bc,
+            notas: (r.provider as any)?.notes || '', camasTotales: 0, camasDisponibles: 0,
+            camasOcupadas: 0, pacientesCount: 0
           });
         }
-        const sede = sedesMap.get(provId);
-        sede.camasTotales++;
-        if (r.status === 'Disponible') {
-          sede.camasDisponibles++;
+        const s = sedesMap.get(provId);
+        s.camasTotales++;
+        if (r.status === 'Disponible') s.camasDisponibles++;
+        if (r.status === 'Ocupada') s.camasOcupadas++;
+        if (r.patient_id) {
+          const set = pacientesPorProvider.get(provId) || new Set();
+          set.add(r.patient_id);
+          pacientesPorProvider.set(provId, set);
         }
       });
 
-      // Asignar estado a las sedes dependiendo de sus cupos
       this.sedes = Array.from(sedesMap.values()).map(s => {
         let estado = 'Normal';
-        
         if (s.camasTotales > 0 && s.camasDisponibles === 0) estado = 'Crítico';
         else if (s.camasTotales > 0 && (s.camasDisponibles / s.camasTotales) <= 0.3) estado = 'Atención';
-        
-        return { ...s, estado };
+        return { ...s, estado, pacientesCount: pacientesPorProvider.get(s.id)?.size || 0 };
       });
 
-      // 6. Cálculos dinámicos de estadísticas generales
       this.totalSedes = this.sedes.length;
       this.camasTotales = resArray.length;
       this.camasDisponibles = resArray.filter(r => r.status === 'Disponible').length;
       this.camasOcupadas = resArray.filter(r => r.status === 'Ocupada').length;
       this.camasEnMantenimiento = resArray.filter(r => r.status === 'En limpieza').length;
-      
-      this.porcentajeOcupacion = this.camasTotales > 0 
-        ? Number(((this.camasOcupadas / this.camasTotales) * 100).toFixed(1)) 
+      this.porcentajeOcupacion = this.camasTotales > 0
+        ? Number(((this.camasOcupadas / this.camasTotales) * 100).toFixed(1))
         : 0;
 
-      // Actualizar datos del gráfico
-      this.doughnutChartDatasets = [
-        {
-          data: [this.camasOcupadas, this.camasDisponibles, this.camasEnMantenimiento],
-          backgroundColor: ['#3b82f6', '#22c55e', '#f59e0b']
-        }
-      ];
+      this.doughnutChartDatasets = [{
+        data: [this.camasOcupadas, this.camasDisponibles, this.camasEnMantenimiento],
+        backgroundColor: ['#3b82f6', '#22c55e', '#f59e0b']
+      }];
 
-      // 7. Cargar Leads para el Kanban de Admisiones
-      const { data: leadsData, error: leadsError } = await this.supabase.client
-        .from('leads')
-        .select('*')
-        .eq('company_id', companyId);
-
-      if (leadsError) throw leadsError;
-      this.leads = leadsData || [];
-
-      // Inicializar/limpiar el contenedor de datos del kanban
+      // Procesar leads
+      this.leads = leadsResult.data || [];
       this.kanbanColumns.forEach(col => this.kanbanData[col.id] = []);
-
-      // Agrupar leads en sus columnas correspondientes
       this.leads.forEach(lead => {
         const status = lead.estado as LeadStatus;
-        if (this.kanbanData[status]) {
-          this.kanbanData[status].push(lead);
-        } else {
-          this.kanbanData['nuevo'].push(lead); // Fallback a 'nuevo' si el estado es inválido
-        }
+        if (this.kanbanData[status]) this.kanbanData[status].push(lead);
+        else this.kanbanData['nuevo'].push(lead);
       });
 
-      // Actualizar datos del gráfico de barras
       this.totalLeads = this.leads.length;
-      this.barChartDatasets = [
-        {
-          data: [
-            this.kanbanData['nuevo'].length,
-            this.kanbanData['contactado'].length,
-            this.kanbanData['evaluacion'].length,
-            this.kanbanData['match'].length,
-            this.kanbanData['cerrado'].length,
-            this.kanbanData['perdido'].length
-          ],
-          // Usamos colores similares a los badges de cada estado en el Kanban
-          backgroundColor: ['#f59e0b', '#3b82f6', '#94a3b8', '#3b82f6', '#22c55e', '#ef4444'],
-          borderRadius: 4
-        }
-      ];
+      this.barChartDatasets = [{
+        data: [
+          this.kanbanData['nuevo'].length, this.kanbanData['contactado'].length,
+          this.kanbanData['evaluacion'].length, this.kanbanData['match'].length,
+          this.kanbanData['cerrado'].length, this.kanbanData['perdido'].length
+        ],
+        backgroundColor: ['#f59e0b', '#3b82f6', '#94a3b8', '#3b82f6', '#22c55e', '#ef4444'],
+        borderRadius: 4
+      }];
 
-      // 8. Cargar Empleados para selectores
-      const { data: membersData, error: membersError } = await this.supabase.client
-        .from('company_members')
-        .select('user_id')
-        .eq('company_id', companyId);
-      
-      if (membersError) console.warn('No se pudieron cargar los empleados:', membersError.message);
-      const memberIds = Array.from(new Set((membersData || []).map((member: any) => member.user_id).filter(Boolean)));
+      // Procesar empleados
+      const memberIds = Array.from(new Set((membersResult.data || []).map((m: any) => m.user_id).filter(Boolean)));
       let profileMap = new Map<string, { full_name: string | null; email: string | null }>();
       if (memberIds.length > 0) {
         const { data: profilesData, error: profilesError } = await this.supabase.client
           .from('profiles')
           .select('id, full_name, email')
           .in('id', memberIds);
-        if (profilesError) {
-          console.warn('No se pudieron cargar los perfiles de empleados:', profilesError.message);
+        if (!profilesError) {
+          profileMap = new Map((profilesData || []).map((p: any) => [p.id, { full_name: p.full_name || null, email: p.email || null }]));
         }
-        profileMap = new Map(
-          (profilesData || []).map((profile: any) => [
-            profile.id,
-            { full_name: profile.full_name || null, email: profile.email || null }
-          ])
-        );
       }
       const employeeMap = new Map<string, { id: string; name: string; email: string; displayName: string }>();
-      (membersData || []).forEach((member: any) => {
+      (membersResult.data || []).forEach((member: any) => {
         const profile = profileMap.get(member.user_id);
         const fullName = profile?.full_name?.trim() || '';
         const email = profile?.email?.trim() || '';
         const inferredName = email ? email.split('@')[0].replace(/[._-]+/g, ' ').trim() : '';
         const resolvedName = fullName || inferredName;
-        const displayName = fullName
-          ? `${fullName}${email ? ' (' + email + ')' : ''}`
-          : (email || resolvedName || 'Empleado sin correo');
-
-        employeeMap.set(member.user_id, {
-          id: member.user_id,
-          name: resolvedName,
-          email,
-          displayName
-        });
+        const displayName = fullName ? `${fullName}${email ? ' (' + email + ')' : ''}` : (email || resolvedName || 'Empleado sin correo');
+        employeeMap.set(member.user_id, { id: member.user_id, name: resolvedName, email, displayName });
       });
       this.empleados = Array.from(employeeMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName, 'es'));
 
-      // 9. Cargar Tareas
+      // Cargar tareas
       const employeeIds = this.empleados.map(e => e.id);
       let tasksData: any[] = [];
-      
       if (employeeIds.length > 0) {
         const res = await this.supabase.client
           .from('care_tasks')
@@ -922,35 +889,30 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         tasksData = res.data || [];
         if (res.error) console.warn('Error cargando tareas:', res.error);
       }
-      this.tareas = tasksData || [];
+      this.tareas = tasksData;
       this.totalTareas = this.tareas.length;
-      this.tasksChartDatasets = [
-        {
-          data: [
-            this.tareas.filter(t => t.status === 'pending').length,
-            this.tareas.filter(t => t.status === 'in_progress').length,
-            this.tareas.filter(t => t.status === 'done').length
-          ],
-          backgroundColor: ['#f59e0b', '#3b82f6', '#22c55e']
-        }
-      ];
+      this.tasksChartDatasets = [{
+        data: [
+          this.tareas.filter(t => t.status === 'pending').length,
+          this.tareas.filter(t => t.status === 'in_progress').length,
+          this.tareas.filter(t => t.status === 'done').length
+        ],
+        backgroundColor: ['#f59e0b', '#3b82f6', '#22c55e']
+      }];
       this.buildOperationalSummary();
 
       if (this.tareas.length > 0) {
-        const { data: taskHistoryData, error: taskHistoryError } = await this.supabase.client
+        const { data: taskHistoryData } = await this.supabase.client
           .from('care_task_history')
           .select('*, author:profiles!changed_by(full_name, email)')
-          .in('task_id', this.tareas.map((task) => task.id))
+          .in('task_id', this.tareas.map(t => t.id))
           .order('created_at', { ascending: false })
           .limit(10);
-
-        if (taskHistoryError) {
-          console.warn('Error cargando historial de tareas:', taskHistoryError);
-        }
         this.taskHistory = taskHistoryData || [];
       } else {
         this.taskHistory = [];
       }
+
       await this.loadErpOperationalModules(companyId);
 
     } catch (error) {
@@ -958,6 +920,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     } finally {
       this.hasLoadedOnce = true;
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
   
@@ -1188,6 +1151,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.currentView = view;
     this.mobileNavOpen = false;
     this.clearSelectedEntity();
+    this.cdr.markForCheck();
   }
 
   toggleMobileNav() {
@@ -1419,9 +1383,23 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   openSedeModal(sede?: any) {
     if (!this.ensureOperationalAccess()) return;
     if (sede) {
-      this.sedeDraft = { id: sede.id, nombre: sede.nombre, ubicacion: sede.ubicacion };
+      this.sedeDraft = {
+        id: sede.id,
+        nombre: sede.nombre || '',
+        ubicacion: sede.ubicacion || '',
+        tipo: sede.tipo || 'residencia',
+        direccion: sede.direccion || '',
+        region: sede.region || '',
+        telefono: sede.telefono || '',
+        email: sede.email || '',
+        encargadoNombre: sede.encargadoNombre || '',
+        encargadoTelefono: sede.encargadoTelefono || '',
+        encargadoEmail: sede.encargadoEmail || '',
+        estado: sede.estadoSede || 'activa',
+        notas: sede.notas || ''
+      };
     } else {
-      this.sedeDraft = { id: null, nombre: '', ubicacion: '' };
+      this.sedeDraft = { id: null, nombre: '', ubicacion: '', tipo: 'residencia', direccion: '', region: '', telefono: '', email: '', encargadoNombre: '', encargadoTelefono: '', encargadoEmail: '', estado: 'activa', notas: '' };
     }
     this.showSedeModal = true;
   }
@@ -1431,19 +1409,28 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!this.companyId || !this.sedeDraft.nombre) return;
     this.savingSede = true;
     try {
+      const payload = {
+        name: this.sedeDraft.nombre,
+        area: this.sedeDraft.ubicacion,
+        type: this.sedeDraft.tipo === 'residencia' ? 'Residencia' : (this.sedeDraft.tipo === 'domicilio' ? 'Cuidador a domicilio' : 'Servicio médico'),
+        address: this.sedeDraft.direccion || null,
+        region: this.sedeDraft.region || null,
+        phone: this.sedeDraft.telefono || null,
+        email: this.sedeDraft.email || null,
+        encargado_name: this.sedeDraft.encargadoNombre || null,
+        encargado_phone: this.sedeDraft.encargadoTelefono || null,
+        encargado_email: this.sedeDraft.encargadoEmail || null,
+        branch_status: this.sedeDraft.estado || 'activa',
+        notes: this.sedeDraft.notas || null
+      };
       let error;
       if (this.sedeDraft.id) {
-        const res = await this.supabase.client.from('providers').update({
-          name: this.sedeDraft.nombre,
-          area: this.sedeDraft.ubicacion
-        }).eq('id', this.sedeDraft.id);
+        const res = await this.supabase.client.from('providers').update(payload).eq('id', this.sedeDraft.id);
         error = res.error;
       } else {
         const res = await this.supabase.client.from('providers').insert({
           company_id: this.companyId,
-          name: this.sedeDraft.nombre,
-          area: this.sedeDraft.ubicacion,
-          type: 'Residencia'
+          ...payload
         });
         error = res.error;
       }
@@ -1469,6 +1456,46 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       console.error('Error eliminando sede:', error);
       this.flash('Error al eliminar la sede. Verifica que no tenga camas asociadas.');
     }
+  }
+
+  openSedeDetail(sede: any) {
+    this.selectedSedeForDetail = sede;
+    const patientsInSede = this.pacientes.filter(p =>
+      this.camasDetalle.some(c => c.provider_id === sede.id && c.paciente_id === p.id)
+    );
+    this.selectedSedePatients = patientsInSede;
+    this.showSedeDetailModal = true;
+  }
+
+  closeSedeDetail(): void {
+    this.showSedeDetailModal = false;
+    this.selectedSedeForDetail = null;
+    this.selectedSedePatients = [];
+  }
+
+  getPatientBedCode(patientId: string): string | null {
+    const cama = this.camasDetalle.find(c => c.paciente_id === patientId);
+    return cama ? cama.id : null;
+  }
+
+  sedeTypeLabel(value: string): string {
+    const labels: Record<string, string> = {
+      residencia: 'Residencia',
+      domicilio: 'Cuidados a domicilio',
+      clinica: 'Clínica',
+      centro_dia: 'Centro de día',
+      otro: 'Otro'
+    };
+    return labels[value] || value || 'Residencia';
+  }
+
+  sedeStatusLabel(value: string): string {
+    const labels: Record<string, string> = {
+      activa: 'Activa',
+      inactiva: 'Inactiva',
+      mantencion: 'En mantención'
+    };
+    return labels[value] || value || 'Activa';
   }
 
   openCamaModal(cama?: any) {
@@ -1602,20 +1629,24 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!intake?.payload) return;
 
     const payload = intake.payload;
-    const careReceiverName = payload.care_receiver?.name?.trim() || '';
-    const caregiverName = payload.caregiver?.name?.trim() || '';
-    const caregiverRelation = payload.caregiver?.relation?.trim() || '';
+    const careReceiver = payload.care_receiver;
+    const caregiver = payload.caregiver;
+    const caregiverName = caregiver?.name?.trim() || '';
+    const caregiverRelation = caregiver?.relation?.trim() || '';
     const supportNetwork = payload.family_context?.support_network?.trim() || '';
     const budget = payload.budget?.monthly_max;
 
-    if (!this.pacienteDraft.first_name && careReceiverName) {
-      const receiverParts = careReceiverName.split(' ');
+    if (!this.pacienteDraft.first_name && careReceiver?.full_name) {
+      const receiverParts = careReceiver.full_name.trim().split(' ');
       this.pacienteDraft.first_name = receiverParts[0] || '';
       this.pacienteDraft.last_name = receiverParts.slice(1).join(' ') || '';
     }
 
+    this.pacienteDraft.document_id = careReceiver?.rut?.trim() || this.pacienteDraft.document_id;
+    this.pacienteDraft.emergency_contact_phone = this.pacienteDraft.emergency_contact_phone || careReceiver?.phone?.trim() || '';
     this.pacienteDraft.emergency_contact_name = caregiverName || caregiverRelation || supportNetwork || this.pacienteDraft.emergency_contact_name;
     this.pacienteDraft.guarantor_name = caregiverName || this.pacienteDraft.guarantor_name;
+    this.pacienteDraft.guarantor_document_id = careReceiver?.rut?.trim() || this.pacienteDraft.guarantor_document_id;
     this.pacienteDraft.monthly_fee = this.pacienteDraft.monthly_fee || budget || null;
   }
 

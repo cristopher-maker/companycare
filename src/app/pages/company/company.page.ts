@@ -118,6 +118,20 @@ type CompanyInvoice = {
   invoice_pdf_url: string | null;
 };
 
+type CareIntakeRow = {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  payload: any;
+  created_at: string | null;
+  updated_at: string | null;
+  care_receiver_full_name: string | null;
+  care_receiver_rut: string | null;
+  care_receiver_birth_date: string | null;
+  care_receiver_phone: string | null;
+  care_receiver_health_coverage: string | null;
+};
+
 @Component({
   selector: 'app-company',
   templateUrl: './company.page.html',
@@ -127,6 +141,7 @@ export class CompanyPage implements OnInit, OnDestroy {
   public loading = true;
   public saving = false;
   public error: string | null = null;
+  public success: string | null = null;
   public company: CompanyRow | null = null;
   public members: CompanyMember[] = [];
   public vouchers: VoucherRow[] = [];
@@ -136,6 +151,7 @@ export class CompanyPage implements OnInit, OnDestroy {
   public onboardingProjects: OnboardingProjectSummary[] = [];
   public subscriptions: CompanySubscription[] = [];
   public invoices: CompanyInvoice[] = [];
+  public careIntakes: CareIntakeRow[] = [];
   public requestsSummary = { total: 0, open: 0, resolved: 0 };
   public currentTab: CompanyTab = 'admin';
   public showInviteModal = false;
@@ -149,7 +165,7 @@ export class CompanyPage implements OnInit, OnDestroy {
   public contractDraft: CompanyContractDraft = this.createContractDraft();
   public requestingPaymentLink = false;
   public selectedPaymentPlan: 'empresa' | 'premium' = 'empresa';
-  public selectedIntake: any | null = null;
+  public selectedIntake: CareIntakeRow | null = null;
   public paymentReturnStatus: PaymentReturnStatus | null = null;
 
   public readonly paymentPlanOptions = [
@@ -262,6 +278,7 @@ export class CompanyPage implements OnInit, OnDestroy {
       { label: 'Empleados', value: String(this.members.length), detail: `${this.adminCount} admins RR.HH.` },
       { label: 'Vouchers', value: String(this.activeVoucherCount), detail: `${this.vouchers.length} creados` },
       { label: 'Documentos', value: String(this.documents.length), detail: `${this.documents.filter((doc) => doc.status === 'approved').length} aprobados` },
+      { label: 'Fichas', value: String(this.careIntakes.length), detail: `${this.careIntakesWithIdentityCount} con paciente` },
       { label: 'Onboarding', value: String(this.onboardingProjects.filter((project) => project.status === 'active').length), detail: `${this.onboardingProjects.length} proyectos` },
       { label: 'Solicitudes', value: String(this.requestsSummary.open), detail: `${this.requestsSummary.total} historicas` },
       { label: 'Pago', value: this.subscriptionStatusLabel(this.currentSubscription?.status || null), detail: this.planTierLabel(this.currentSubscription?.plan_tier || this.activeContract?.plan_tier || this.company?.plan_tier || null) },
@@ -286,6 +303,14 @@ export class CompanyPage implements OnInit, OnDestroy {
 
   public dismissPaymentReturn(): void {
     this.paymentReturnStatus = null;
+  }
+
+  public get careIntakesWithIdentityCount(): number {
+    return this.careIntakes.filter((intake) => this.careIntakeReceiverName(intake) !== 'Sin paciente').length;
+  }
+
+  public dismissSuccess(): void {
+    this.success = null;
   }
 
   private normalizePaymentReturnStatus(value: string | null): PaymentReturnStatus | null {
@@ -363,6 +388,7 @@ export class CompanyPage implements OnInit, OnDestroy {
         onboardingRes,
         subscriptionsRes,
         invoicesRes,
+        careIntakesRes,
       ] = await Promise.all([
         this.supabase.client.from('companies').select('*').eq('id', companyId).single(),
         this.supabase.client.from('company_members_view').select('*').eq('company_id', companyId),
@@ -400,6 +426,11 @@ export class CompanyPage implements OnInit, OnDestroy {
           .eq('company_id', companyId)
           .order('created_at', { ascending: false })
           .limit(5),
+        this.supabase.client
+          .from('care_intakes')
+          .select('id,company_id,employee_id,payload,created_at,updated_at,care_receiver_full_name,care_receiver_rut,care_receiver_birth_date,care_receiver_phone,care_receiver_health_coverage')
+          .eq('company_id', companyId)
+          .order('updated_at', { ascending: false }),
       ]);
 
       if (companyRes.error) throw companyRes.error;
@@ -428,6 +459,9 @@ export class CompanyPage implements OnInit, OnDestroy {
 
       if (invoicesRes.error) throw invoicesRes.error;
       this.invoices = (invoicesRes.data ?? []) as CompanyInvoice[];
+
+      if (careIntakesRes.error) throw careIntakesRes.error;
+      this.careIntakes = (careIntakesRes.data ?? []) as CareIntakeRow[];
       this.selectedPaymentPlan = this.normalizePlanTier(
         this.currentSubscription?.plan_tier || this.activeContract?.plan_tier || this.company?.plan_tier
       );
@@ -497,8 +531,10 @@ export class CompanyPage implements OnInit, OnDestroy {
   public async sendInvite(): Promise<void> {
     if (!this.company || !this.inviteEmail) return;
     this.saving = true;
+    this.error = null;
+    this.success = null;
     try {
-      const { error } = await this.supabase.client.functions.invoke('send-company-invitation', {
+      const { data, error } = await this.supabase.client.functions.invoke('send-company-invitation', {
         body: {
           companyId: this.company.id,
           email: this.inviteEmail.trim().toLowerCase(),
@@ -508,7 +544,11 @@ export class CompanyPage implements OnInit, OnDestroy {
       if (error) throw error;
       this.showInviteModal = false;
       this.inviteEmail = '';
-      // Aquí podrías mostrar una notificación de éxito
+      await this.refresh();
+      const linkedExistingUser = (data as { linkedExistingUser?: boolean } | null)?.linkedExistingUser === true;
+      this.success = linkedExistingUser
+        ? 'Empleado agregado a la empresa.'
+        : 'Invitacion enviada al empleado.';
     } catch (err: any) {
       this.error = await this.getFunctionErrorMessage(err, 'Error al invitar.');
     } finally {
@@ -883,5 +923,87 @@ export class CompanyPage implements OnInit, OnDestroy {
 
   public closeIntakeModal(): void {
     this.selectedIntake = null;
+  }
+
+  public openIntakeModal(intake: CareIntakeRow): void {
+    this.selectedIntake = intake;
+  }
+
+  public careIntakeEmployee(intake: CareIntakeRow | null): CompanyMember | null {
+    if (!intake?.employee_id) return null;
+    return this.members.find((member) => member.user_id === intake.employee_id) || null;
+  }
+
+  public careIntakeReceiverName(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return (
+      intake?.care_receiver_full_name ||
+      payload?.care_receiver?.full_name ||
+      payload?.care_receiver?.name ||
+      'Sin paciente'
+    );
+  }
+
+  public careIntakeReceiverRut(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return intake?.care_receiver_rut || payload?.care_receiver?.rut || payload?.care_receiver?.national_id || 'Sin RUT';
+  }
+
+  public careIntakeReceiverPhone(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return intake?.care_receiver_phone || payload?.care_receiver?.phone || 'Sin telefono';
+  }
+
+  public careIntakeHealthCoverage(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return intake?.care_receiver_health_coverage || payload?.care_receiver?.health_coverage || 'Sin cobertura';
+  }
+
+  public careIntakeAge(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    const age = payload?.care_receiver?.age ?? payload?.family?.age ?? null;
+    return age === null || age === undefined || age === '' ? 'Sin edad' : String(age);
+  }
+
+  public careIntakeCondition(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return payload?.care_receiver?.primary_condition || 'Sin condicion';
+  }
+
+  public careIntakeDependency(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return this.dependencyLevelLabel(payload?.care_receiver?.dependency_level);
+  }
+
+  public careIntakeCity(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return payload?.location?.city || payload?.location?.comuna || 'Sin comuna';
+  }
+
+  public careIntakeSupportNetwork(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return payload?.family_context?.support_network || 'Sin red de apoyo';
+  }
+
+  public careIntakeCaregiver(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    const name = payload?.caregiver?.name || this.careIntakeEmployee(intake)?.full_name || 'Sin nombre';
+    const relation = payload?.caregiver?.relation;
+    return relation ? `${name} (${relation})` : name;
+  }
+
+  public careIntakeNotes(intake: CareIntakeRow | null): string {
+    const payload = intake?.payload ?? {};
+    return payload?.notes || 'Sin notas relevantes.';
+  }
+
+  public dependencyLevelLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      low: 'Baja',
+      medium: 'Media',
+      high: 'Alta',
+      full: 'Dependencia total',
+    };
+    return value ? labels[value] || value : 'Sin dependencia';
   }
 }

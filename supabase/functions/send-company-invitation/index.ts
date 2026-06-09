@@ -103,50 +103,46 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (existingProfile?.id) {
-      const { data: existingMembership } = await supabaseAdmin
-        .from('company_members')
-        .select('company_id, user_id, member_role')
-        .eq('company_id', companyId)
-        .eq('user_id', existingProfile.id)
-        .maybeSingle();
+      return await linkExistingUserToCompany(supabaseAdmin, {
+        companyId,
+        email,
+        role,
+        invitedBy: user.id,
+        existingUserId: existingProfile.id,
+      });
+    }
 
-      if (existingMembership?.user_id) {
-        return jsonResponse({ error: 'Este usuario ya pertenece a la empresa.' }, 409);
-      }
+    const authUser = await findAuthUserByEmail(supabaseAdmin, email);
 
-      const { data: invitation, error: invitationError } = await supabaseAdmin
-        .from('company_invitations')
-        .insert({
-          company_id: companyId,
-          email,
-          role,
-          invited_by: user.id,
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-        })
-        .select('id, email, role, status, token, expires_at, accepted_at')
-        .single();
+    if (authUser?.id) {
+      const fullName =
+        authUser.user_metadata?.full_name ||
+        authUser.user_metadata?.name ||
+        authUser.email?.split('@')[0] ||
+        '';
 
-      if (invitationError || !invitation) {
-        return jsonResponse({ error: invitationError?.message || 'Could not create invitation.' }, 400);
-      }
-
-      const { error: membershipError } = await supabaseAdmin
-        .from('company_members')
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
         .upsert(
           {
-            company_id: companyId,
-            user_id: existingProfile.id,
-            member_role: role,
+            id: authUser.id,
+            email,
+            full_name: fullName,
           },
-          { onConflict: 'company_id,user_id' }
+          { onConflict: 'id' }
         );
 
-      if (membershipError) {
-        return jsonResponse({ error: membershipError.message }, 400);
+      if (profileError) {
+        return jsonResponse({ error: profileError.message }, 400);
       }
 
-      return jsonResponse({ invitation, linkedExistingUser: true });
+      return await linkExistingUserToCompany(supabaseAdmin, {
+        companyId,
+        email,
+        role,
+        invitedBy: user.id,
+        existingUserId: authUser.id,
+      });
     }
 
     const { data: invitation, error: invitationError } = await supabaseAdmin
@@ -197,4 +193,80 @@ function jsonResponse(body: unknown, status = 200): Response {
       'Content-Type': 'application/json',
     },
   });
+}
+
+async function linkExistingUserToCompany(
+  supabaseAdmin: any,
+  input: {
+    companyId: string;
+    email: string;
+    role: string;
+    invitedBy: string;
+    existingUserId: string;
+  }
+): Promise<Response> {
+  const { data: existingMembership } = await supabaseAdmin
+    .from('company_members')
+    .select('company_id, user_id, member_role')
+    .eq('company_id', input.companyId)
+    .eq('user_id', input.existingUserId)
+    .maybeSingle();
+
+  if (existingMembership?.user_id) {
+    return jsonResponse({ error: 'Este usuario ya pertenece a la empresa.' }, 409);
+  }
+
+  const { data: invitation, error: invitationError } = await supabaseAdmin
+    .from('company_invitations')
+    .insert({
+      company_id: input.companyId,
+      email: input.email,
+      role: input.role,
+      invited_by: input.invitedBy,
+      status: 'accepted',
+      accepted_at: new Date().toISOString(),
+    })
+    .select('id, email, role, status, token, expires_at, accepted_at')
+    .single();
+
+  if (invitationError || !invitation) {
+    return jsonResponse({ error: invitationError?.message || 'Could not create invitation.' }, 400);
+  }
+
+  const { error: membershipError } = await supabaseAdmin
+    .from('company_members')
+    .upsert(
+      {
+        company_id: input.companyId,
+        user_id: input.existingUserId,
+        member_role: input.role,
+      },
+      { onConflict: 'company_id,user_id' }
+    );
+
+  if (membershipError) {
+    return jsonResponse({ error: membershipError.message }, 400);
+  }
+
+  return jsonResponse({ invitation, linkedExistingUser: true });
+}
+
+async function findAuthUserByEmail(supabaseAdmin: any, email: string): Promise<any | null> {
+  const targetEmail = email.toLowerCase();
+  let page = 1;
+  const perPage = 1000;
+
+  while (page <= 10) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) return null;
+
+    const users = data?.users ?? [];
+    const match = users.find((candidate: any) => candidate.email?.toLowerCase() === targetEmail);
+    if (match) return match;
+    if (users.length < perPage) return null;
+
+    page += 1;
+  }
+
+  return null;
 }

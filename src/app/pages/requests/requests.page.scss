@@ -245,6 +245,15 @@ app-requests {
   font-weight: 600;
 }
 
+.request-card__details {
+  max-width: 760px;
+  margin-top: 10px;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .request-card__dot {
   width: 4px;
   height: 4px;

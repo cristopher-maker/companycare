@@ -1,35 +1,42 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Design tokens
+// Design tokens (Aligned with global brand identity)
 // ─────────────────────────────────────────────────────────────────────────────
  
 $navy:        #0f1c2e;
 $navy-mid:    #1a2d44;
-$orange:      #F47B4F;
-$orange-dark: #e06638;
+$orange:      #f27a5e; // Unified brand accent
+$orange-dark: #d85f46;
 $white:       #ffffff;
-$text-body:   #4a5568;
-$text-muted:  #8898aa;
-$border:      #e8edf3;
-$surface:     #f7f9fc;
+$text-body:   #2d3748;
+$text-muted:  #718096;
+$border:      #e2e8f0;
+$surface:     #f8fafc;
  
 $accent-map: (
-  'blue':  (#dbeafe, #1d4ed8, #eff6ff),
-  'green': (#dcfce7, #16a34a, #f0fdf4),
-  'amber': (#fef3c7, #d97706, #fffbeb),
+  'blue':  (#eff6ff, #2563eb),
+  'green': (#f0fdf4, #10b981),
+  'amber': (#fffbeb, #f59e0b),
 );
  
-───────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Page Layout
+// ─────────────────────────────────────────────────────────────────────────────
  
 .services-page {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: $text-body;
-  background: $white;
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+  padding-top: 80px;
 }
  
 .services-shell {
   max-width: 1160px;
   margin: 0 auto;
   padding: 0 2rem;
+  position: relative;
+  z-index: 1;
 }
  
 // ─────────────────────────────────────────────────────────────────────────────
@@ -41,11 +48,14 @@ $accent-map: (
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: $orange;
   margin-bottom: 1rem;
+  background: rgba($orange, 0.08);
+  padding: 6px 12px;
+  border-radius: 100px;
  
   &__dot {
     width: 6px;
@@ -56,10 +66,11 @@ $accent-map: (
   }
  
   &--light {
-    color: rgba($white, 0.65);
+    color: rgba($white, 0.85);
+    background: rgba($white, 0.12);
  
     .services-kicker__dot {
-      background: rgba($white, 0.65);
+      background: $white;
     }
   }
 }
@@ -69,19 +80,22 @@ $accent-map: (
 // ─────────────────────────────────────────────────────────────────────────────
  
 .services-section-head {
-  margin-bottom: 3rem;
+  margin-bottom: 3.5rem;
+  position: relative;
+  z-index: 10; // Ensure it stays on top of any background elements
  
   h2 {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    font-size: clamp(28px, 3.5vw, 38px);
+    font-size: clamp(28px, 3.2vw, 38px);
     font-weight: 800;
     color: $navy;
-    line-height: 1.15;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
     margin: 0 0 1rem;
   }
  
   p {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.7;
     color: $text-muted;
     max-width: 520px;
@@ -90,17 +104,18 @@ $accent-map: (
  
   &--split {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    align-items: end;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 3rem;
+    align-items: flex-end;
  
     p {
       max-width: 100%;
       margin-bottom: 0.25rem;
     }
  
-    @media (max-width: 700px) {
+    @media (max-width: 768px) {
       grid-template-columns: 1fr;
+      gap: 1.5rem;
     }
   }
 }
@@ -117,9 +132,9 @@ $accent-map: (
   font-size: 14px;
   font-weight: 600;
   border-radius: 8px;
-  padding: 13px 24px;
+  padding: 12px 24px;
   text-decoration: none;
-  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  transition: all 0.2s ease;
   cursor: pointer;
  
   &:active { transform: scale(0.98); }
@@ -127,51 +142,67 @@ $accent-map: (
   &--primary {
     background: $orange;
     color: $white;
-    border: 2px solid $orange;
+    border: 1px solid $orange;
+    box-shadow: 0 4px 12px rgba($orange, 0.15);
  
-    &:hover { background: $orange-dark; border-color: $orange-dark; }
+    &:hover {
+      background: $orange-dark;
+      border-color: $orange-dark;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba($orange, 0.25);
+    }
   }
  
   &--secondary {
     background: transparent;
     color: $navy;
-    border: 2px solid rgba($navy, 0.2);
+    border: 1px solid rgba($navy, 0.15);
  
-    &:hover { border-color: rgba($navy, 0.5); }
+    &:hover {
+      border-color: rgba($navy, 0.4);
+      background: rgba($navy, 0.02);
+      transform: translateY(-1px);
+    }
  
-    svg { transition: transform 0.15s; }
+    svg { transition: transform 0.2s ease; }
     &:hover svg { transform: translateX(2px); }
   }
  
   &--cta {
     background: $white;
     color: $navy;
-    border: 2px solid $white;
+    border: none;
     font-size: 15px;
-    padding: 15px 32px;
+    font-weight: 700;
+    padding: 14px 30px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
  
-    &:hover { background: rgba($white, 0.9); }
+    &:hover {
+      background: #f8fafc;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+    }
   }
 }
  
 // ─────────────────────────────────────────────────────────────────────────────
-// Hero
+// Hero Section
 // ─────────────────────────────────────────────────────────────────────────────
  
 .services-hero {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 4rem;
   align-items: center;
-  padding: 5rem 0 4rem;
+  padding: 4.5rem 0 5rem;
  
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
-    padding: 3rem 0 2.5rem;
+    gap: 3rem;
+    padding: 3rem 0;
   }
 }
  
-// Content side
 .services-hero__content {
   display: flex;
   flex-direction: column;
@@ -180,14 +211,16 @@ $accent-map: (
  
 .services-hero__title {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: clamp(36px, 4.5vw, 52px);
+  font-size: clamp(34px, 4vw, 48px);
   font-weight: 800;
   color: $navy;
-  line-height: 1.1;
-  margin: 0 0 1.25rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.5rem;
  
   em {
     font-style: italic;
+    font-weight: 800;
     color: $orange;
   }
 }
@@ -196,30 +229,29 @@ $accent-map: (
   font-size: 16px;
   line-height: 1.7;
   color: $text-muted;
-  max-width: 440px;
-  margin: 0 0 1.75rem;
+  max-width: 460px;
+  margin: 0 0 2rem;
 }
  
 .services-hero__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
  
   span {
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 12.5px;
+    font-weight: 600;
     padding: 6px 14px;
     border-radius: 100px;
-    border: 1.5px solid $border;
+    border: 1px solid rgba($border, 0.8);
     color: $text-body;
     background: $surface;
-    letter-spacing: 0.01em;
-    transition: border-color 0.15s, background 0.15s;
+    transition: all 0.2s ease;
  
     &:hover {
       border-color: $orange;
-      background: rgba($orange, 0.05);
+      background: rgba($orange, 0.04);
       color: $orange;
     }
   }
@@ -231,7 +263,7 @@ $accent-map: (
   flex-wrap: wrap;
 }
  
-// Media side
+// Media side (Clean Stacked Layout)
 .services-hero__media {
   display: flex;
   flex-direction: column;
@@ -243,14 +275,13 @@ $accent-map: (
   border-radius: 16px;
   overflow: hidden;
   aspect-ratio: 4 / 3;
+  box-shadow: 0 10px 30px rgba(15, 28, 46, 0.05);
+  border: 1px solid rgba($border, 0.8);
  
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    box-shadow: inset 0 0 0 1px rgba($navy, 0.08);
-    pointer-events: none;
+  &:hover {
+    .services-hero__photo {
+      transform: scale(1.02);
+    }
   }
 }
  
@@ -260,10 +291,6 @@ $accent-map: (
   object-fit: cover;
   display: block;
   transition: transform 0.4s ease;
- 
-  .services-hero__photo-wrap:hover & {
-    transform: scale(1.02);
-  }
 }
  
 .services-hero__photo-overlay {
@@ -272,7 +299,7 @@ $accent-map: (
   background: linear-gradient(
     to bottom,
     transparent 50%,
-    rgba($navy, 0.35) 100%
+    rgba($navy, 0.2) 100%
   );
   pointer-events: none;
 }
@@ -281,24 +308,26 @@ $accent-map: (
 .services-hero__summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0;
   background: $navy;
   border-radius: 12px;
   overflow: hidden;
   padding: 0;
   margin: 0;
+  box-shadow: 0 10px 25px rgba(15, 28, 46, 0.08);
 }
  
 .services-hero__metric {
   padding: 1.25rem 1.5rem;
   border-right: 1px solid rgba($white, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
  
   &:last-child { border-right: none; }
  
   dt {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 750;
     color: $white;
     line-height: 1;
     margin-bottom: 4px;
@@ -306,9 +335,11 @@ $accent-map: (
  
   dd {
     font-size: 11px;
-    color: rgba($white, 0.45);
+    color: rgba($white, 0.5);
     line-height: 1.4;
     margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
 }
  
@@ -317,14 +348,16 @@ $accent-map: (
 // ─────────────────────────────────────────────────────────────────────────────
  
 .services-grid-section {
-  padding: 5rem 0;
+  padding: 5.5rem 0;
   border-top: 1px solid $border;
 }
  
 .services-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 10;
  
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
@@ -335,14 +368,28 @@ $accent-map: (
   background: $white;
   border: 1px solid $border;
   border-radius: 16px;
-  padding: 2rem;
+  padding: 2.25rem;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+ 
+  &::after {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.5rem;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1;
+    color: rgba($navy, 0.05);
+    transition: opacity 0.2s ease;
+  }
  
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 32px rgba($navy, 0.08);
+    box-shadow: 0 12px 32px rgba(15, 28, 46, 0.06);
+    border-color: rgba($orange, 0.25);
   }
  
   &__top {
@@ -359,6 +406,7 @@ $accent-map: (
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.2s ease;
  
     mat-icon {
       font-size: 22px;
@@ -374,8 +422,7 @@ $accent-map: (
   }
  
   &__title {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 700;
     color: $navy;
     line-height: 1.25;
@@ -384,10 +431,11 @@ $accent-map: (
  
   &__description {
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.65;
     color: $text-muted;
     margin-bottom: 1.5rem;
     flex-grow: 1;
+    min-height: 72px;
   }
  
   &__divider {
@@ -444,16 +492,12 @@ $accent-map: (
  
   // Accent variants
   @each $name, $vals in $accent-map {
-    $color:   nth($vals, 1);
+    $bg:      nth($vals, 1);
     $text:    nth($vals, 2);
-    $bg:      nth($vals, 3);
  
     &--#{$name} {
-      background: $bg;
-      border-color: rgba($text, 0.15);
- 
       .service-card__icon {
-        background: rgba($text, 0.1);
+        background: $bg;
         mat-icon { color: $text; }
       }
  
@@ -462,11 +506,15 @@ $accent-map: (
       }
  
       .service-card__check {
-        background: rgba($text, 0.12);
+        background: $bg;
         color: $text;
       }
     }
   }
+  
+  &:nth-child(1)::after { content: '01'; }
+  &:nth-child(2)::after { content: '02'; }
+  &:nth-child(3)::after { content: '03'; }
 }
  
 // ─────────────────────────────────────────────────────────────────────────────
@@ -474,21 +522,22 @@ $accent-map: (
 // ─────────────────────────────────────────────────────────────────────────────
  
 .services-process {
-  padding: 5rem 0;
+  padding: 5.5rem 0;
   border-top: 1px solid $border;
 }
  
 .services-steps {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0;
+  gap: 1.25rem;
   position: relative;
+  z-index: 10;
  
   // Connecting line
   &::before {
     content: '';
     position: absolute;
-    top: 28px;
+    top: 32px;
     left: calc(12.5% + 1px);
     right: calc(12.5% + 1px);
     height: 1px;
@@ -502,50 +551,59 @@ $accent-map: (
     z-index: 0;
   }
  
-  @media (max-width: 700px) {
+  @media (max-width: 768px) {
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
  
     &::before { display: none; }
   }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 }
  
 .services-step {
-  padding: 0 1.5rem;
-  position: relative;
-  z-index: 1;
+  padding: 1.5rem;
+  border: 1px solid $border;
+  border-radius: 16px;
+  background: $white;
+  box-shadow: 0 4px 15px rgba(15, 28, 46, 0.01);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
  
   &__index {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 13px;
     font-weight: 700;
     color: $white;
     background: $orange;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 1.25rem;
-    letter-spacing: -0.02em;
     position: relative;
     z-index: 2;
   }
  
   &__title {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     color: $navy;
     margin-bottom: 0.5rem;
   }
  
   &__text {
-    font-size: 14px;
-    line-height: 1.65;
+    font-size: 13.5px;
+    line-height: 1.6;
     color: $text-muted;
     margin: 0;
+  }
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 28, 46, 0.04);
   }
 }
  
@@ -554,11 +612,13 @@ $accent-map: (
 // ─────────────────────────────────────────────────────────────────────────────
  
 .services-cta {
-  padding: 5rem 0;
+  padding: 4rem 0 5rem;
 }
  
 .services-cta__inner {
-  background: $navy;
+  background: 
+    radial-gradient(circle at 85% 15%, rgba($orange, 0.15), transparent 30%),
+    $navy;
   border-radius: 20px;
   padding: 4rem;
   display: flex;
@@ -567,8 +627,8 @@ $accent-map: (
   gap: 3rem;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 20px 40px rgba(15, 28, 74, 0.12);
  
-  // Decorative circle
   &::before {
     content: '';
     position: absolute;
@@ -577,19 +637,7 @@ $accent-map: (
     width: 300px;
     height: 300px;
     border-radius: 50%;
-    background: rgba($orange, 0.06);
-    pointer-events: none;
-  }
- 
-  &::after {
-    content: '';
-    position: absolute;
-    right: 60px;
-    bottom: -60px;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    background: rgba($orange, 0.04);
+    background: rgba($orange, 0.05);
     pointer-events: none;
   }
  
@@ -602,20 +650,22 @@ $accent-map: (
  
 .services-cta__copy {
   max-width: 520px;
+  position: relative;
+  z-index: 5;
  
   h2 {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    font-size: clamp(24px, 3vw, 32px);
+    font-size: clamp(26px, 3vw, 34px);
     font-weight: 800;
     color: $white;
     line-height: 1.2;
     margin: 0 0 1rem;
+    letter-spacing: -0.01em;
   }
  
   p {
     font-size: 15px;
     line-height: 1.7;
-    color: rgba($white, 0.55);
+    color: rgba($white, 0.65);
     margin: 0;
   }
 }
@@ -626,14 +676,15 @@ $accent-map: (
   align-items: flex-start;
   gap: 12px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 5;
 }
  
 .services-cta__note {
   font-size: 12px;
-  color: rgba($white, 0.58);
+  color: rgba($white, 0.5);
   text-align: left;
   margin: 0;
-  letter-spacing: 0.01em;
 }
  
 // ─────────────────────────────────────────────────────────────────────────────
@@ -643,295 +694,9 @@ $accent-map: (
 @media (prefers-reduced-motion: reduce) {
   .service-card,
   .services-hero__photo,
+  .services-step,
   .services-btn {
-    transition: none;
-  }
-}
-
-// Pulido visual: sección Oferta
-.services-grid-section {
-  position: relative;
-  padding: 5.5rem 0;
-  border-top: 0;
-}
-
-.services-grid-section::before {
-  content: '';
-  position: absolute;
-  inset: 1.5rem -2rem auto;
-  height: 280px;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 16% 18%, rgba($orange, 0.08), transparent 34%),
-    linear-gradient(135deg, rgba(#f7f9fc, 0.9), rgba(#fff7ed, 0.48));
-  pointer-events: none;
-}
-
-.services-grid-section .services-section-head {
-  position: relative;
-  z-index: 1;
-  margin-bottom: 2.5rem;
-}
-
-.services-grid-section .services-section-head h2 {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  max-width: 540px;
-  font-size: clamp(32px, 3.8vw, 46px);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-}
-
-.services-grid-section .services-section-head p {
-  max-width: 500px;
-  color: #6f7e8f;
-}
-
-.services-grid {
-  position: relative;
-  z-index: 1;
-  gap: 1.5rem;
-}
-
-.service-card {
-  position: relative;
-  min-height: 360px;
-  padding: 2rem;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 18px 42px rgba($navy, 0.06);
-}
-
-.service-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba($white, 0.74), rgba($white, 0));
-  pointer-events: none;
-}
-
-.service-card::after {
-  position: absolute;
-  top: 1.3rem;
-  right: 1.35rem;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1;
-  color: rgba($navy, 0.09);
-}
-
-.service-card:nth-child(1)::after {
-  content: '01';
-}
-
-.service-card:nth-child(2)::after {
-  content: '02';
-}
-
-.service-card:nth-child(3)::after {
-  content: '03';
-}
-
-.service-card__top,
-.service-card__title,
-.service-card__description,
-.service-card__divider,
-.service-card__label,
-.service-card__deliverables {
-  position: relative;
-  z-index: 1;
-}
-
-.service-card__top {
-  margin-bottom: 1.75rem;
-}
-
-.service-card__icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  box-shadow: 0 12px 24px rgba($navy, 0.06);
-}
-
-.service-card__title {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 21px;
-  letter-spacing: -0.02em;
-}
-
-.service-card__description {
-  min-height: 72px;
-}
-
-.service-card__divider {
-  background: linear-gradient(90deg, rgba($navy, 0.1), transparent);
-}
-
-.service-card__deliverables {
-  gap: 10px;
-}
-
-.service-card__deliverables li {
-  line-height: 1.4;
-}
-
-// Pulido visual: método y CTA
-.services-process {
-  position: relative;
-  padding: 5rem 0 3rem;
-  border-top: 0;
-}
-
-.services-process::before {
-  content: '';
-  position: absolute;
-  inset: 2rem -2rem 0;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 12% 16%, rgba($orange, 0.07), transparent 30%),
-    linear-gradient(180deg, rgba(#f7f9fc, 0.86), rgba(#ffffff, 0.98));
-  border: 1px solid rgba($border, 0.8);
-  pointer-events: none;
-}
-
-.services-process .services-section-head {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(280px, 0.9fr);
-  gap: 2rem;
-  align-items: end;
-  margin-bottom: 2.25rem;
-  padding: 0 2rem;
-}
-
-.services-process .services-section-head h2 {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: clamp(32px, 3.4vw, 44px);
-  letter-spacing: -0.03em;
-  line-height: 1.08;
-}
-
-.services-process .services-section-head p {
-  max-width: 520px;
-  margin-bottom: 0.2rem;
-}
-
-.services-steps {
-  position: relative;
-  z-index: 1;
-  gap: 1rem;
-  padding: 0 2rem 1rem;
-}
-
-.services-steps::before {
-  top: 34px;
-  left: calc(12.5% + 2rem);
-  right: calc(12.5% + 2rem);
-  height: 2px;
-  background: linear-gradient(90deg, rgba($orange, 0.26), rgba($navy, 0.12));
-}
-
-.services-step {
-  min-height: 190px;
-  padding: 1.25rem;
-  border: 1px solid rgba($border, 0.92);
-  border-radius: 18px;
-  background: rgba($white, 0.86);
-  box-shadow: 0 16px 34px rgba($navy, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.services-step:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 22px 42px rgba($navy, 0.08);
-}
-
-.services-step__index {
-  margin-bottom: 1.05rem;
-  box-shadow: 0 10px 22px rgba($orange, 0.22);
-}
-
-.services-step__title {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  letter-spacing: -0.02em;
-}
-
-.services-cta {
-  padding: 2rem 0 5rem;
-}
-
-.services-cta__inner {
-  border-radius: 24px;
-  padding: 3.5rem 4rem;
-  background:
-    radial-gradient(circle at 88% 4%, rgba($orange, 0.18), transparent 28%),
-    linear-gradient(135deg, #0f1c2e 0%, #14243a 58%, #1a2d44 100%);
-  box-shadow: 0 28px 58px rgba($navy, 0.18);
-}
-
-.services-cta__inner::before {
-  right: -44px;
-  top: -110px;
-  background: rgba($orange, 0.08);
-}
-
-.services-cta__inner::after {
-  right: 96px;
-  bottom: -86px;
-  background: rgba($white, 0.05);
-}
-
-.services-cta__copy h2 {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  max-width: 600px;
-  font-size: clamp(28px, 3vw, 40px);
-  letter-spacing: -0.03em;
-}
-
-.services-cta__copy p {
-  max-width: 560px;
-  color: rgba($white, 0.68);
-}
-
-.services-cta__actions {
-  position: relative;
-  z-index: 1;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.services-btn--cta {
-  min-width: 210px;
-  justify-content: center;
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.18);
-}
-
-@media (max-width: 900px) {
-  .services-process .services-section-head {
-    grid-template-columns: 1fr;
-    padding: 0 1.25rem;
-  }
-
-  .services-steps {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 0 1.25rem 1rem;
-  }
-
-  .services-steps::before {
-    display: none;
-  }
-}
-
-@media (max-width: 620px) {
-  .services-steps {
-    grid-template-columns: 1fr;
-  }
-
-  .services-cta__inner {
-    padding: 2.25rem;
+    transition: none !important;
+    transform: none !important;
   }
 }
