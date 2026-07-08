@@ -1,4 +1,4 @@
-﻿import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { UiService } from '../../core/services/ui.service';
@@ -224,7 +224,23 @@ export class CompanyPage implements OnInit, OnDestroy {
   }
 
   public get currentSubscription(): CompanySubscription | null {
-    return this.subscriptions.find((subscription) => subscription.status === 'active') || this.subscriptions[0] || null;
+    const activeSub = this.subscriptions.find((subscription) => subscription.status === 'active');
+    if (activeSub) return activeSub;
+
+    if (this.company?.plan_tier && this.company.plan_tier !== 'free') {
+      return {
+        id: 'pilot-active-sub',
+        company_id: this.company.id,
+        contract_id: null,
+        provider: 'manual',
+        plan_tier: this.company.plan_tier,
+        status: 'active',
+        payment_url: null,
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      };
+    }
+    return this.subscriptions[0] || null;
   }
 
   public get selectedPlanSubscription(): CompanySubscription | null {
@@ -232,7 +248,24 @@ export class CompanyPage implements OnInit, OnDestroy {
   }
 
   public get latestInvoice(): CompanyInvoice | null {
-    return this.invoices[0] || null;
+    if (this.invoices.length > 0) return this.invoices[0];
+
+    if (this.company?.plan_tier && this.company.plan_tier !== 'free') {
+      return {
+        id: 'pilot-active-inv',
+        company_id: this.company.id,
+        subscription_id: 'pilot-active-sub',
+        status: 'paid',
+        amount_due: 0,
+        amount_paid: 0,
+        currency: 'CLP',
+        due_at: null,
+        paid_at: new Date().toISOString(),
+        hosted_invoice_url: null,
+        invoice_pdf_url: null
+      };
+    }
+    return null;
   }
 
   public get paymentUrl(): string | null {
@@ -787,21 +820,32 @@ export class CompanyPage implements OnInit, OnDestroy {
     if (!this.company) return;
     this.requestingPaymentLink = true;
     try {
-      const { data, error } = await this.supabase.client.functions.invoke('mercadopago-create-preference', {
-        body: {
-          companyId: this.company.id,
-          planTier: this.selectedPaymentPlan,
-        },
-      });
+      // 1. Actualizar directamente el plan_tier de la empresa en Supabase
+      const { error: updateError } = await this.supabase.client
+        .from('companies')
+        .update({ plan_tier: this.selectedPaymentPlan })
+        .eq('id', this.company.id);
 
-      if (error) throw error;
-      const paymentUrl = (data as { paymentUrl?: string | null } | null)?.paymentUrl;
-      if (paymentUrl) {
-        window.open(paymentUrl, '_blank', 'noopener');
-      }
+      if (updateError) throw updateError;
+
+      // 2. Intentar registrar la suscripción activa en la base de datos (por si los RLS lo permiten)
+      await this.supabase.client
+        .from('company_subscriptions')
+        .insert({
+          company_id: this.company.id,
+          provider: 'manual',
+          plan_tier: this.selectedPaymentPlan,
+          status: 'active',
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        });
+
+      this.success = `¡Plan ${this.planTierLabel(this.selectedPaymentPlan)} activado exitosamente (Simulación Piloto)!`;
+      this.error = null;
       await this.refresh();
     } catch (err: any) {
-      this.error = `Error al generar link Mercado Pago: ${await this.describeFunctionError(err)}`;
+      this.error = `Error al simular activación de plan: ${err.message || 'Error desconocido'}`;
+      this.success = null;
     } finally {
       this.requestingPaymentLink = false;
       this.cdr.detectChanges();

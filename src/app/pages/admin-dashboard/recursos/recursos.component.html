@@ -1,0 +1,288 @@
+<div class="ad-page">
+
+  <!-- Page header -->
+  <div class="ad-page-header">
+    <div>
+      <div class="ad-page-eyebrow">Administración</div>
+      <h1 class="ad-page-title">Biblioteca de Recursos</h1>
+      <p class="ad-page-subtitle">Gestiona guías, PDFs y videos visibles para todos los empleados.</p>
+    </div>
+    <button class="ad-btn ad-btn--primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      Nuevo recurso
+    </button>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="rc-toolbar">
+    <div class="rc-search">
+      <mat-icon class="rc-search__icon">search</mat-icon>
+      <input
+        type="search"
+        class="rc-search__input"
+        placeholder="Buscar recurso..."
+        [(ngModel)]="searchQuery"
+      />
+    </div>
+    <div class="rc-filters">
+      <button
+        class="rc-filter-btn"
+        [class.active]="filterStatus === 'all'"
+        (click)="filterStatus = 'all'"
+      >Todos ({{ resources.length }})</button>
+      <button
+        class="rc-filter-btn"
+        [class.active]="filterStatus === 'published'"
+        (click)="filterStatus = 'published'"
+      >Publicados</button>
+      <button
+        class="rc-filter-btn"
+        [class.active]="filterStatus === 'draft'"
+        (click)="filterStatus = 'draft'"
+      >Borradores</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="ad-state ad-state--loading" *ngIf="loading">
+    <div class="ad-spinner"></div>
+    <span>Cargando recursos...</span>
+  </div>
+
+  <!-- Error -->
+  <div class="ad-state ad-state--error" *ngIf="!loading && error">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error }}</span>
+    <button class="ad-btn ad-btn--ghost" (click)="loadResources()">Reintentar</button>
+  </div>
+
+  <!-- Empty -->
+  <div class="ad-state" *ngIf="!loading && !error && filteredResources.length === 0">
+    <mat-icon style="font-size:40px;color:#94a3b8">library_books</mat-icon>
+    <p style="color:#64748b;margin:8px 0 0">
+      {{ searchQuery ? 'Sin resultados para "' + searchQuery + '"' : 'Aún no hay recursos. Crea el primero.' }}
+    </p>
+  </div>
+
+  <!-- Table -->
+  <div class="rc-table-wrap" *ngIf="!loading && !error && filteredResources.length > 0">
+    <table class="rc-table">
+      <thead>
+        <tr>
+          <th>Recurso</th>
+          <th>Categoría</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th>Prioritario</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of filteredResources; trackBy: trackById">
+          <td class="rc-cell-main">
+            <div class="rc-resource-title">{{ r.title }}</div>
+            <div class="rc-resource-sub">{{ r.summary | slice:0:70 }}{{ r.summary.length > 70 ? '…' : '' }}</div>
+          </td>
+          <td>
+            <span class="rc-badge rc-badge--cat">{{ r.category }}</span>
+          </td>
+          <td>
+            <span class="rc-type-chip">
+              <mat-icon class="rc-type-chip__icon">{{ typeIcon(r.resource_type) }}</mat-icon>
+              {{ typeLabel(r.resource_type) }}
+            </span>
+          </td>
+          <td>
+            <button
+              class="rc-toggle"
+              [class.rc-toggle--on]="r.is_published"
+              (click)="togglePublish(r)"
+              [title]="r.is_published ? 'Despublicar' : 'Publicar'"
+            >
+              <span class="rc-toggle__dot"></span>
+              <span>{{ r.is_published ? 'Publicado' : 'Borrador' }}</span>
+            </button>
+          </td>
+          <td>
+            <button
+              class="rc-toggle rc-toggle--compact"
+              [class.rc-toggle--on]="r.is_priority"
+              (click)="togglePriority(r)"
+              title="Marcar como prioritario"
+            >
+              <span class="rc-toggle__dot"></span>
+            </button>
+          </td>
+          <td class="rc-cell-actions">
+            <button class="ad-btn ad-btn--ghost ad-btn--sm" (click)="openEdit(r)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="ad-btn ad-btn--danger ad-btn--sm" (click)="deleteResource(r)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="rc-modal-backdrop" *ngIf="showModal" (click)="closeModal()"></div>
+
+<div class="rc-modal" *ngIf="showModal" role="dialog">
+  <div class="rc-modal__header">
+    <h2 class="rc-modal__title">
+      {{ formMode === 'create' ? 'Nuevo recurso' : 'Editar recurso' }}
+    </h2>
+    <button class="rc-modal__close" (click)="closeModal()" aria-label="Cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="rc-modal__body">
+
+    <!-- Tipo de recurso -->
+    <div class="rc-field">
+      <label class="rc-label">Tipo de recurso</label>
+      <div class="rc-type-selector">
+        <button
+          *ngFor="let t of typeOptions"
+          type="button"
+          class="rc-type-option"
+          [class.active]="form.resource_type === t.value"
+          (click)="form.resource_type = t.value"
+        >
+          <mat-icon>{{ t.icon }}</mat-icon>
+          <span>{{ t.label }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Título -->
+    <div class="rc-field">
+      <label class="rc-label" for="rc-title">Título *</label>
+      <input id="rc-title" class="rc-input" type="text" [(ngModel)]="form.title" placeholder="Ej: Guía rápida de financiación" />
+    </div>
+
+    <!-- Resumen -->
+    <div class="rc-field">
+      <label class="rc-label" for="rc-summary">Resumen corto *</label>
+      <input id="rc-summary" class="rc-input" type="text" [(ngModel)]="form.summary" placeholder="1-2 líneas descriptivas de la tarjeta" />
+    </div>
+
+    <!-- Categoría + Tiempo lectura -->
+    <div class="rc-row">
+      <div class="rc-field">
+        <label class="rc-label" for="rc-cat">Categoría *</label>
+        <select id="rc-cat" class="rc-input rc-select" [(ngModel)]="form.category">
+          <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+      <div class="rc-field rc-field--sm">
+        <label class="rc-label" for="rc-time">Tiempo lectura (min)</label>
+        <input id="rc-time" class="rc-input" type="number" min="1" max="60" [(ngModel)]="form.read_time_min" />
+      </div>
+    </div>
+
+    <!-- PDF upload (solo tipo pdf) -->
+    <div class="rc-field" *ngIf="form.resource_type === 'pdf'">
+      <label class="rc-label">Archivo PDF</label>
+      <div class="rc-upload-area" *ngIf="!pdfFileName">
+        <mat-icon class="rc-upload-area__icon">upload_file</mat-icon>
+        <p class="rc-upload-area__text">Arrastra el PDF aquí o haz clic para seleccionar</p>
+        <p class="rc-upload-area__sub">Máximo 20 MB</p>
+        <input type="file" accept="application/pdf" class="rc-upload-area__input" (change)="onFileSelected($event)" />
+      </div>
+      <div class="rc-upload-done" *ngIf="pdfFileName">
+        <mat-icon style="color:#0F6E56">picture_as_pdf</mat-icon>
+        <span class="rc-upload-done__name">{{ pdfFileName }}</span>
+        <button type="button" class="rc-upload-done__remove" (click)="removePdf()" title="Quitar PDF">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="rc-upload-progress" *ngIf="uploadingPdf">
+        <div class="rc-upload-progress__bar" [style.width.%]="uploadProgress"></div>
+      </div>
+    </div>
+
+    <!-- Video URL (solo tipo video) -->
+    <div class="rc-field" *ngIf="form.resource_type === 'video'">
+      <label class="rc-label" for="rc-video">URL del video (YouTube o Vimeo)</label>
+      <input
+        id="rc-video"
+        class="rc-input"
+        type="url"
+        [(ngModel)]="form.video_url"
+        placeholder="https://www.youtube.com/watch?v=..."
+      />
+    </div>
+
+    <!-- Secciones de contenido (artículo y PDF) -->
+    <div class="rc-sections" *ngIf="form.resource_type !== 'video'">
+      <div class="rc-sections__header">
+        <label class="rc-label">Contenido por secciones</label>
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" (click)="addSection()">
+          <mat-icon>add</mat-icon> Sección
+        </button>
+      </div>
+
+      <div
+        class="rc-section-card"
+        *ngFor="let section of form.content; let i = index; trackBy: trackByIndex"
+      >
+        <div class="rc-section-card__head">
+          <span class="rc-section-card__num">{{ i + 1 }}</span>
+          <button
+            type="button"
+            class="rc-section-card__remove"
+            (click)="removeSection(i)"
+            *ngIf="(form.content?.length ?? 0) > 1"
+            title="Eliminar sección"
+          >
+            <mat-icon>remove_circle_outline</mat-icon>
+          </button>
+        </div>
+        <div class="rc-field">
+          <label class="rc-label rc-label--sm">Título de sección</label>
+          <input class="rc-input rc-input--sm" type="text" [(ngModel)]="section.heading" placeholder="Ej: ¿Cuándo considerar una residencia?" />
+        </div>
+        <div class="rc-field">
+          <label class="rc-label rc-label--sm">Párrafo</label>
+          <textarea class="rc-input rc-textarea" [(ngModel)]="section.body" rows="3" placeholder="Texto explicativo..."></textarea>
+        </div>
+        <div class="rc-field">
+          <label class="rc-label rc-label--sm">Puntos clave (uno por línea, opcional)</label>
+          <textarea
+            class="rc-input rc-textarea rc-textarea--sm"
+            rows="3"
+            [value]="getBulletText(section)"
+            (input)="setBulletText(section, $any($event.target).value)"
+            placeholder="Punto 1&#10;Punto 2&#10;Punto 3"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Opciones -->
+    <div class="rc-row rc-row--checks">
+      <label class="rc-check">
+        <input type="checkbox" [(ngModel)]="form.is_published" />
+        <span>Publicar inmediatamente</span>
+      </label>
+      <label class="rc-check">
+        <input type="checkbox" [(ngModel)]="form.is_priority" />
+        <span>Marcar como prioritario</span>
+      </label>
+    </div>
+
+  </div><!-- /modal body -->
+
+  <div class="rc-modal__footer">
+    <button class="ad-btn ad-btn--ghost" (click)="closeModal()" [disabled]="saving">Cancelar</button>
+    <button class="ad-btn ad-btn--primary" (click)="save()" [disabled]="saving || uploadingPdf">
+      <mat-icon *ngIf="saving" class="rc-spin">sync</mat-icon>
+      {{ saving ? 'Guardando...' : (formMode === 'create' ? 'Crear recurso' : 'Guardar cambios') }}
+    </button>
+  </div>
+</div>

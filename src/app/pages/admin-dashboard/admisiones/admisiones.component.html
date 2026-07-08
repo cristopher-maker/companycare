@@ -1,0 +1,95 @@
+<div class="view-kanban mt-8" style="display: flex; flex-direction: column; height: 100%;">
+  <div class="view-header view-header--kanban">
+    <div class="view-header__content">
+      <span class="view-title">Pipeline de Admisiones</span>
+      <p class="view-subtitle">
+        {{ filteredTotalKanbanLeads }} casos visibles en seguimiento.
+        {{ filteredFinalKanbanLeads }} ya llegaron a una salida final.
+      </p>
+    </div>
+    <button class="btn-primary btn-primary--kanban" (click)="parent.openLeadModal()">
+      <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">add</mat-icon>
+      Nueva consulta
+    </button>
+  </div>
+
+  <div class="table-filters table-filters--kanban">
+    <div class="field-group field-group--compact field-group--search">
+      <label class="field-label">Buscar</label>
+      <input class="field-input" type="search" [(ngModel)]="leadFilters.query" placeholder="Nombre, comuna o dependencia" />
+    </div>
+    <div class="field-group field-group--compact">
+      <label class="field-label">Etapa</label>
+      <select class="field-input" [(ngModel)]="leadFilters.status">
+        <option value="all">Todas</option>
+        <option value="nuevo">Nuevas</option>
+        <option value="contactado">Contactado</option>
+        <option value="evaluacion">Evaluacion</option>
+        <option value="match">Propuesta</option>
+        <option value="cerrado">Cerrado</option>
+        <option value="perdido">Perdido</option>
+      </select>
+    </div>
+    <div class="field-group field-group--compact">
+      <label class="field-label">Comuna</label>
+      <input class="field-input" type="search" [(ngModel)]="leadFilters.comuna" placeholder="Ej: Las Condes" />
+    </div>
+    <button class="btn-secondary table-filters__reset" type="button" (click)="resetLeadFilters()">Limpiar</button>
+  </div>
+  
+  <!-- Tablero Kanban dinámico -->
+  <div class="kanban-board" cdkDropListGroup>
+    <div class="kanban-column" [class.kanban-column--final]="isTerminalKanbanColumn(column.id)" *ngFor="let column of filteredKanbanColumns; trackBy: trackByKanbanColumn">
+      <div class="kanban-column-header">
+        <div class="kanban-column-heading">
+          <span>{{ column.label }}</span>
+          <small>{{ getKanbanColumnHint(column.id) }}</small>
+        </div>
+        <span class="kanban-counter">{{ getFilteredKanbanItems(column.id).length }}</span>
+      </div>
+      
+      <div 
+        class="kanban-dropzone"
+        cdkDropList
+        [id]="column.id"
+        [cdkDropListData]="parent.kanbanData[column.id]"
+        (cdkDropListDropped)="dropKanban($event)">
+
+        <div *ngIf="!getFilteredKanbanItems(column.id).length" class="kanban-empty">
+          <mat-icon>inbox</mat-icon>
+          <strong>{{ getKanbanEmptyTitle(column.id) }}</strong>
+          <span>{{ getKanbanEmptyHint(column.id) }}</span>
+        </div>
+
+        <div class="kanban-card" [class.kanban-card--selected]="parent.isSelectedEntity('lead', lead.id)" *ngFor="let lead of getFilteredKanbanItems(column.id); trackBy: trackByLead" cdkDrag [cdkDragData]="lead" cdkDragPreviewContainer="parent" role="button" tabindex="0" (click)="parent.openLeadDetail(lead)" (keydown.enter)="parent.openLeadDetail(lead)">
+          <ng-template cdkDragPlaceholder>
+            <div class="kanban-card kanban-card--placeholder">
+              <div class="kanban-card-content"></div>
+            </div>
+          </ng-template>
+          <div class="kanban-card-content">
+            <div class="card-title">{{ lead.nombre }}</div>
+            <div class="card-subtitle">
+              {{ lead.comuna || 'Sin comuna' }} 
+              <ng-container *ngIf="lead.dependencia">· {{ lead.dependencia }}</ng-container>
+            </div>
+            
+            <div class="kanban-card__meta">
+              <span class="status-badge"
+                    [class.badge-warn]="column.id === 'nuevo'"
+                    [class.badge-blue]="column.id === 'contactado' || column.id === 'match'"
+                    [class.badge-gray]="column.id === 'evaluacion'"
+                    [class.badge-green]="column.id === 'cerrado'"
+                    [class.badge-red]="column.id === 'perdido'">
+                {{ column.id === 'nuevo' ? 'Pendiente' : column.label }}
+              </span>
+              <span *ngIf="lead.presupuesto" class="kanban-card__price">
+                {{ lead.presupuesto | currency:'CLP':'symbol-narrow':'1.0-0' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

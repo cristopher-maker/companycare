@@ -17,7 +17,7 @@ export const internalAdminGuard: CanMatchFn = async (): Promise<boolean | UrlTre
     .eq('id', userId)
     .maybeSingle();
 
-  if (error || profile?.role !== 'admin') {
+  if (error || (profile?.role !== 'admin' && profile?.role !== 'company_admin')) {
     return router.createUrlTree(['/company']);
   }
 

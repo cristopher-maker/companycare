@@ -1,0 +1,122 @@
+<div class="mt-8">
+  <div class="view-header">
+    <span class="view-title">Gestión de Tareas</span>
+    <button class="btn-primary" (click)="parent.openTareaModal()">
+      <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">add</mat-icon>
+      Nueva Tarea
+    </button>
+  </div>
+  
+  <div class="table-filters">
+    <div class="field-group field-group--compact field-group--search">
+      <label class="field-label">Buscar</label>
+      <input class="field-input" type="search" [(ngModel)]="taskFilters.query" placeholder="Titulo, vinculo o responsable" />
+    </div>
+    <div class="field-group field-group--compact">
+      <label class="field-label">Estado</label>
+      <select class="field-input" [(ngModel)]="taskFilters.status">
+        <option value="all">Todos</option>
+        <option value="overdue">Vencidas</option>
+        <option value="pending">Pendientes</option>
+        <option value="in_progress">En progreso</option>
+        <option value="done">Completadas</option>
+      </select>
+    </div>
+    <div class="field-group field-group--compact">
+      <label class="field-label">Vinculo</label>
+      <select class="field-input" [(ngModel)]="taskFilters.entityType">
+        <option value="all">Todos</option>
+        <option value="lead">Admision</option>
+        <option value="sede">Sede</option>
+        <option value="cama">Cama</option>
+        <option value="paciente">Paciente</option>
+        <option value="none">Sin vinculo</option>
+      </select>
+    </div>
+    <div class="field-group field-group--compact">
+      <label class="field-label">Prioridad</label>
+      <select class="field-input" [(ngModel)]="taskFilters.priority">
+        <option value="all">Todas</option>
+        <option value="high">Alta</option>
+        <option value="medium">Media</option>
+        <option value="low">Baja</option>
+      </select>
+    </div>
+    <button class="btn-secondary table-filters__reset" type="button" (click)="resetTaskFilters()">Limpiar</button>
+  </div>
+  
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:32%">Tarea</th>
+          <th style="width:18%">Vinculada a</th>
+          <th style="width:20%">Asignado a</th>
+          <th style="width:15%">Vencimiento</th>
+          <th style="width:15%">Estado</th>
+          <th style="width:10%"></th>
+        </tr>
+      </thead>
+      <tbody *ngIf="filteredTareas.length > 0">
+        <tr *ngFor="let tarea of filteredTareas">
+          <td class="td-primary">
+            {{ tarea.title }}
+            <span *ngIf="tarea.priority === 'high'" class="status-badge badge-red" style="font-size: 9px; padding: 2px 4px; margin-left: 6px;">Alta</span>
+          </td>
+          <td>
+            <span *ngIf="tarea.entity_label; else noEntity" class="status-badge badge-gray">{{ tarea.entity_label }}</span>
+            <ng-template #noEntity>
+              <span style="font-size: 11px; color: var(--text3);">Sin vínculo</span>
+            </ng-template>
+          </td>
+          <td>
+            {{ tarea.assigned?.full_name || 'Sin asignar' }}
+            <div *ngIf="tarea.assigned?.email" style="font-size: 10px; color: var(--text3); margin-top: 2px;">{{ tarea.assigned.email }}</div>
+          </td>
+          <td class="td-mono">{{ tarea.due_at | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.badge-red]="isTaskOverdue(tarea)"
+                  [class.badge-warn]="!isTaskOverdue(tarea) && tarea.status === 'pending'"
+                  [class.badge-blue]="!isTaskOverdue(tarea) && tarea.status === 'in_progress'"
+                  [class.badge-green]="tarea.status === 'done'">
+              {{ taskStatusLabel(tarea) }}
+            </span>
+          </td>
+          <td class="td-actions">
+            <button class="btn-ghost" style="margin-right: 6px;" (click)="parent.openTareaModal(tarea)">Editar</button>
+            <button class="btn-ghost" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);" (click)="parent.deleteTarea(tarea)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+      <tbody *ngIf="filteredTareas.length === 0 && !parent.loading">
+        <tr>
+          <td colspan="6" class="td-empty">
+            No hay tareas que coincidan con los filtros actuales.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="table-card task-history-panel">
+    <div class="task-history-panel__header">
+      <h3 class="task-history-panel__title">Historial reciente de tareas</h3>
+    </div>
+    <div class="task-history-list">
+      <article class="task-history-item" *ngFor="let entry of parent.taskHistory">
+        <div class="task-history-item__dot" [ngClass]="'task-history-item__dot--' + entry.action"></div>
+        <div class="task-history-item__body">
+          <strong>{{ entry.summary }}</strong>
+          <p>
+            {{ entry.author?.full_name || 'Usuario' }}
+            <span>· {{ parent.getTimeAgo(entry.created_at) }}</span>
+          </p>
+        </div>
+      </article>
+      <div *ngIf="parent.taskHistory.length === 0" class="task-history-empty">
+        Aun no hay cambios registrados en tareas.
+      </div>
+    </div>
+  </div>
+</div>

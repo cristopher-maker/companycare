@@ -1,0 +1,137 @@
+<div class="metrics-view">
+  <section class="dashboard-hero">
+    <div>
+      <span class="dashboard-hero__eyebrow">Panel de control</span>
+      <h1>{{ parent.dashboardGreeting }}, {{ parent.profileName || 'Administrador' }}</h1>
+      <p>Resumen operativo de admisiones, tareas, disponibilidad y alertas.</p>
+    </div>
+  </section>
+
+  <div class="dashboard-summary-grid">
+    <button type="button" class="dashboard-summary-card" *ngFor="let card of parent.dashboardSummaryCards" [ngClass]="'dashboard-summary-card--' + card.tone">
+      <span class="dashboard-summary-card__icon">
+        <mat-icon>{{ card.icon }}</mat-icon>
+      </span>
+      <span class="dashboard-summary-card__label">{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
+      <small>{{ card.detail }}</small>
+    </button>
+  </div>
+
+  <div class="dashboard-workbench">
+    <section class="table-card dashboard-panel dashboard-panel--actions">
+      <div class="dashboard-panel__header">
+        <div>
+          <h3>Próximas acciones</h3>
+          <p>Prioridades sugeridas con los datos actuales.</p>
+        </div>
+      </div>
+      <div class="dashboard-action-list" *ngIf="parent.dashboardActionItems.length">
+        <button type="button" class="dashboard-action" *ngFor="let item of parent.dashboardActionItems" [ngClass]="'dashboard-action--' + item.tone" (click)="parent.setView(item.view)">
+          <span><mat-icon>{{ item.icon }}</mat-icon></span>
+          <strong>{{ item.title }}</strong>
+          <small>{{ item.detail }}</small>
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+      <div class="dashboard-empty" *ngIf="!parent.dashboardActionItems.length">
+        No hay acciones urgentes pendientes.
+      </div>
+    </section>
+  </div>
+
+  <div class="metrics-charts">
+    <section class="table-card chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">Distribución de Camas</h3>
+      </div>
+      <div class="chart-card__body">
+        <div *ngIf="parent.camasTotales > 0" class="chart-canvas chart-canvas--square">
+          <canvas
+            baseChart
+            [labels]="parent.doughnutChartLabels"
+            [datasets]="parent.doughnutChartDatasets"
+            [options]="parent.doughnutChartOptions"
+            [legend]="true"
+            type="doughnut">
+          </canvas>
+        </div>
+        <div *ngIf="parent.camasTotales === 0" class="chart-empty-state">Sin datos</div>
+      </div>
+    </section>
+    
+    <section class="table-card chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">Estado de Admisiones</h3>
+      </div>
+      <div class="chart-card__body">
+        <div *ngIf="parent.totalLeads > 0" class="chart-canvas chart-canvas--bar">
+          <canvas
+            baseChart
+            [labels]="parent.barChartLabels"
+            [datasets]="parent.barChartDatasets"
+            [options]="parent.barChartOptions"
+            [legend]="false"
+            type="bar">
+          </canvas>
+        </div>
+        <div *ngIf="parent.totalLeads === 0" class="chart-empty-state">Sin datos</div>
+      </div>
+    </section>
+    
+    <section class="table-card chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">Estado de Tareas</h3>
+      </div>
+      <div class="chart-card__body">
+        <div *ngIf="parent.totalTareas > 0" class="chart-canvas chart-canvas--square">
+          <canvas
+            baseChart
+            [labels]="parent.tasksChartLabels"
+            [datasets]="parent.tasksChartDatasets"
+            [options]="parent.tasksChartOptions"
+            [legend]="true"
+            type="doughnut">
+          </canvas>
+        </div>
+        <div *ngIf="parent.totalTareas === 0" class="chart-empty-state">Sin datos</div>
+      </div>
+    </section>
+  </div>
+
+  <section class="table-card ops-panel metrics-alerts-panel">
+    <div class="ops-panel__header">
+      <h3 class="ops-panel__title">Alertas operativas</h3>
+    </div>
+    <div class="ops-alerts-grid">
+      <article class="ops-alert" *ngFor="let alert of parent.operationalAlerts" [ngClass]="'ops-alert--' + alert.level">
+        <div class="ops-alert__dot"></div>
+        <div class="ops-alert__body">
+          <strong>{{ alert.title }}</strong>
+          <p>{{ alert.detail }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="table-card dashboard-panel">
+    <div class="dashboard-panel__header">
+      <div>
+        <h3>Actividad reciente</h3>
+        <p>Últimos movimientos de tareas, admisiones y cobros.</p>
+      </div>
+    </div>
+    <div class="dashboard-event-list" *ngIf="parent.latestOperationalEvents.length">
+      <article class="dashboard-event" *ngFor="let event of parent.latestOperationalEvents">
+        <span><mat-icon>{{ event.icon }}</mat-icon></span>
+        <div>
+          <strong>{{ event.title }}</strong>
+          <small>{{ event.detail }} &middot; {{ parent.getTimeAgo(event.created_at) }}</small>
+        </div>
+      </article>
+    </div>
+    <div class="dashboard-empty" *ngIf="!parent.latestOperationalEvents.length">
+      Aún no hay actividad para mostrar.
+    </div>
+  </section>
+</div>

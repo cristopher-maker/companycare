@@ -1,0 +1,52 @@
+<div class="mt-8">
+  <div class="view-header">
+    <span class="view-title">Pacientes activos</span>
+    <button class="btn-primary" (click)="parent.openNewPacienteModal()">
+      <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">add</mat-icon>
+      Asignar paciente a cama
+    </button>
+  </div>
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:20%">Paciente</th>
+          <th style="width:25%">Tutor / Financiero</th>
+          <th style="width:20%">Contacto Emergencia</th>
+          <th style="width:15%">Cama / Sede</th>
+          <th style="width:20%"></th>
+        </tr>
+      </thead>
+      <tbody *ngIf="parent.pacientesActivos.length > 0">
+        <tr *ngFor="let p of parent.pacientesActivos" [class.row-highlight]="parent.isSelectedEntity('paciente', p.id)">
+          <td class="td-primary">
+            {{ p.nombreCompleto }}
+            <div style="font-size: 11px; color: var(--text3); font-weight: normal; margin-top: 2px;">RUT: {{ p.documento }}</div>
+          </td>
+          <td>
+            <div style="font-weight: 500;">{{ p.guarantor_name }}</div>
+            <div style="font-size: 11px; color: var(--text3); margin-top: 2px;" *ngIf="p.monthly_fee > 0">Tarifa: {{ p.monthly_fee | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+          </td>
+          <td>{{ p.contacto }}</td>
+          <td><span class="status-badge badge-gray">{{ p.camaAsignada }}</span></td>
+          <td class="td-actions">
+            <button class="btn-ghost" (click)="parent.openPacienteModal(p)">
+              Editar
+            </button>
+            <button class="btn-ghost" style="color: var(--text2);" (click)="parent.openInvoicesModal(p)">
+              Historial
+            </button>
+            <button class="btn-ghost" style="color: var(--blue);" (click)="parent.emitirCobro(p)">
+              Cobro
+            </button>
+          </td>
+        </tr>
+      </tbody>
+      <tbody *ngIf="parent.pacientesActivos.length === 0">
+        <tr>
+          <td colspan="5" class="td-empty">No hay pacientes registrados. Asigna el nombre de un paciente a una cama para que aparezca aquí.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

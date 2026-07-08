@@ -1,0 +1,80 @@
+<div class="mt-8">
+  <div class="view-header">
+    <span class="view-title">Estado de sedes</span>
+    <button class="btn-primary" (click)="parent.openSedeModal()">
+      <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">add</mat-icon>
+      Añadir sede
+    </button>
+  </div>
+  
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:16%">Sede</th>
+          <th style="width:12%">Tipo</th>
+          <th style="width:12%">Ubicación</th>
+          <th style="width:10%">Teléfono</th>
+          <th style="width:10%">Encargado</th>
+          <th style="width:7%">Camas</th>
+          <th style="width:8%">Pacientes</th>
+          <th style="width:8%">Disponibles</th>
+          <th style="width:9%">Estado</th>
+          <th style="width:8%"></th>
+        </tr>
+      </thead>
+      <tbody *ngIf="parent.sedes.length > 0">
+        <tr *ngFor="let sede of parent.sedes" [class.row-highlight]="parent.isSelectedEntity('sede', sede.id)">
+          <td class="td-primary">{{ sede.nombre }}</td>
+          <td>{{ sedeTypeLabel(sede.tipo) }}</td>
+          <td>{{ sede.ubicacion }}</td>
+          <td class="td-mono">{{ sede.telefono || '-' }}</td>
+          <td>{{ sede.encargadoNombre || '-' }}</td>
+          <td class="td-mono">{{ sede.camasTotales }}</td>
+          <td class="td-mono">{{ sede.pacientesCount }}</td>
+          <td>
+            <div class="progress-row">
+              <span class="td-mono" style="min-width:22px">{{ sede.camasDisponibles }}</span>
+              <div class="progress-track">
+                <div class="progress-fill"
+                     [style.width.%]="sede.camasTotales > 0 ? (sede.camasDisponibles / sede.camasTotales) * 100 : 0"
+                     [class.fill-green]="sede.estado === 'Normal'"
+                     [class.fill-warn]="sede.estado === 'Atención'"
+                     [class.fill-red]="sede.estado === 'Crítico'">
+                </div>
+              </div>
+              <span class="pct-label" *ngIf="sede.camasTotales > 0">{{ ((sede.camasDisponibles / sede.camasTotales) * 100) | number:'1.0-0' }}%</span>
+              <span class="pct-label" *ngIf="sede.camasTotales === 0">-</span>
+            </div>
+          </td>
+          <td>
+            <span class="status-badge"
+                  [class.badge-green]="sede.estadoSede === 'activa'"
+                  [class.badge-warn]="sede.estadoSede === 'mantencion'"
+                  [class.badge-red]="sede.estadoSede === 'inactiva'">
+              {{ sedeStatusLabel(sede.estadoSede) }}
+            </span>
+          </td>
+          <td class="td-actions">
+            <button class="btn-ghost" style="margin-right: 4px;" (click)="parent.openSedeDetail(sede)" title="Ver detalle">
+              <mat-icon style="font-size:14px;width:14px;height:14px">visibility</mat-icon>
+            </button>
+            <button class="btn-ghost" style="margin-right: 4px;" (click)="parent.openSedeModal(sede)">
+              Editar
+            </button>
+            <button class="btn-ghost" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);" (click)="parent.deleteSede(sede)">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+      <tbody *ngIf="parent.sedes.length === 0">
+        <tr>
+          <td colspan="10" class="td-empty">
+            No hay sedes registradas. Usa "Añadir sede" para comenzar.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

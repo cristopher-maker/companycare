@@ -1,21 +1,24 @@
 :host {
-  /* Paleta de colores más moderna y limpia */
-  --ce-primary: #123c4a;
-  --ce-primary-hover: #0f2f3a;
-  --ce-primary-bg: rgba(18, 60, 74, 0.08);
-  --ce-accent: #f27a5e;
-  --ce-accent-soft: #ffd3c8;
-  --ce-accent-bg: rgba(242, 122, 94, 0.12);
+  /* Paleta alineada con la página de Peticiones */
+  --ce-primary: #4664ff;
+  --ce-primary-hover: #3451e6;
+  --ce-primary-bg: rgba(70, 100, 255, 0.08);
+  --ce-primary-soft: #eef2ff;
+  --ce-accent: #4664ff;
+  --ce-accent-soft: #eef2ff;
+  --ce-accent-bg: rgba(70, 100, 255, 0.12);
   
   --ce-surface: #ffffff;
-  --ce-bg-page: #f7fafb;
+  --ce-bg-page: #f4f7fb;
   
-  --ce-border: #d9e3f6;
-  --ce-border-focus: #b8c8ea;
+  --ce-border: #dde5f0;
+  --ce-border-focus: #c6d2ff;
   
-  --ce-text-main: #0f172a;
+  --ce-text-main: #172033;
   --ce-text-muted: #64748b;
   --ce-text-light: #94a3b8;
+  
+  --ce-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
 }
 
 mat-icon {
@@ -157,11 +160,11 @@ ion-content.care-experts {
 
 /* Panel Principal (Cards) */
 .ce-panel {
-  background: var(--ce-surface);
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
   border: 1px solid var(--ce-border);
-  border-radius: 20px;
+  border-radius: 24px;
   padding: 40px;
-  box-shadow: 0 8px 30px -8px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
+  box-shadow: var(--ce-shadow);
 }
 
 .ce-panel--sidebar,
@@ -325,8 +328,8 @@ ion-content.care-experts {
 
   &.is-active {
     border-color: var(--ce-primary);
-    background: var(--ce-primary-bg);
-    box-shadow: 0 0 0 1.5px var(--ce-primary), 0 8px 20px -8px rgba(18, 60, 74, 0.15);
+    background: var(--ce-primary-soft);
+    box-shadow: 0 0 0 1.5px var(--ce-primary), 0 8px 20px -8px rgba(70, 100, 255, 0.2);
     
     .ce-channel__icon-wrapper {
       background: var(--ce-primary);
@@ -446,7 +449,7 @@ ion-content.care-experts {
 }
 
 .ce-contact-locked mat-icon {
-  color: #123c4a;
+  color: var(--ce-primary);
   font-size: 20px;
 }
 

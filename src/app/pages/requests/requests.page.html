@@ -2,112 +2,184 @@
 
 <main class="requests-page">
   <div class="requests-page__inner">
+    
+    <!-- Hero Header -->
     <section class="requests-hero">
       <div class="requests-hero__mark" aria-hidden="true">
-        <mat-icon>content_paste</mat-icon>
+        <mat-icon>assignment</mat-icon>
       </div>
       <div class="requests-hero__copy">
         <div class="requests-hero__eyebrow">Care Experts</div>
         <h2>Seguimiento de tus solicitudes</h2>
-        <p>Revisa el estado de cada caso y retoma la conversacion cuando lo necesites.</p>
+        <p>Revisa el estado de cada caso y retoma la conversación cuando lo necesites.</p>
       </div>
       <button type="button" class="requests-hero__refresh" (click)="refresh()" [disabled]="loading" aria-label="Actualizar solicitudes">
         <mat-icon
           class="requests-hero__refresh-icon"
           [class.requests-hero__refresh-icon--spinning]="loading"
           aria-hidden="true"
-          >refresh</mat-icon
-        >
+        >refresh</mat-icon>
         <span>Actualizar</span>
       </button>
     </section>
 
+    <!-- Overview Widgets -->
     <section class="requests-overview" *ngIf="!loading && items.length" aria-label="Resumen de solicitudes">
-      <article class="requests-overview__card">
-        <span>Total</span>
-        <strong>{{ items.length }}</strong>
+      <article class="requests-overview__card requests-overview__card--total">
+        <div class="requests-overview__icon-box">
+          <mat-icon>history</mat-icon>
+        </div>
+        <div class="requests-overview__content">
+          <span class="requests-overview__label">Total</span>
+          <strong class="requests-overview__value">{{ items.length }}</strong>
+        </div>
       </article>
-      <article class="requests-overview__card">
-        <span>Activas</span>
-        <strong>{{ openRequestsCount }}</strong>
+      
+      <article class="requests-overview__card requests-overview__card--active">
+        <div class="requests-overview__icon-box">
+          <mat-icon>pending_actions</mat-icon>
+        </div>
+        <div class="requests-overview__content">
+          <span class="requests-overview__label">Activas</span>
+          <strong class="requests-overview__value">{{ openRequestsCount }}</strong>
+        </div>
       </article>
-      <article class="requests-overview__card">
-        <span>Cerradas</span>
-        <strong>{{ closedRequestsCount }}</strong>
+      
+      <article class="requests-overview__card requests-overview__card--closed">
+        <div class="requests-overview__icon-box">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="requests-overview__content">
+          <span class="requests-overview__label">Cerradas</span>
+          <strong class="requests-overview__value">{{ closedRequestsCount }}</strong>
+        </div>
       </article>
     </section>
 
+    <!-- Loading State -->
     <div *ngIf="loading" class="requests-state requests-state--loading">
       <div class="requests-spinner" aria-hidden="true"></div>
       <p>Cargando solicitudes...</p>
     </div>
 
+    <!-- Error State -->
     <div *ngIf="error" class="requests-state requests-state--error" role="alert">
-      <strong>Error:</strong>
-      <span>{{ error }}</span>
+      <mat-icon class="requests-state__icon-error">error_outline</mat-icon>
+      <div>
+        <strong>Error de conexión</strong>
+        <p>{{ error }}</p>
+      </div>
     </div>
 
+    <!-- Empty State -->
     <div *ngIf="!loading && !error && !items.length" class="requests-state">
       <mat-icon class="requests-state__icon" aria-hidden="true">forum</mat-icon>
       <h3>No tienes solicitudes</h3>
-      <p>Puedes iniciar una nueva asesoria desde el dashboard o con un Care Expert.</p>
-      <a routerLink="/care-experts" class="requests-state__action">Iniciar asesoria</a>
+      <p>Puedes iniciar una nueva asesoría desde el panel o contactar con un Care Expert.</p>
+      <a routerLink="/care-experts" class="requests-state__action">Iniciar asesoría</a>
     </div>
 
+    <!-- Requests List -->
     <section *ngIf="!loading && items.length" class="requests-list" aria-label="Listado de solicitudes">
-      <a
+      <article
         *ngFor="let item of visibleItems"
-        [routerLink]="['/care-experts']"
-        [queryParams]="{ request: item.id }"
         class="request-card"
       >
         <div class="request-card__main">
-          <div class="request-card__topic">
-            {{ item.appointment?.kind || item.channel }}
+          
+          <!-- Card Header (Title & Status Badge) -->
+          <div class="request-card__header">
+            <div class="request-card__title-area">
+              <div class="request-card__icon-wrap">
+                <mat-icon>{{ item.appointment?.kind === 'Videollamada' ? 'videocam' : (item.appointment?.kind === 'Llamada' ? 'phone' : 'chat') }}</mat-icon>
+              </div>
+              <h3 class="request-card__topic">
+                {{ item.appointment?.kind || item.channel }}
+              </h3>
+            </div>
+            
+            <span class="request-card__status" [ngClass]="statusClass(item.status)">
+              {{ statusLabel(item.status) }}
+            </span>
           </div>
+
+          <!-- Card Meta -->
           <div class="request-card__meta">
-            <span>{{ displayDate(item) | date: 'EEEE d MMMM, HH:mm' }}</span>
-            <ng-container *ngIf="item.topic">
+            <div class="request-card__meta-item">
+              <mat-icon class="request-card__meta-icon">calendar_today</mat-icon>
+              <span>{{ displayDate(item) | date: 'EEEE d \'de\' MMMM, HH:mm' }}</span>
+            </div>
+            <div class="request-card__meta-item" *ngIf="item.topic">
               <span class="request-card__dot" aria-hidden="true"></span>
-              <span>{{ item.topic }}</span>
-            </ng-container>
+              <span class="request-card__topic-tag">{{ item.topic }}</span>
+            </div>
           </div>
-          <div class="request-card__details" *ngIf="appointmentDetails(item) as details">
-            {{ details }}
-          </div>
-          <div class="request-card__details" *ngIf="item.appointment?.kind === 'Videollamada' && item.appointment?.meeting_url">
-            {{ item.appointment?.meeting_url }}
-          </div>
-          <div class="request-card__details" *ngIf="item.appointment?.kind === 'Videollamada' && !item.appointment?.meeting_url">
-            El enlace de acceso estará disponible cuando se genere la videollamada.
-          </div>
-          <div class="request-card__details" *ngIf="item.appointment?.kind === 'Llamada'">
-            Recibiras la llamada en el telefono indicado.
-          </div>
-          <div class="request-card__details" *ngIf="!item.appointment">
-            Solicitud creada el {{ item.created_at | date: 'dd/MM/yyyy, HH:mm' }}.
+
+          <!-- Card Body / Details -->
+          <div class="request-card__body-content">
+            <!-- Notes Details -->
+            <div class="request-card__details" *ngIf="appointmentDetails(item) as details">
+              <mat-icon class="request-card__details-icon">notes</mat-icon>
+              <span class="request-card__details-text">{{ details }}</span>
+            </div>
+
+            <!-- Meet Link Info (Cleaned - no heavy background) -->
+            <div class="request-card__meet-info" *ngIf="item.appointment?.kind === 'Videollamada' && item.appointment?.meeting_url">
+              <mat-icon class="request-card__meet-icon">link</mat-icon>
+              <span class="meet-label">Enlace de acceso:</span>
+              <a [href]="item.appointment.meeting_url" target="_blank" rel="noopener" class="meet-url">
+                {{ item.appointment.meeting_url }}
+              </a>
+            </div>
+            
+            <!-- Dynamic Notice Details -->
+            <div class="request-card__details request-card__details--notice" *ngIf="item.appointment?.kind === 'Videollamada' && !item.appointment?.meeting_url">
+              <mat-icon class="request-card__details-icon">info</mat-icon>
+              <span>El enlace de acceso estará disponible cuando se genere la videollamada.</span>
+            </div>
+            
+            <div class="request-card__details request-card__details--notice" *ngIf="item.appointment?.kind === 'Llamada'">
+              <mat-icon class="request-card__details-icon">phone_callback</mat-icon>
+              <span>Recibirás la llamada en el teléfono indicado.</span>
+            </div>
+            
+            <div class="request-card__details request-card__details--notice" *ngIf="!item.appointment">
+              <mat-icon class="request-card__details-icon">schedule</mat-icon>
+              <span>Solicitud creada el {{ item.created_at | date: 'dd/MM/yyyy, HH:mm' }}.</span>
+            </div>
           </div>
         </div>
 
+        <!-- Action Area (Properly structured, no nested interactive elements) -->
         <div class="request-card__actions">
           <button
             *ngIf="hasVideoMeeting(item)"
             type="button"
-            class="request-card__meeting"
+            class="request-btn request-btn--success"
             (click)="openMeeting($event, item.appointment?.meeting_url)"
           >
             <mat-icon>videocam</mat-icon>
             <span>Unirse</span>
           </button>
 
-          <span *ngIf="isPendingVideoMeeting(item)" class="request-card__meeting request-card__meeting--pending">
+          <span *ngIf="isPendingVideoMeeting(item)" class="request-btn request-btn--pending">
             <mat-icon>pending</mat-icon>
             <span>Sin enlace</span>
           </span>
+
+          <a
+            [routerLink]="['/care-experts']"
+            [queryParams]="{ request: item.id }"
+            class="request-btn request-btn--primary"
+          >
+            <mat-icon>forum</mat-icon>
+            <span>Ver chat</span>
+          </a>
         </div>
-      </a>
+      </article>
     </section>
 
+    <!-- Pagination -->
     <div *ngIf="!loading && totalPages > 1" class="requests-pagination">
       <button
         type="button"
@@ -115,7 +187,8 @@
         (click)="prevPage()"
         [disabled]="currentPage === 1"
       >
-        Anterior
+        <mat-icon>chevron_left</mat-icon>
+        <span>Anterior</span>
       </button>
 
       <button
@@ -134,7 +207,8 @@
         (click)="nextPage()"
         [disabled]="currentPage === totalPages"
       >
-        Siguiente
+        <span>Siguiente</span>
+        <mat-icon>chevron_right</mat-icon>
       </button>
     </div>
   </div>

@@ -1,0 +1,496 @@
+<div class="erp-config-view">
+  <div class="view-header">
+    <span class="view-title">{{ parent.companyConfigMode ? 'Mi empresa' : 'Configuración ERP' }}</span>
+    <button *ngIf="!parent.companyConfigMode" class="btn-ghost" (click)="parent.exportConfigSnapshotToCSV()">
+      <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">download</mat-icon>
+      Exportar CSV
+    </button>
+  </div>
+
+  <div class="erp-toolbar table-card">
+    <div>
+      <h3>{{ parent.companyConfigMode ? 'Centro de empresa' : 'Configuración operativa' }}</h3>
+      <p>{{ parent.companyConfigMode ? 'Administra datos de empresa, documentos y mensajes de soporte.' : 'Ajustes que cambian el funcionamiento diario: flujos, reglas, documentos y mensajes.' }}</p>
+    </div>
+    <label class="erp-search" *ngIf="!parent.companyConfigMode">
+      <mat-icon>search</mat-icon>
+      <input type="search" [(ngModel)]="parent.configSearch" placeholder="Buscar categoría, estado, SLA, documento..." />
+    </label>
+  </div>
+
+  <div class="erp-summary-strip">
+    <button *ngIf="parent.companyConfigMode" type="button" class="erp-summary-card" (click)="parent.setConfigSection('company')">
+      <span>Mi empresa</span>
+      <strong>1</strong>
+      <small>Datos generales</small>
+    </button>
+    <button *ngIf="!parent.companyConfigMode && !parent.hideWorkflowConfig" type="button" class="erp-summary-card" (click)="parent.setConfigSection('workflow')">
+      <span>Flujos</span>
+      <strong>{{ parent.systemCategories.length + parent.systemStatuses.length }}</strong>
+      <small>Categorías y estados</small>
+    </button>
+    <button *ngIf="!parent.companyConfigMode" type="button" class="erp-summary-card" (click)="parent.setConfigSection('business')">
+      <span>Reglas</span>
+      <strong>{{ parent.businessParameters.length + parent.planSlas.length }}</strong>
+      <small>Parámetros y SLA</small>
+    </button>
+    <button type="button" class="erp-summary-card" (click)="parent.setConfigSection('documents')">
+      <span>Documentos</span>
+      <strong>{{ parent.companyDocuments.length }}</strong>
+      <small>Contratos y archivos</small>
+    </button>
+    <button *ngIf="parent.companyConfigMode" type="button" class="erp-summary-card" (click)="parent.setConfigSection('messages')">
+      <span>Soporte</span>
+      <strong>{{ parent.entityComments.length }}</strong>
+      <small>Mensajes enviados</small>
+    </button>
+  </div>
+
+  <div class="erp-section-tabs">
+    <button *ngIf="parent.companyConfigMode" type="button" [class.active]="parent.configSection === 'company'" (click)="parent.setConfigSection('company')">
+      <mat-icon>business</mat-icon>
+      Mi empresa
+    </button>
+    <button type="button" [class.active]="parent.configSection === 'appearance'" (click)="parent.setConfigSection('appearance')">
+      <mat-icon>palette</mat-icon>
+      Apariencia
+    </button>
+    <button *ngIf="!parent.companyConfigMode && !parent.hideWorkflowConfig" type="button" [class.active]="parent.configSection === 'workflow'" (click)="parent.setConfigSection('workflow')">
+      <mat-icon>account_tree</mat-icon>
+      Flujos
+    </button>
+    <button *ngIf="!parent.companyConfigMode" type="button" [class.active]="parent.configSection === 'business'" (click)="parent.setConfigSection('business')">
+      <mat-icon>tune</mat-icon>
+      Reglas
+    </button>
+    <button type="button" [class.active]="parent.configSection === 'documents'" (click)="parent.setConfigSection('documents')">
+      <mat-icon>folder_open</mat-icon>
+      Documentos
+    </button>
+    <button type="button" [class.active]="parent.configSection === 'messages'" (click)="parent.setConfigSection('messages')">
+      <mat-icon>forum</mat-icon>
+      {{ parent.companyConfigMode ? 'Mensajes/soporte' : 'Mensajes' }}
+    </button>
+  </div>
+
+  <div class="erp-config-grid">
+    <section class="table-card erp-panel erp-panel--wide" *ngIf="parent.configSection === 'company' && parent.companyConfigMode">
+      <ng-content select="[config-content]"></ng-content>
+    </section>
+
+    <section class="table-card erp-panel erp-panel--wide appearance-panel" *ngIf="parent.configSection === 'appearance'">
+      <div class="erp-panel__header">
+        <div>
+          <h3>Apariencia del ERP</h3>
+          <p>Personaliza esta empresa sin afectar a las demás: colores, botones, bordes, densidad y logo.</p>
+        </div>
+        <span>Por empresa</span>
+      </div>
+
+      <div class="appearance-layout">
+        <div class="appearance-controls">
+          <div class="theme-preset-row">
+            <button type="button" class="btn-secondary" (click)="parent.applyThemePreset('care')">Company Care</button>
+            <button type="button" class="btn-secondary" (click)="parent.applyThemePreset('clinical')">Clínico</button>
+            <button type="button" class="btn-secondary" (click)="parent.applyThemePreset('corporate')">Corporativo</button>
+            <button type="button" class="btn-secondary" (click)="parent.applyThemePreset('warm')">Cálido</button>
+          </div>
+
+          <div class="theme-control-group">
+            <h4>Colores</h4>
+            <div class="theme-color-grid">
+              <label class="theme-color-field">
+                <span>Primario</span>
+                <input type="color" [(ngModel)]="parent.brandingDraft.erp_primary_color">
+                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_primary_color" placeholder="#123c4a">
+              </label>
+              <label class="theme-color-field">
+                <span>Acento</span>
+                <input type="color" [(ngModel)]="parent.brandingDraft.erp_accent_color">
+                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_accent_color" placeholder="#f27a5e">
+              </label>
+              <label class="theme-color-field">
+                <span>Fondo</span>
+                <input type="color" [(ngModel)]="parent.brandingDraft.erp_background_color">
+                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_background_color" placeholder="#f8fafc">
+              </label>
+              <label class="theme-color-field">
+                <span>Superficie</span>
+                <input type="color" [(ngModel)]="parent.brandingDraft.erp_surface_color">
+                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_surface_color" placeholder="#ffffff">
+              </label>
+              <label class="theme-color-field">
+                <span>Texto</span>
+                <input type="color" [(ngModel)]="parent.brandingDraft.erp_text_color">
+                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_text_color" placeholder="#0f172a">
+              </label>
+            </div>
+          </div>
+
+          <div class="theme-control-group">
+            <h4>Estilo</h4>
+            <div class="erp-form-grid erp-form-grid--four">
+              <label class="theme-select-field">
+                <span>Botones</span>
+                <select class="field-input" [(ngModel)]="parent.brandingDraft.erp_button_style">
+                  <option value="solid">Solidos</option>
+                  <option value="soft">Suaves</option>
+                  <option value="outline">Contorno</option>
+                </select>
+              </label>
+              <label class="theme-select-field">
+                <span>Bordes</span>
+                <select class="field-input" [(ngModel)]="parent.brandingDraft.erp_radius">
+                  <option value="compact">Compactos</option>
+                  <option value="rounded">Redondeados</option>
+                  <option value="pill">Pildora</option>
+                </select>
+              </label>
+              <label class="theme-select-field">
+                <span>Densidad</span>
+                <select class="field-input" [(ngModel)]="parent.brandingDraft.erp_density">
+                  <option value="compact">Compacta</option>
+                  <option value="comfortable">Cómoda</option>
+                  <option value="spacious">Amplia</option>
+                </select>
+              </label>
+              <label class="theme-select-field">
+                <span>Tipografia</span>
+                <select class="field-input" [(ngModel)]="parent.brandingDraft.erp_font_family">
+                  <option value="dm_sans">DM Sans</option>
+                  <option value="inter">Inter</option>
+                  <option value="system">Sistema</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <label class="theme-select-field">
+            <span>Logo URL</span>
+            <input class="field-input" [(ngModel)]="parent.brandingDraft.logo_url" placeholder="https://empresa.com/logo.svg">
+          </label>
+
+          <button class="btn-primary" (click)="parent.saveBranding()">Guardar apariencia</button>
+        </div>
+
+        <div class="theme-preview">
+          <div class="theme-preview__top">
+            <div class="theme-preview__mark">
+              <mat-icon>healing</mat-icon>
+            </div>
+            <div>
+              <strong>Vista previa ERP</strong>
+              <span>Panel operacional</span>
+            </div>
+          </div>
+          <div class="theme-preview__metric">
+            <span>Casos activos</span>
+            <strong>24</strong>
+            <em>+8% este mes</em>
+          </div>
+          <div class="theme-preview__actions">
+            <button type="button" class="btn-primary">Crear tarea</button>
+            <button type="button" class="btn-secondary">Exportar</button>
+          </div>
+          <div class="theme-preview__table">
+            <div>
+              <strong>Activación de empresa</strong>
+              <span class="status-badge badge-green">Activo</span>
+            </div>
+            <div>
+              <strong>SLA plan</strong>
+              <span class="status-badge badge-blue">24h</span>
+            </div>
+            <div>
+              <strong>Documento contrato</strong>
+              <span class="status-badge badge-warn">Revision</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card erp-panel" *ngIf="parent.configSection === 'business' && !parent.companyConfigMode">
+      <div class="erp-panel__header">
+        <div>
+          <h3>Parámetros de negocio</h3>
+          <p>Define valores internos que controlan reglas del ERP.</p>
+        </div>
+        <span>{{ parent.businessParameters.length }} activos</span>
+      </div>
+      <div class="erp-form-grid erp-form-grid--four">
+        <input class="field-input" [(ngModel)]="parent.parameterDraft.key" placeholder="clave_interna">
+        <input class="field-input" [(ngModel)]="parent.parameterDraft.label" placeholder="Etiqueta">
+        <select class="field-input" [(ngModel)]="parent.parameterDraft.value_type">
+          <option value="text">Texto</option>
+          <option value="number">Número</option>
+          <option value="boolean">Boeleano</option>
+          <option value="json">JSON</option>
+        </select>
+        <input class="field-input" [(ngModel)]="parent.parameterDraft.value" placeholder="Valor">
+      </div>
+      <button class="btn-primary" (click)="parent.addBusinessParameter()">Guardar parámetro</button>
+      <div class="erp-chip-list">
+        <span class="erp-chip" *ngFor="let param of parent.businessParameters">{{ param.label }}</span>
+      </div>
+    </section>
+
+    <section class="table-card erp-panel erp-panel--wide workflow-console" *ngIf="parent.configSection === 'workflow' && !parent.companyConfigMode">
+      <div class="erp-panel__header">
+        <div>
+          <h3>Flujos operativos</h3>
+          <p>Define las opciones que el equipo usa en solicitudes, tareas, documentos, proveedores y leads.</p>
+        </div>
+        <span>{{ parent.systemCategories.length }} categorías · {{ parent.systemStatuses.length }} estados</span>
+      </div>
+
+      <div class="workflow-layout">
+        <div class="workflow-block">
+          <div class="workflow-block__title">
+            <strong>Categorías</strong>
+            <span>Clasifican registros y filtros.</span>
+          </div>
+          <div class="erp-form-grid erp-form-grid--action">
+            <label class="field-stack">
+              <span>Módulo</span>
+              <select class="field-input" [(ngModel)]="parent.categoryDraft.scope">
+                <option value="request">Solicitud</option>
+                <option value="task">Tarea</option>
+                <option value="provider">Proveedor</option>
+                <option value="document">Documento</option>
+                <option value="lead">Lead</option>
+              </select>
+            </label>
+            <label class="field-stack">
+              <span>Nombre</span>
+              <input class="field-input" [(ngModel)]="parent.categoryDraft.name" placeholder="Ej: Urgente, Legal, Salud">
+            </label>
+            <label class="field-stack field-stack--compact">
+              <span>Color</span>
+              <input class="field-input" [(ngModel)]="parent.categoryDraft.color" placeholder="#f27a5e">
+            </label>
+            <button class="btn-primary" (click)="parent.addCategory()">Agregar</button>
+          </div>
+          <div class="erp-table-list" *ngIf="parent.systemCategories.length; else emptyCategories">
+            <div class="erp-table-list__head">
+              <span>Modulo</span>
+              <span>Categoría</span>
+              <span>Color</span>
+            </div>
+            <div class="erp-table-list__row" *ngFor="let category of parent.systemCategories">
+              <span>{{ category.scope }}</span>
+              <strong>{{ category.name }}</strong>
+              <span class="color-pill">
+                <i [style.background]="category.color || '#e2e8f0'"></i>
+                {{ category.color || 'Sin color' }}
+              </span>
+            </div>
+          </div>
+          <ng-template #emptyCategories>
+            <div class="erp-empty-state">No hay categorías todavía. Agrega las que realmente usará el equipo.</div>
+          </ng-template>
+        </div>
+
+        <div class="workflow-block">
+          <div class="workflow-block__title">
+            <strong>Estados</strong>
+            <span>Controlan avance y cierres por flujo.</span>
+          </div>
+          <div class="erp-form-grid erp-form-grid--action">
+            <label class="field-stack">
+              <span>Flujo</span>
+              <select class="field-input" [(ngModel)]="parent.statusDraft.scope">
+                <option value="request">Solicitud</option>
+                <option value="task">Tarea</option>
+                <option value="lead">Lead</option>
+                <option value="document">Documento</option>
+              </select>
+            </label>
+            <label class="field-stack field-stack--compact">
+              <span>Código</span>
+              <input class="field-input" [(ngModel)]="parent.statusDraft.code" placeholder="en_revision">
+            </label>
+            <label class="field-stack">
+              <span>Etiqueta</span>
+              <input class="field-input" [(ngModel)]="parent.statusDraft.label" placeholder="En revision">
+            </label>
+            <label class="erp-check erp-check--button"><input type="checkbox" [(ngModel)]="parent.statusDraft.is_terminal"> Terminal</label>
+            <button class="btn-primary" (click)="parent.addStatus()">Agregar</button>
+          </div>
+          <div class="erp-table-list" *ngIf="parent.systemStatuses.length; else emptyStatuses">
+            <div class="erp-table-list__head">
+              <span>Flujo</span>
+              <span>Estado</span>
+              <span>Cierre</span>
+            </div>
+            <div class="erp-table-list__row" *ngFor="let status of parent.systemStatuses">
+              <span>{{ status.scope }}</span>
+              <strong>{{ status.label }}</strong>
+              <span>{{ status.is_terminal ? 'Terminal' : 'Intermedio' }}</span>
+            </div>
+          </div>
+          <ng-template #emptyStatuses>
+            <div class="erp-empty-state">No hay estados configurables. Parte por los estados que cambian más seguido.</div>
+          </ng-template>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card erp-panel" *ngIf="parent.configSection === 'business' && !parent.companyConfigMode">
+      <div class="erp-panel__header">
+        <div>
+          <h3>SLA por plan</h3>
+          <p>Configura tiempos de respuesta, tareas y escalamiento.</p>
+        </div>
+        <span>{{ parent.planSlas.length }} planes</span>
+      </div>
+      <div class="erp-form-grid erp-form-grid--four">
+        <input class="field-input" [(ngModel)]="parent.planSlaDraft.plan_tier" placeholder="Plan">
+        <input class="field-input" type="number" [(ngModel)]="parent.planSlaDraft.request_response_hours" placeholder="Respuesta h">
+        <input class="field-input" type="number" [(ngModel)]="parent.planSlaDraft.task_due_hours" placeholder="Tarea h">
+        <input class="field-input" type="number" [(ngModel)]="parent.planSlaDraft.escalation_hours" placeholder="Escala h">
+      </div>
+      <button class="btn-primary" (click)="parent.addPlanSla()">Guardar SLA</button>
+      <div class="erp-list">
+        <div class="erp-list-row" *ngFor="let sla of parent.planSlas">
+          <strong>{{ sla.plan_tier }}</strong>
+          <span>{{ sla.request_response_hours }}h respuesta · {{ sla.escalation_hours }}h escalamiento</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card erp-panel erp-panel--wide" *ngIf="parent.configSection === 'messages' && !parent.companyConfigMode">
+      <div class="erp-panel__header">
+        <div>
+          <h3>Plantillas de email</h3>
+          <p>Prepara comunicaciones reutilizables para invitaciones, seguimiento y cierre.</p>
+        </div>
+        <span>{{ parent.emailTemplates.length }} plantillas</span>
+      </div>
+      <div class="erp-form-grid erp-form-grid--three">
+        <input class="field-input" [(ngModel)]="parent.emailTemplateDraft.code" placeholder="codigo">
+        <input class="field-input" [(ngModel)]="parent.emailTemplateDraft.name" placeholder="Nombre">
+        <input class="field-input" [(ngModel)]="parent.emailTemplateDraft.subject" placeholder="Asunto">
+      </div>
+      <textarea class="field-input" rows="3" [(ngModel)]="parent.emailTemplateDraft.body_html" placeholder="<p>Hola {{nombre}}, ...</p>"></textarea>
+      <button class="btn-primary" (click)="parent.addEmailTemplate()">Crear plantilla</button>
+      <div class="erp-document-list">
+        <div class="erp-list-row" *ngFor="let template of parent.emailTemplates">
+          <strong>{{ template.name }}</strong>
+          <span>{{ template.subject }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card erp-panel" *ngIf="parent.configSection === 'documents'">
+      <div class="erp-panel__header">
+        <div>
+          <h3>Documentos</h3>
+          <p>Registra contratos, propuestas, certificados y archivos de caso.</p>
+        </div>
+        <span>{{ parent.companyDocuments.length }} registros</span>
+      </div>
+      <div class="erp-form-grid erp-form-grid--two">
+        <select class="field-input" [(ngModel)]="parent.documentDraft.document_type">
+          <option value="contract">Contrato</option>
+          <option value="company_file">Archivo empresa</option>
+          <option value="case_file">Archivo caso</option>
+          <option value="certificate">Certificado</option>
+          <option value="proposal">Propuesta</option>
+          <option value="other">Otro</option>
+        </select>
+        <input class="field-input" [(ngModel)]="parent.documentDraft.title" placeholder="Título documento">
+      </div>
+      <label class="erp-upload-field">
+        <span>Archivo</span>
+        <input type="file" (change)="parent.onDocumentFileSelected($event)">
+        <strong>{{ parent.selectedDocumentFile?.name || 'Seleccionar archivo' }}</strong>
+        <small *ngIf="parent.selectedDocumentFile">{{ (parent.selectedDocumentFile.size / 1024 / 1024) | number:'1.1-1' }} MB</small>
+      </label>
+      <input *ngIf="!parent.selectedDocumentFile && !parent.companyConfigMode" class="field-input" [(ngModel)]="parent.documentDraft.storage_path" placeholder="Ruta storage opcional: company-id/archivo.pdf">
+      <button class="btn-primary" (click)="parent.addDocumentRecord()" [disabled]="parent.uploadingDocument || (parent.companyConfigMode && !parent.selectedDocumentFile)">
+        {{ parent.uploadingDocument ? 'Subiendo...' : (parent.selectedDocumentFile ? 'Subir documento' : 'Registrar documento') }}
+      </button>
+      <div class="erp-list">
+        <div class="erp-document-row" *ngFor="let doc of parent.companyDocuments">
+          <div class="erp-document-row__main">
+            <strong>{{ doc.title }}</strong>
+            <span>{{ doc.document_type }} · {{ doc.file_name || 'Sin archivo' }}</span>
+            <small>
+              {{ doc.created_at | date:'dd/MM/yyyy HH:mm' }}
+              <ng-container *ngIf="doc.size_bytes"> · {{ parent.formatBytes(doc.size_bytes) }}</ng-container>
+            </small>
+          </div>
+          <span class="status-badge"
+            [class.badge-blue]="doc.status === 'draft'"
+            [class.badge-warn]="doc.status === 'review'"
+            [class.badge-green]="doc.status === 'approved'"
+            [class.badge-gray]="doc.status === 'archived'">
+            {{ doc.status }}
+          </span>
+          <div class="erp-document-row__actions">
+            <button
+              type="button"
+              class="btn-secondary erp-list-action"
+              [disabled]="!doc.storage_path"
+              (click)="parent.openCompanyDocument(doc)">
+              Ver
+            </button>
+            <button type="button" class="btn-secondary erp-list-action" *ngIf="doc.status !== 'approved'" (click)="parent.updateCompanyDocumentStatus(doc, 'approved')">Aprobar</button>
+            <button type="button" class="btn-secondary erp-list-action" *ngIf="doc.status !== 'archived'" (click)="parent.updateCompanyDocumentStatus(doc, 'archived')">Archivar</button>
+            <button type="button" class="btn-secondary erp-list-action erp-list-action--danger" (click)="parent.deleteCompanyDocument(doc)">Eliminar</button>
+          </div>
+        </div>
+        <div class="erp-empty-state" *ngIf="parent.companyDocuments.length === 0">
+          No hay documentos cargados.
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card erp-panel" *ngIf="parent.configSection === 'messages'">
+      <div class="erp-panel__header">
+        <div>
+          <h3>{{ parent.companyConfigMode ? 'Mensajes y soporte' : 'Mensajeria interna' }}</h3>
+          <p>{{ parent.companyConfigMode ? 'Deja mensajes para el equipo Company Care.' : 'Deja notas operativas asociadas a empresa, tareas, leads o documentos.' }}</p>
+        </div>
+        <span>{{ parent.entityComments.length }} mensajes</span>
+      </div>
+      <div class="erp-form-grid erp-form-grid--two" *ngIf="!parent.companyConfigMode">
+        <select class="field-input" [(ngModel)]="parent.commentDraft.entity_type">
+          <option value="company">Empresa</option>
+          <option value="task">Tarea</option>
+          <option value="lead">Lead</option>
+          <option value="document">Documento</option>
+        </select>
+        <select class="field-input" [(ngModel)]="parent.commentDraft.visibility">
+          <option value="internal">Interno</option>
+          <option value="company">Visible empresa</option>
+        </select>
+      </div>
+      <textarea class="field-input" rows="3" [(ngModel)]="parent.commentDraft.body" [placeholder]="parent.companyConfigMode ? 'Escribe un mensaje para soporte Company Care...' : 'Escribe un comentario o nota operacional...'"></textarea>
+      <button class="btn-primary" (click)="parent.addComment()">Agregar comentario</button>
+      <div class="erp-list">
+        <div class="erp-list-row" *ngFor="let comment of parent.entityComments | slice:0:5">
+          <strong>{{ comment.author?.full_name || 'Usuario' }}</strong>
+          <span>{{ comment.body }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card erp-panel erp-panel--wide" *ngIf="parent.configSearch.trim()">
+      <div class="erp-panel__header">
+        <div>
+          <h3>Resultados búsqueda</h3>
+          <p>Vista rápida de la configuración cargada.</p>
+        </div>
+        <span>{{ parent.filteredConfigRows.length }} ítems</span>
+      </div>
+      <div class="erp-list">
+        <div class="erp-list-row" *ngFor="let row of parent.filteredConfigRows">
+          <strong>{{ row.type }} · {{ row.title }}</strong>
+          <span>{{ row.detail }}</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

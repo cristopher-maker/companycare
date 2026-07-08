@@ -1,0 +1,44 @@
+<div class="mt-8">
+  <div class="view-header">
+    <span class="view-title">Facturación y Cobros globales</span>
+  </div>
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:25%">Paciente</th>
+          <th style="width:15%">Emisión</th>
+          <th style="width:15%">Vencimiento</th>
+          <th style="width:15%">Monto</th>
+          <th style="width:15%">Estado</th>
+          <th style="width:15%">Acciones</th>
+        </tr>
+      </thead>
+      <tbody *ngIf="parent.allInvoicesView.length > 0">
+        <tr *ngFor="let inv of parent.allInvoicesView">
+          <td class="td-primary">
+            {{ inv.patientName }}
+            <div style="font-size: 11px; color: var(--text3); font-weight: normal; margin-top: 2px;">RUT: {{ inv.document }}</div>
+          </td>
+          <td class="td-mono">{{ inv.issue_date | date:'dd/MM/yyyy' }}</td>
+          <td class="td-mono">{{ inv.due_date | date:'dd/MM/yyyy' }}</td>
+          <td class="td-mono" style="font-weight: 500;">{{ inv.amount | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+          <td>
+            <span class="status-badge badge-gray" *ngIf="inv.status === 'draft'">Borrador</span>
+            <span class="status-badge badge-blue" *ngIf="inv.status === 'sent'">Enviado</span>
+            <span class="status-badge badge-green" *ngIf="inv.status === 'paid'">Pagado</span>
+            <span class="status-badge badge-red" *ngIf="inv.status === 'overdue'">Vencido</span>
+          </td>
+          <td class="td-actions">
+            <button class="btn-ghost" *ngIf="inv.status !== 'paid'" style="color: var(--accent);" (click)="parent.updateInvoiceStatus(inv, 'paid')">Marcar Pagado</button>
+          </td>
+        </tr>
+      </tbody>
+      <tbody *ngIf="parent.allInvoicesView.length === 0">
+        <tr>
+          <td colspan="6" class="td-empty">No hay cobros emitidos globalmente. Genera el primer cobro desde la pestaña de Pacientes.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

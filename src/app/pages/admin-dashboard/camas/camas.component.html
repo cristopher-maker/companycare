@@ -1,0 +1,53 @@
+<div class="mt-8">
+  <div class="view-header">
+    <span class="view-title">Camas y vacantes</span>
+    <button class="btn-primary" (click)="parent.openCamaModal()">
+      <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">add</mat-icon>
+      Añadir cama
+    </button>
+  </div>
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:16%">ID / Código</th>
+          <th style="width:22%">Sede</th>
+          <th style="width:16%">Tipo</th>
+          <th style="width:16%">Estado</th>
+          <th style="width:20%">Paciente</th>
+          <th style="width:10%"></th>
+        </tr>
+      </thead>
+      <tbody *ngIf="parent.camasDetalle.length > 0">
+        <tr *ngFor="let cama of parent.camasDetalle" [class.row-highlight]="parent.isSelectedEntity('cama', cama.dbId)">
+          <td class="td-mono td-primary">{{ cama.id }}</td>
+          <td>{{ cama.sede }}</td>
+          <td>{{ cama.tipo }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.badge-blue]="cama.estado === 'Ocupada'"
+                  [class.badge-green]="cama.estado === 'Disponible'"
+                  [class.badge-warn]="cama.estado === 'En limpieza'"
+                  [class.badge-gray]="cama.estado === 'Mantenimiento'">
+              {{ cama.estado }}
+            </span>
+          </td>
+          <td>{{ cama.paciente }}</td>
+          <td class="td-actions">
+            <button class="btn-ghost" style="margin-right: 6px;" (click)="parent.openCamaModal(cama)">
+              Editar
+            </button>
+            <button class="btn-ghost" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);" (click)="parent.deleteCama(cama)">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+      <tbody *ngIf="parent.camasDetalle.length === 0">
+        <tr>
+          <td colspan="6" class="td-empty">No hay camas registradas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

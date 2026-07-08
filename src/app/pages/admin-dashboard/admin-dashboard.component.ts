@@ -1,9 +1,10 @@
-import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
+import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { ChartConfiguration } from 'chart.js';
+import { filter } from 'rxjs/operators';
 
 type LeadStatus = 'nuevo' | 'contactado' | 'evaluacion' | 'match' | 'cerrado' | 'perdido';
 type ConfigSection = 'company' | 'appearance' | 'workflow' | 'business' | 'documents' | 'messages';
@@ -17,7 +18,8 @@ type DashboardToast = { id: number; tone: ToastTone; message: string };
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   @Input() hideWorkflowConfig = false;
@@ -41,6 +43,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   loading = true;
   hasLoadedOnce = false;
   profileRole: string | null = null;
+  profileName: string | null = null;
   hasActivePlan = false;
   activePlanTier: string | null = null;
 
@@ -142,7 +145,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     'tareas',
     'empleados',
     'vouchers',
-    'facturacion',
     'gastos'
   ]);
 
@@ -260,13 +262,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   onboardingStepDraft: any = { project_id: null, title: '', description: '', step_key: '' };
   brandingDraft: any = {
     logo_url: '',
-    primary_color: '#123c4a',
-    secondary_color: '#f27a5e',
-    erp_primary_color: '#123c4a',
-    erp_accent_color: '#f27a5e',
-    erp_background_color: '#f8fafc',
+    primary_color: '#5d87ff',
+    secondary_color: '#fa896b',
+    erp_primary_color: '#5d87ff',
+    erp_accent_color: '#fa896b',
+    erp_background_color: '#f4f6fa',
     erp_surface_color: '#ffffff',
-    erp_text_color: '#0f172a',
+    erp_text_color: '#2a3547',
     erp_button_style: 'solid',
     erp_radius: 'compact',
     erp_density: 'comfortable',
@@ -417,11 +419,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   get adminThemeVars() {
-    const primary = this.normalizeHex(this.brandingDraft.erp_primary_color, '#123c4a');
-    const accent = this.normalizeHex(this.brandingDraft.erp_accent_color, '#f27a5e');
-    const background = this.normalizeHex(this.brandingDraft.erp_background_color, '#f8fafc');
+    const primary = this.normalizeHex(this.brandingDraft.erp_primary_color, '#5d87ff');
+    const accent = this.normalizeHex(this.brandingDraft.erp_accent_color, '#fa896b');
+    const background = this.normalizeHex(this.brandingDraft.erp_background_color, '#f4f6fa');
     const surface = this.normalizeHex(this.brandingDraft.erp_surface_color, '#ffffff');
-    const text = this.normalizeHex(this.brandingDraft.erp_text_color, '#0f172a');
+    const text = this.normalizeHex(this.brandingDraft.erp_text_color, '#2a3547');
 
     return {
       '--bg': background,
@@ -505,7 +507,23 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   get hasOperationalAccess(): boolean {
-    return this.profileRole === 'admin' || this.hasActivePlan;
+    return this.profileRole === 'admin' || this.profileRole === 'company_admin' || this.hasActivePlan;
+  }
+
+  get profileRoleLabel(): string {
+    switch (this.profileRole) {
+      case 'admin': return 'Super Admin';
+      case 'company_admin': return 'Admin Empresa';
+      case 'employee': return 'Colaborador';
+      case 'manager': return 'Gerente';
+      case 'care_expert': return 'Experto Cuidado';
+      default: return 'Usuario';
+    }
+  }
+
+  get profileInitials(): string {
+    if (!this.profileName) return 'US';
+    return this.profileName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   }
 
   get planGateMessage(): string {
@@ -608,15 +626,36 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private realtimeChannel: any;
 
   constructor(
-    private supabase: SupabaseService,
+    public supabase: SupabaseService,
     private auth: AuthService,
     private route: ActivatedRoute,
+    private router: Router,
     cdr: ChangeDetectorRef
   ) { this.cdr = cdr; }
 
   async ngOnInit() {
     if (this.companyConfigMode) {
       this.configSection = 'company';
+    } else {
+      const syncView = () => {
+        const firstChild = this.route.firstChild;
+        if (firstChild) {
+          firstChild.url.subscribe(url => {
+            if (url.length > 0) {
+              this.currentView = url[0].path as DashboardView;
+              this.cdr.markForCheck();
+            }
+          });
+        }
+      };
+      
+      syncView();
+
+      this.router.events.pipe(
+        filter(event => event instanceof NavigationEnd)
+      ).subscribe(() => {
+        syncView();
+      });
     }
 
     this.route.queryParamMap.subscribe((params) => {
@@ -672,11 +711,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
       // Profile + company_members corren en paralelo (dependen de userId)
       const [profileResult, memberResult] = await Promise.all([
-        this.supabase.client.from('profiles').select('role').eq('id', userId).maybeSingle(),
+        this.supabase.client.from('profiles').select('role, full_name').eq('id', userId).maybeSingle(),
         this.supabase.client.from('company_members').select('company_id').eq('user_id', userId).maybeSingle()
       ]);
 
       this.profileRole = (profileResult.data?.role as string | undefined) ?? null;
+      this.profileName = (profileResult.data?.full_name as string | undefined) ?? null;
 
       const companyId = memberResult.data?.company_id;
       if (!companyId) {
@@ -692,6 +732,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       // 2. Todas las queries de datos corren en paralelo una vez que tenemos companyId
       const [
         subscriptionResult,
+        companyResult,
         providersResult,
         patientsResult,
         contractsResult,
@@ -710,6 +751,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           .order('current_period_end', { ascending: false, nullsFirst: false })
           .limit(1)
           .maybeSingle(),
+        this.supabase.client
+          .from('companies')
+          .select('plan_tier')
+          .eq('id', companyId)
+          .maybeSingle(),
         this.supabase.client.from('providers').select('*').eq('company_id', companyId),
         this.supabase.client.from('patients').select('*').eq('company_id', companyId),
         this.supabase.client.from('patient_contracts').select('*').eq('company_id', companyId),
@@ -721,8 +767,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       ]);
 
       // Procesar resultados
-      this.hasActivePlan = !!subscriptionResult.data;
-      this.activePlanTier = (subscriptionResult.data?.plan_tier as string | undefined) ?? null;
+      const activePlanFromCompany = (companyResult.data?.plan_tier as string | undefined) ?? null;
+      this.hasActivePlan = !!subscriptionResult.data || (activePlanFromCompany !== null && activePlanFromCompany !== 'free');
+      this.activePlanTier = (subscriptionResult.data?.plan_tier as string | undefined) ?? activePlanFromCompany ?? null;
 
       if (this.isPlanLockedView(this.currentView)) {
         this.currentView = 'metricas';
@@ -1006,7 +1053,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return labels[status || ''] || 'Sin estado';
   }
 
-  private taskDueDeadline(value: string): Date | null {
+  public taskDueDeadline(value: string): Date | null {
     if (!value) return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
       const [year, month, day] = value.split('-').map(Number);
@@ -1152,6 +1199,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.mobileNavOpen = false;
     this.clearSelectedEntity();
     this.cdr.markForCheck();
+
+    if (!this.companyConfigMode) {
+      this.router.navigate([view], { relativeTo: this.route });
+    }
   }
 
   toggleMobileNav() {
@@ -1201,7 +1252,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.showToast(message, 'error', 5200);
   }
 
-  private flash(message: string) {
+  public flash(message: string) {
     const normalized = message.toLowerCase();
     if (normalized.includes('guardado correctamente') || normalized.includes('apariencia guardada') || normalized.includes('correctamente')) {
       this.notifySuccess(message);
@@ -1243,7 +1294,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  private confirmAction(message: string, options?: {
+  public confirmAction(message: string, options?: {
     title?: string;
     tone?: ToastTone;
     confirmLabel?: string;
@@ -1258,7 +1309,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  private ensureOperationalAccess(): boolean {
+  public ensureOperationalAccess(): boolean {
     if (this.hasOperationalAccess) return true;
     this.notifyWarning('Necesitas un plan activo para realizar esta accion.');
     return false;
@@ -2141,11 +2192,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   applyThemePreset(preset: 'care' | 'clinical' | 'corporate' | 'warm') {
     const presets = {
       care: {
-        erp_primary_color: '#123c4a',
-        erp_accent_color: '#f27a5e',
-        erp_background_color: '#f8fafc',
+        erp_primary_color: '#5d87ff',
+        erp_accent_color: '#fa896b',
+        erp_background_color: '#f4f6fa',
         erp_surface_color: '#ffffff',
-        erp_text_color: '#0f172a',
+        erp_text_color: '#2a3547',
         erp_button_style: 'solid',
         erp_radius: 'compact',
         erp_density: 'comfortable'
@@ -2191,11 +2242,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       logo_url: this.brandingDraft.logo_url || null,
       primary_color: this.brandingDraft.erp_primary_color || this.brandingDraft.primary_color,
       secondary_color: this.brandingDraft.erp_accent_color || this.brandingDraft.secondary_color,
-      erp_primary_color: this.normalizeHex(this.brandingDraft.erp_primary_color, '#123c4a'),
-      erp_accent_color: this.normalizeHex(this.brandingDraft.erp_accent_color, '#f27a5e'),
-      erp_background_color: this.normalizeHex(this.brandingDraft.erp_background_color, '#f8fafc'),
+      erp_primary_color: this.normalizeHex(this.brandingDraft.erp_primary_color, '#5d87ff'),
+      erp_accent_color: this.normalizeHex(this.brandingDraft.erp_accent_color, '#fa896b'),
+      erp_background_color: this.normalizeHex(this.brandingDraft.erp_background_color, '#f4f6fa'),
       erp_surface_color: this.normalizeHex(this.brandingDraft.erp_surface_color, '#ffffff'),
-      erp_text_color: this.normalizeHex(this.brandingDraft.erp_text_color, '#0f172a'),
+      erp_text_color: this.normalizeHex(this.brandingDraft.erp_text_color, '#2a3547'),
       erp_button_style: this.brandingDraft.erp_button_style || 'solid',
       erp_radius: this.brandingDraft.erp_radius || 'compact',
       erp_density: this.brandingDraft.erp_density || 'comfortable',

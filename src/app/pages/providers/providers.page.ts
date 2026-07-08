@@ -41,6 +41,7 @@ type ProviderCard = {
   address: string | null;
   placeId: string | null;
   whatsapp: string | null;
+  imgFailed?: boolean;
 };
 
 @Component({
@@ -101,6 +102,7 @@ export class ProvidersPage implements OnInit, OnDestroy {
   public openProvider(provider: ProviderCard): void {
     this.selectedProvider = provider;
     this.selectedProviderImages = provider.images;
+    document.body.style.overflow = 'hidden';
     
     const total = Math.max(provider.reviews, 1);
     const five = Math.round(total * Math.min(provider.rating / 5, 1) * 0.78);
@@ -123,6 +125,7 @@ export class ProvidersPage implements OnInit, OnDestroy {
       event.stopPropagation();
     }
     this.selectedProvider = null;
+    document.body.style.overflow = '';
   }
 
   public removeSelectedImage(index: number): void {
@@ -305,6 +308,23 @@ export class ProvidersPage implements OnInit, OnDestroy {
     return provider.id;
   }
 
+  public onImgError(event: Event, provider: ProviderCard): void {
+    provider.imgFailed = true;
+  }
+
+  public getProviderIcon(type: ProviderType): string {
+    switch (type) {
+      case 'Residencia':
+        return 'home_work';
+      case 'Cuidador a domicilio':
+        return 'healing';
+      case 'Servicio médico':
+        return 'local_hospital';
+      default:
+        return 'business';
+    }
+  }
+
   private toProviderCard(row: ProviderRow): ProviderCard {
     const metadata = row.metadata ?? {};
     const listings = (row.provider_listings ?? []).filter((item) => !!item);
@@ -351,6 +371,7 @@ export class ProvidersPage implements OnInit, OnDestroy {
       address,
       placeId,
       whatsapp,
+      imgFailed: false,
     };
   }
 }
