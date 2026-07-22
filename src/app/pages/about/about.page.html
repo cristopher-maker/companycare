@@ -1,147 +1,214 @@
-﻿<app-site-header></app-site-header>
+<app-site-header></app-site-header>
 
 <main class="pg about-page">
   
-  <!-- HERO SECTION -->
-  <section class="about-hero" (mousemove)="onHeroPointerMove($event)" (mouseleave)="resetHeroParallax()">
-    <div class="about-hero-inner">
-      <div class="about-hero-copy">
-        <div class="section-kicker kicker-light">Nosotros</div>
-        <h1 class="about-h1">Cuidado senior con criterio humano, clínico y corporativo</h1>
-        <p class="about-desc">Reducimos el estrés de quienes cuidan a un ser querido y ayudamos a las empresas a convertir ese desafío en un beneficio real, visible y útil.</p>
-
-        <div class="about-hero-actions">
-          <a class="about-hero-cta" routerLink="/services">Ver servicios</a>
-          <a class="about-hero-link" routerLink="/contact">Hablar con el equipo</a>
-        </div>
-
-        <div class="about-hero-metrics">
-          <div class="about-hero-metric">
-            <span class="about-hero-metric__icon" aria-hidden="true">
-              <mat-icon>business</mat-icon>
-            </span>
-            <span class="about-hero-metric__copy">
-              <strong>200+</strong>
-              <span>empresas con foco en bienestar</span>
-            </span>
-          </div>
-          <div class="about-hero-metric">
-            <span class="about-hero-metric__icon" aria-hidden="true">
-              <mat-icon>hub</mat-icon>
-            </span>
-            <span class="about-hero-metric__copy">
-              <strong>1 red</strong>
-              <span>de expertos, recursos y proveedores</span>
-            </span>
-          </div>
-          <div class="about-hero-metric">
-            <span class="about-hero-metric__icon" aria-hidden="true">
-              <mat-icon>favorite</mat-icon>
-            </span>
-            <span class="about-hero-metric__copy">
-              <strong>1 misión</strong>
-              <span>hacer el cuidado menos abrumador</span>
-            </span>
-          </div>
-        </div>
+  <!-- 01 · ESENCIA DE MARCA -->
+  <section class="section brand-essence">
+    <div class="section-container">
+      <div class="brand-section-header">
+        <span class="brand-kicker">01 · ESENCIA DE MARCA</span>
+        <h1 class="brand-h1">Cuidamos a quienes cuidan.</h1>
+        <p class="brand-lead">
+          Company Care es un ecosistema tecnológico y humano estructurado como un beneficio corporativo de alto impacto. Acompañamos a los trabajadores que cuidan de un familiar mayor, aliviando su carga mental, administrativa y operativa.
+        </p>
       </div>
 
-      <div
-        class="about-hero-visual"
-        aria-label="Acompañamiento de cuidado senior"
-        [style.--photo-x]="photoOffsetX"
-        [style.--photo-y]="photoOffsetY"
-      >
-        <div class="about-photo-card about-photo-card--main">
-          <img src="assets/img/about-us.webp" alt="Profesional de salud orientando a una familia" />
+      <div class="essence-grid">
+        <div class="essence-card">
+          <div class="essence-card__dot"></div>
+          <h3>Orientación profesional</h3>
+          <p>Guía gerontológica experta para tomar mejores decisiones, sin sentirse solo.</p>
         </div>
-        <div class="about-hero-note">
-          <strong>Modelo de cuidado</strong>
-          <p>Orientación humana, criterio experto y seguimiento para cada caso.</p>
+
+        <div class="essence-card">
+          <div class="essence-card__dot"></div>
+          <h3>Proveedores validados</h3>
+          <p>Buscar, comparar y contratar servicios de confianza desde un solo lugar.</p>
         </div>
-        <div class="about-floating-quote" aria-label="Testimonio breve">
-          <span>Escuchados y apoyados  s</span>
-        
+
+        <div class="essence-card">
+          <div class="essence-card__dot"></div>
+          <h3>Contexto de salud</h3>
+          <p>Organizar la información del adulto mayor en un espacio claro y compartido.</p>
         </div>
-        <div class="about-network-pill" aria-hidden="true">
-          <span class="about-network-pill__nodes">
-            <i></i>
-          </span>
-          <strong>Red activa</strong>
-          <small>expertos coordinados</small>
+
+        <div class="essence-card">
+          <div class="essence-card__dot"></div>
+          <h3>Bienestar del cuidador</h3>
+          <p>Herramientas para reducir el agotamiento físico, mental y emocional.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- STORY SECTION -->
-  <section class="section about-story">
-    <div class="story-layout">
-      <div class="story-content">
-        <h2 class="section-h2">De una experiencia personal a una plataforma útil para miles de familias</h2>
-        <p>Company Care nació de la necesidad real de sus fundadores al enfrentar el desafío de cuidar a sus padres. La búsqueda de información confiable, proveedores de calidad y apoyo emocional era un verdadero laberinto.</p>
-        <p>Decidimos transformar esa dificultad en una oportunidad: crear una plataforma que centralice todo lo que un empleado cuidador necesita, respaldada por la experiencia clínica y la tecnología, devolviéndole la tranquilidad a las familias.</p>
+  <!-- 02 · PROPÓSITO -->
+  <section class="section brand-purpose">
+    <div class="section-container">
+      <div class="brand-section-header">
+        <span class="brand-kicker">02 · PROPÓSITO</span>
+        <h2 class="brand-h2">Por qué existimos</h2>
+        <blockquote class="purpose-quote">
+          “Ningún colaborador debiera elegir entre su trabajo y cuidar a quien ama.”
+        </blockquote>
       </div>
 
-      <div class="story-aside">
-        <div class="story-quote">
-          <span class="story-quote__mark">“</span>
-          <p>Queremos que pedir orientación no se sienta como empezar desde cero cada vez.</p>
+      <div class="purpose-cards-grid">
+        <div class="purpose-card purpose-card--mission">
+          <span class="purpose-card__label">MISIÓN</span>
+          <p>
+            Aliviar la carga de quienes cuidan de un familiar mayor, combinando tecnología y acompañamiento humano dentro del entorno laboral.
+          </p>
         </div>
-        <div class="story-media-placeholder" aria-label="Acompañamiento cotidiano"></div>
+
+        <div class="purpose-card purpose-card--vision">
+          <span class="purpose-card__label">VISIÓN</span>
+          <p>
+            Ser el beneficio de cuidado más valorado en las empresas, donde cuidar a los mayores sea sostenible para cada familia.
+          </p>
+        </div>
+      </div>
+
+      <div class="purpose-audience-box">
+        <span class="purpose-audience-box__label">A QUIÉN SERVIMOS</span>
+        <p>
+          Empresas que ofrecen Company Care como beneficio interno, y —en el centro de todo— sus <strong>trabajadores cuidadores</strong>: personas que sostienen su vida laboral mientras cuidan de un adulto mayor.
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- VALUES SECTION -->
-  <section class="section about-values">
-    <div class="text-center">
-      <div class="section-kicker">Pilares</div>
-      <h2 class="section-h2">Nuestros Valores</h2>
-    </div>
-    <div class="values-grid">
-      <div class="value-card">
-        <div class="value-icon coral"><mat-icon>favorite</mat-icon></div>
-        <h3 class="value-title">Empatía</h3>
-        <p class="value-desc">Entendemos el viaje del cuidador porque lo hemos vivido en primera persona.</p>
+  <!-- 03 · VALORES -->
+  <section class="section brand-values">
+    <div class="section-container">
+      <div class="brand-section-header">
+        <span class="brand-kicker">03 · VALORES</span>
+        <h2 class="brand-h2">Lo que nos guía</h2>
+        <p class="brand-sublead">
+          Cuatro principios que ordenan cada decisión de producto, servicio y comunicación.
+        </p>
       </div>
-      <div class="value-card">
-        <div class="value-icon teal"><mat-icon>verified_user</mat-icon></div>
-        <h3 class="value-title">Confianza</h3>
-        <p class="value-desc">Verificamos cada proveedor y recurso para tu absoluta tranquilidad.</p>
-      </div>
-      <div class="value-card">
-        <div class="value-icon amber"><mat-icon>lightbulb</mat-icon></div>
-        <h3 class="value-title">Claridad</h3>
-        <p class="value-desc">Simplificamos información compleja para que tomes decisiones informadas.</p>
+
+      <div class="values-list">
+        <div class="value-item">
+          <span class="value-item__number">01</span>
+          <div class="value-item__body">
+            <h3>Empatía primero</h3>
+            <p>Antes que una solución, hay una persona cansada. Escuchamos y respondemos con calidez.</p>
+          </div>
+        </div>
+
+        <div class="value-item">
+          <span class="value-item__number">02</span>
+          <div class="value-item__body">
+            <h3>Confianza que se gana</h3>
+            <p>Validamos proveedores, cuidamos los datos y cumplimos lo que prometemos.</p>
+          </div>
+        </div>
+
+        <div class="value-item">
+          <span class="value-item__number">03</span>
+          <div class="value-item__body">
+            <h3>Claridad sin fricción</h3>
+            <p>Simplificamos lo complejo. Cada paso es entendible para cualquier persona, sin jerga.</p>
+          </div>
+        </div>
+
+        <div class="value-item">
+          <span class="value-item__number">04</span>
+          <div class="value-item__body">
+            <h3>Dignidad y respeto</h3>
+            <p>Honramos la etapa de vida del adulto mayor y el esfuerzo silencioso de quien cuida.</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- TEAM & EXPERTS SECTION -->
-  <section class="section about-team">
-    <div class="advisory-board">
-      <div class="text-center">
-        <div class="section-kicker">Respaldo Clínico</div>
-        <h2 class="section-h2">Consejo Asesor</h2>
+  <!-- 04 · PERSONALIDAD -->
+  <section class="section brand-personality">
+    <div class="section-container">
+      <div class="brand-section-header">
+        <span class="brand-kicker">04 · PERSONALIDAD</span>
+        <h2 class="brand-h2">Cómo se siente la marca</h2>
+        <p class="brand-sublead">
+          Cálida y humana, pero confiable y profesional.
+        </p>
       </div>
-      <p class="advisory-desc text-center">Nuestras decisiones están respaldadas por un comité de expertos en geriatría, psicología y trabajo social.</p>
-      <div class="advisory-panel">
-        <div class="advisory-tags" aria-label="Áreas del consejo asesor">
+
+      <div class="personality-pills">
+        <span class="personality-pill">Cercana</span>
+        <span class="personality-pill">Empática</span>
+        <span class="personality-pill">Confiable</span>
+        <span class="personality-pill">Clara</span>
+        <span class="personality-pill">Serena</span>
+        <span class="personality-pill">Optimista</span>
+      </div>
+
+      <div class="personality-comparison-grid">
+        <div class="comparison-column comparison-column--somos">
+          <span class="comparison-column__label">SOMOS</span>
+          <ul>
+            <li>
+              <span class="dot-icon"></span>
+              Un apoyo constante, no una carga más
+            </li>
+            <li>
+              <span class="dot-icon"></span>
+              Expertos accesibles y humanos
+            </li>
+            <li>
+              <span class="dot-icon"></span>
+              Un aliado del bienestar del equipo
+            </li>
+          </ul>
+        </div>
+
+        <div class="comparison-column comparison-column--nosomos">
+          <span class="comparison-column__label">NO SOMOS</span>
+          <ul>
+            <li>
+              <span class="dash-icon">—</span>
+              Fríos ni excesivamente clínicos
+            </li>
+            <li>
+              <span class="dash-icon">—</span>
+              Corporativos ni distantes
+            </li>
+            <li>
+              <span class="dash-icon">—</span>
+              Alarmistas ni paternalistas
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORIA Y RESPALDO CLÍNICO -->
+  <section class="section about-story-team">
+    <div class="section-container">
+      <div class="story-block">
+        <h2 class="brand-h2">De una experiencia personal a un beneficio para miles de familias</h2>
+        <p>
+          Company Care nació al enfrentar de cerca el desafío de cuidar a nuestros padres. La búsqueda de información confiable, proveedores de calidad y apoyo emocional era un laberinto. Decidimos transformar esa dificultad en una oportunidad: crear una plataforma que centralice todo lo que un empleado cuidador necesita, respaldada por experiencia clínica y tecnología.
+        </p>
+      </div>
+
+      <div class="advisory-block">
+        <div class="advisory-header text-center">
+          <span class="brand-kicker">Respaldo Clínico</span>
+          <h3 class="brand-h3">Consejo Asesor y Red Certificada</h3>
+          <p>
+            Nuestras decisiones están respaldadas por un comité interdisciplinario en geriatría, psicología y trabajo social, junto a más de 100 especialistas coordinados.
+          </p>
+        </div>
+        <div class="advisory-tags">
           <span>Geriatría</span>
           <span>Psicología</span>
           <span>Trabajo social</span>
           <span>Apoyo familiar</span>
         </div>
-        <p class="advisory-panel__text">
-          Un comité interdisciplinario revisa criterios de orientación, bienestar, dependencia, salud mental y acompañamiento familiar para sostener decisiones claras y responsables.
-        </p>
       </div>
-    </div>
-
-    <div class="specialist-network text-center">
-      <h3 class="section-h3">Nuestra Red de Especialistas</h3>
-      <p class="network-desc">Más allá de la plataforma, nuestro verdadero motor son los <strong>más de 100 cuidadores, enfermeras y especialistas certificados</strong> que acompañan a las familias día a día, seleccionados bajo estrictos estándares de calidad clínica y empatía.</p>
     </div>
   </section>
 

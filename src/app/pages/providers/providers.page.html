@@ -272,16 +272,14 @@
 <div *ngIf="selectedProvider" class="modal-backdrop" (click)="closeProvider()">
   <div class="detail-modal" (click)="$event.stopPropagation()">
     
-    <!-- Modal Header Bar (Fixed at the top) -->
+    <!-- Modal Header Bar (Single Clean Volver Action) -->
     <header class="detail-modal__header">
-      <button (click)="closeProvider()" class="detail-modal__back-btn" aria-label="Volver al listado">
+      <button (click)="closeProvider()" class="detail-modal__back-btn" aria-label="Volver a proveedores">
         <mat-icon>arrow_back</mat-icon>
-        <span>Volver al directorio</span>
+        <span>Volver a proveedores</span>
       </button>
       <h2 class="detail-modal__header-title">{{ selectedProvider.name }}</h2>
-      <button (click)="closeProvider()" class="detail-modal__close-btn-top" aria-label="Cerrar modal">
-        <mat-icon>close</mat-icon>
-      </button>
+      <div class="detail-modal__header-spacer"></div>
     </header>
 
     <!-- Scrollable container -->
@@ -290,7 +288,7 @@
       <!-- Main Centered Content Wrapper -->
       <div class="detail-modal__inner-container">
 
-        <!-- Top Banner (Inside centered wrapper to avoid cropping) -->
+        <!-- Top Banner -->
         <div class="detail-modal__banner">
           <img 
             *ngIf="selectedProvider.imageUrl && !selectedProvider.imgFailed" 
@@ -307,7 +305,7 @@
         <!-- Main Columns Layout -->
         <div class="detail-modal__layout">
           
-          <!-- Left: Core Information Container (Styled as white card) -->
+          <!-- Left: Core Information Container -->
           <div class="detail-modal__left">
             <div class="detail-modal__header-area">
               <div class="detail-modal__tags-row">
@@ -330,7 +328,7 @@
             <!-- Description Section -->
             <div class="detail-modal__section">
               <h3 class="detail-modal__sec-title">Acerca de este proveedor</h3>
-              <p class="detail-modal__desc-text">{{ selectedProvider.description || 'No hay descripción disponible para este proveedor.' }}</p>
+              <p class="detail-modal__desc-text">{{ selectedProvider.description || 'Prestador certificado y verificado por Company Care, especializado en la atención integral de personas mayores, evaluación ergonómica del entorno y contención profesional para el grupo familiar.' }}</p>
             </div>
 
             <!-- Gallery Images (if any) -->

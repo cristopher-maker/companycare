@@ -1,4 +1,4 @@
-﻿<app-site-header></app-site-header>
+<app-site-header></app-site-header>
 
 <div class="packages-page">
     <h2 class="sr-only">Página de planes Company Care con colores cálidos y calculadora de impacto</h2>
@@ -38,7 +38,7 @@
 
     <section class="plans-section">
       <div class="plan-card">
-        <div class="plan-icon">🏛️</div>
+        <div class="plan-icon"><mat-icon>layers</mat-icon></div>
         <div>
           <div class="plan-name">Plan Plataforma</div>
           <div><span class="plan-price">$49.000</span><span class="plan-price-label"> CLP /mes</span></div>
@@ -60,7 +60,7 @@
 
       <div class="plan-card plan-card--featured">
         <div class="plan-badge">Más completo</div>
-        <div class="plan-icon">✦</div>
+        <div class="plan-icon"><mat-icon>workspace_premium</mat-icon></div>
         <div>
           <div class="plan-name">Plan Acompañamiento</div>
           <div><span class="plan-price">$149.000</span><span class="plan-price-label"> CLP /mes</span></div>
@@ -121,58 +121,29 @@
       </div>
     </section>
 
-    <section class="compare-section">
-      <div class="compare-head">
-        <div class="kicker">Comparativa</div>
-        <h2>Qué incluye cada plan</h2>
-        <p>La diferencia está en cuánto acompañamiento operativo y experto necesita tu empresa para que el beneficio realmente se use.</p>
-      </div>
-      <table class="compare-table">
-        <thead>
-          <tr>
-            <th>Capacidad</th>
-            <th>Plataforma</th>
-            <th>Acompañamiento</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Portal co-brandeado</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Recursos y guías</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Onboarding RR.HH.</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Fichas de cuidado RR.HH.</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Métricas del beneficio</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Formación para managers</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Vouchers y beneficios</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Acceso completo a Care Experts</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Seguimiento de casos</td><td><span class="status-yes">✓</span></td><td><span class="status-yes">✓</span></td></tr>
-          <tr><td>Soporte prioritario</td><td><span class="status-no">—</span></td><td><span class="status-yes">✓</span></td></tr>
-        </tbody>
-      </table>
-    </section>
+    <!-- ─── CTA FINAL SECTION ───────────────────────────────────── -->
+    <section class="cta-section" aria-label="Solicitar propuesta">
+      <div class="cta-banner">
+        <div class="cta-copy">
+          <span class="cta-kicker">
+            <i class="cta-kicker-dot"></i>
+            Decisión
+          </span>
+          <h2>¿Quieres presentar una propuesta clara a tu dirección?</h2>
+          <p>Te enviamos la presentación ejecutiva, el detalle de planes y un cálculo proyectado para tu dotación.</p>
+        </div>
 
-    <div class="custom-section">
-      <div class="custom-section__icon-block">
-        <div class="kicker custom-kicker">Plan a medida</div>
-        <div class="custom-section__icon">⚙</div>
-      </div>
-      <div class="custom-content">
-        <h3>¿Necesitas una propuesta especial?</h3>
-        <p>Ajustamos alcance, onboarding, co-branding, métricas y soporte para compañías con más dotación o una operación más compleja.</p>
-      </div>
-      <a class="btn-outline-warm" href="/contact">Hablar con ventas</a>
-    </div>
-
-    <section class="final-cta">
-      <div>
-        <div class="kicker final-cta-kicker">Cotización</div>
-        <h2>Solicita una propuesta ajustada a tu dotación y objetivos</h2>
-        <p>Definimos plan, alcance, onboarding y métricas de adopción según tu realidad.</p>
-      </div>
-      <div class="cta-actions">
-        <a class="btn-warm-solid" href="/contact">Contactar comercial</a>
-        <a class="btn-warm-ghost" href="/about">Ver más sobre Company Care</a>
+        <div class="cta-actions">
+          <a class="cta-btn" routerLink="/contact">
+            Solicitar propuesta
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3 8h10m-4-5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <span class="cta-note">Respuesta en menos de 24 horas · Sin compromiso</span>
+        </div>
       </div>
     </section>
-  </div>
+</div>
 
 <app-site-footer></app-site-footer>

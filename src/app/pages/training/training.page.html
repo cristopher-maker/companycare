@@ -9,8 +9,8 @@
 
       <div class="training-hero__copy">
         <p class="training-hero__eyebrow">Learning hub</p>
-        <h1>Tu formacion</h1>
-        <p>Modulos y eventos breves para apoyar a empleados cuidadores con herramientas concretas.</p>
+        <h1>Tu formación</h1>
+        <p>Módulos y eventos breves para apoyar a empleados cuidadores con herramientas concretas.</p>
       </div>
 
       <a *ngIf="isStaff" routerLink="/training/admin" class="training-hero__admin">
@@ -29,7 +29,7 @@
       <article class="training-overview__card">
         <span>En curso</span>
         <strong>{{ inProgressCount }}</strong>
-        <p>Modulos retomables desde tu ultima actividad</p>
+        <p>Módulos retomables desde tu última actividad</p>
       </article>
 
       <article class="training-overview__card">
@@ -60,7 +60,7 @@
           <div class="training-progress-card__copy">
             <span>Ruta activa</span>
             <strong>{{ overallProgressPercent }}%</strong>
-            <p>Avanza en micro-modulos practicos y retoma donde quedaste.</p>
+            <p>Avanza en micro-módulos prácticos y retoma donde quedaste.</p>
           </div>
           <div class="training-progress-card__bar">
             <div class="training-progress-card__track">
@@ -73,7 +73,7 @@
         <div *ngIf="courses.length === 0" class="training-empty">
           <mat-icon aria-hidden="true">auto_stories</mat-icon>
           <h2>No hay cursos publicados</h2>
-          <p>Cuando el equipo cargue nuevos modulos, apareceran aqui para iniciar o continuar.</p>
+          <p>Cuando el equipo cargue nuevos módulos, aparecerán aquí para iniciar o continuar.</p>
         </div>
 
         <div *ngIf="courses.length > 0" class="training-courses">
@@ -83,6 +83,7 @@
             [class.is-active]="c.isActive"
             [class.is-completed]="c.state === 'completed'"
             [class.is-progress]="c.state === 'in_progress'"
+            (click)="onCourseAction(c)"
           >
             <div class="training-course-card__top">
               <div class="training-course-card__icon" [ngClass]="courseStateClass(c.state)" aria-hidden="true">
@@ -126,7 +127,7 @@
                 }}
               </span>
 
-              <button type="button" class="training-course-card__action" [disabled]="!userId" (click)="onCourseAction(c)">
+              <button type="button" class="training-course-card__action" (click)="$event.stopPropagation(); onCourseAction(c)">
                 <span>{{ c.actionLabel }}</span>
                 <mat-icon *ngIf="c.actionArrow" aria-hidden="true">arrow_forward</mat-icon>
               </button>
@@ -148,7 +149,7 @@
                 <span>{{ e.date }}</span>
               </div>
               <h3>{{ e.title }}</h3>
-              <p>Sesion breve orientada a resolver dudas y aterrizar herramientas de apoyo.</p>
+              <p>Sesión breve orientada a resolver dudas y aterrizar herramientas de apoyo.</p>
             </div>
 
             <button type="button" class="training-event-card__action">Reservar cupo</button>
@@ -159,12 +160,134 @@
           <div class="training-empty">
             <mat-icon aria-hidden="true">event_busy</mat-icon>
             <h2>No hay eventos agendados</h2>
-            <p>Cuando publiquemos nuevos talleres o webinars, podras verlos y reservarlos aqui.</p>
+            <p>Cuando publiquemos nuevos talleres o webinars, podrás verlos y reservarlos aquí.</p>
           </div>
         </ng-template>
       </section>
     </div>
   </div>
 </main>
+
+<!-- ─── COURSE LEARNING DRAWER MODAL ──────────────────────────────────────── -->
+<div class="course-drawer-backdrop" *ngIf="activeCourse" (click)="closeCourseModal()">
+  <div class="course-drawer" (click)="$event.stopPropagation()">
+    
+    <header class="course-drawer__header">
+      <div class="drawer-meta">
+        <span class="level-badge">{{ activeCourse.level }}</span>
+        <span class="duration-badge"><mat-icon>schedule</mat-icon> {{ activeCourse.duration }}</span>
+      </div>
+      <button type="button" class="close-btn" (click)="closeCourseModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
+
+    <div class="course-drawer__content">
+      <h2 class="course-drawer__title">{{ activeCourse.title }}</h2>
+
+      <!-- Overall Progress Bar -->
+      <div class="course-drawer__progress">
+        <div class="progress-bar">
+          <span [style.width.%]="activeCourse.progress"></span>
+        </div>
+        <div class="progress-info">
+          <span class="progress-text">{{ activeCourse.progress }}% completado</span>
+          <span class="lesson-count">Módulo {{ activeLessonIndex + 1 }} de {{ activeCourse.lessons.length }}</span>
+        </div>
+      </div>
+
+      <!-- Modules Selector Tabs -->
+      <div class="course-module-tabs">
+        <button
+          *ngFor="let lesson of activeCourse.lessons; let i = index"
+          type="button"
+          class="module-tab-btn"
+          [class.is-active]="activeLessonIndex === i"
+          [class.is-done]="(i + 1) * (100 / activeCourse.lessons.length) <= activeCourse.progress"
+          (click)="selectLesson(i)"
+        >
+          <mat-icon>
+            {{ (i + 1) * (100 / activeCourse.lessons.length) <= activeCourse.progress ? 'check_circle' : (activeLessonIndex === i ? 'play_circle' : 'radio_button_unchecked') }}
+          </mat-icon>
+          <span>Módulo {{ i + 1 }}</span>
+        </button>
+      </div>
+
+      <!-- ACTIVE LESSON CONTENT VIEWER -->
+      <div class="active-lesson-viewer" *ngIf="currentLesson">
+        <h3 class="lesson-title">{{ currentLesson.title }}</h3>
+        <p class="lesson-summary-lead">{{ currentLesson.summary }}</p>
+
+        <!-- Lesson Body Text -->
+        <div class="lesson-body-box">
+          <h4>
+            <mat-icon>import_contacts</mat-icon>
+            Contenido de la Lección
+          </h4>
+          <p>{{ currentLesson.content }}</p>
+        </div>
+
+        <!-- Expert Tips Box -->
+        <div class="lesson-tips-box" *ngIf="currentLesson.tips && currentLesson.tips.length > 0">
+          <h4>
+            <mat-icon>lightbulb</mat-icon>
+            Consejos del Especialista Gerontológico
+          </h4>
+          <ul>
+            <li *ngFor="let tip of currentLesson.tips">{{ tip }}</li>
+          </ul>
+        </div>
+
+        <!-- Interactive Checklist -->
+        <div class="lesson-checklist-box" *ngIf="currentLesson.checklist && currentLesson.checklist.length > 0">
+          <h4>
+            <mat-icon>task</mat-icon>
+            Lista de Verificación Práctica
+          </h4>
+          <div class="checklist-items">
+            <label
+              *ngFor="let item of currentLesson.checklist"
+              class="checklist-item"
+              [class.is-checked]="checkedChecklistItems[item]"
+            >
+              <input
+                type="checkbox"
+                [checked]="checkedChecklistItems[item]"
+                (change)="toggleCheckItem(item)"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="checklist-label">{{ item }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="course-drawer__actions">
+        <button
+          type="button"
+          class="btn-advance-lesson"
+          *ngIf="activeCourse.progress < 100"
+          (click)="advanceActiveCourse()"
+        >
+          <mat-icon>check</mat-icon>
+          Completar Módulo {{ activeLessonIndex + 1 }} y Continuar
+        </button>
+
+        <button
+          type="button"
+          class="btn-completed-course"
+          *ngIf="activeCourse.progress >= 100"
+          (click)="closeCourseModal()"
+        >
+          <mat-icon>verified</mat-icon>
+          ¡Curso Completado al 100%! Cerrar
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
 
 <app-site-footer></app-site-footer>

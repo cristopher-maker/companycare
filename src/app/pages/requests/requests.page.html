@@ -74,7 +74,7 @@
     <!-- Empty State -->
     <div *ngIf="!loading && !error && !items.length" class="requests-state">
       <mat-icon class="requests-state__icon" aria-hidden="true">forum</mat-icon>
-      <h3>No tienes solicitudes</h3>
+      <h3>No tienes solicitudes activas</h3>
       <p>Puedes iniciar una nueva asesoría desde el panel o contactar con un Care Expert.</p>
       <a routerLink="/care-experts" class="requests-state__action">Iniciar asesoría</a>
     </div>
@@ -123,12 +123,13 @@
               <span class="request-card__details-text">{{ details }}</span>
             </div>
 
-            <!-- Meet Link Info (Cleaned - no heavy background) -->
+            <!-- Meet Link Info (Clean Pill Badge) -->
             <div class="request-card__meet-info" *ngIf="item.appointment?.kind === 'Videollamada' && item.appointment?.meeting_url">
-              <mat-icon class="request-card__meet-icon">link</mat-icon>
-              <span class="meet-label">Enlace de acceso:</span>
+              <mat-icon class="request-card__meet-icon">videocam</mat-icon>
+              <span class="meet-label">Enlace de acceso a sala:</span>
               <a [href]="item.appointment.meeting_url" target="_blank" rel="noopener" class="meet-url">
-                {{ item.appointment.meeting_url }}
+                <mat-icon>launch</mat-icon>
+                <span>Abrir Google Meet</span>
               </a>
             </div>
             
@@ -150,7 +151,7 @@
           </div>
         </div>
 
-        <!-- Action Area (Properly structured, no nested interactive elements) -->
+        <!-- Action Area -->
         <div class="request-card__actions">
           <button
             *ngIf="hasVideoMeeting(item)"

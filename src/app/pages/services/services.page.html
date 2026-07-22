@@ -1,33 +1,33 @@
 <app-site-header></app-site-header>
- 
+
 <main class="services-page">
-  <div class="services-shell">
- 
-    <!-- ─── HERO ─────────────────────────────────────────────── -->
-    <section class="services-hero" aria-label="Servicios de cuidado corporativo">
- 
+
+  <!-- ─── HERO SECTION ─────────────────────────────────────────────── -->
+  <section class="services-hero" aria-label="Servicios de cuidado corporativo">
+    <div class="services-hero__grid">
+
+      <!-- LEFT COLUMN -->
       <div class="services-hero__content">
         <div class="services-kicker">
           <span class="services-kicker__dot"></span>
-          Servicios
+          Servicios Corporativos
         </div>
- 
+
         <h1 class="services-hero__title">
           Ordena el cuidado<br>
-          <em>de tu equipo.</em>
+          <span class="highlight">de tu equipo.</span>
         </h1>
- 
+
         <p class="services-hero__subtitle">
-          Diagnóstico, plan de acción y seguimiento para que las empresas puedan
-          acompañar a sus colaboradores con criterio humano y operativo.
+          Diagnóstico, plan de acción y seguimiento continuo para que las empresas acompañen a sus colaboradores cuidadores con criterio humano y operativo.
         </p>
- 
-        <div class="services-hero__chips" role="list" aria-label="Fases del servicio">
-          <span role="listitem">Diagnóstico</span>
-          <span role="listitem">Implementación</span>
-          <span role="listitem">Seguimiento</span>
+
+        <div class="services-hero__phases">
+          <span class="phase-tag"><i class="phase-dot"></i> Diagnóstico</span>
+          <span class="phase-tag"><i class="phase-dot"></i> Implementación</span>
+          <span class="phase-tag"><i class="phase-dot"></i> Seguimiento</span>
         </div>
- 
+
         <div class="services-hero__actions">
           <a class="services-btn services-btn--primary" routerLink="/contact">
             Solicitar reunión
@@ -40,28 +40,32 @@
           </a>
         </div>
       </div>
- 
+
+      <!-- RIGHT COLUMN (Full Bleed Photo to Right Screen Edge) -->
       <div class="services-hero__media">
-        <div class="services-hero__photo-wrap">
+        <div class="services-hero__photo-card">
           <img
             class="services-hero__photo"
             src="assets/img/carousel-4.webp"
             alt="Acompañamiento profesional en entorno de cuidado"
             loading="eager"
           />
-          <div class="services-hero__photo-overlay" aria-hidden="true"></div>
-        </div>
- 
-        <dl class="services-hero__summary" aria-label="Métricas del servicio">
-          <div class="services-hero__metric" *ngFor="let metric of serviceMetrics; trackBy: trackByLabel">
-            <dt class="services-hero__metric-value">{{ metric.value }}</dt>
-            <dd class="services-hero__metric-label">{{ metric.label }}</dd>
+          
+          <div class="services-hero__floating-card">
+            <span class="stat-value">24+</span>
+            <div class="stat-info">
+              <strong>Tareas completadas por ciclo</strong>
+              <span>Seguimiento y apoyo continuo</span>
+            </div>
           </div>
-        </dl>
+        </div>
       </div>
- 
-    </section>
- 
+
+    </div>
+  </section>
+
+  <div class="services-shell">
+
     <!-- ─── SERVICIOS GRID ─────────────────────────────────── -->
     <section class="services-grid-section" aria-label="Servicios principales">
       <div class="services-section-head services-section-head--split">
@@ -77,7 +81,7 @@
           para que el cuidado no dependa de improvisación.
         </p>
       </div>
- 
+
       <div class="services-grid">
         <article
           class="service-card"
@@ -90,12 +94,12 @@
             </div>
             <div class="service-card__accent-pip"></div>
           </div>
- 
+
           <h3 class="service-card__title">{{ service.title }}</h3>
           <p class="service-card__description">{{ service.description }}</p>
- 
+
           <div class="service-card__divider" aria-hidden="true"></div>
- 
+
           <p class="service-card__label">Incluye</p>
           <ul class="service-card__deliverables">
             <li *ngFor="let item of service.deliverables">
@@ -106,7 +110,7 @@
         </article>
       </div>
     </section>
- 
+
     <!-- ─── PROCESO ───────────────────────────────────────── -->
     <section class="services-process" aria-label="Cómo trabajamos">
       <div class="services-section-head">
@@ -117,7 +121,7 @@
         <h2>Cómo trabajamos</h2>
         <p>Un recorrido simple, visible y medible para pasar del diagnóstico a resultados sostenibles.</p>
       </div>
- 
+
       <div class="services-steps">
         <article
           class="services-step"
@@ -129,7 +133,7 @@
         </article>
       </div>
     </section>
- 
+
     <!-- ─── CTA FINAL ──────────────────────────────────────── -->
     <section class="services-cta" aria-label="Siguiente paso">
       <div class="services-cta__inner">
@@ -147,17 +151,17 @@
             y dejamos un plan ejecutable para tu equipo.
           </p>
         </div>
- 
+
         <div class="services-cta__actions">
           <a class="services-btn services-btn--cta" routerLink="/contact">
-            Hablar con el equipo
+            Hablar com el equipo
           </a>
           <p class="services-cta__note">Sin compromiso · Respuesta en 24 h</p>
         </div>
       </div>
     </section>
- 
+
   </div>
 </main>
- 
+
 <app-site-footer></app-site-footer>

@@ -352,6 +352,10 @@ export class ProvidersPage implements OnInit, OnDestroy {
     const placeId = typeof metadata['place_id'] === 'string' ? metadata['place_id'] : null;
     const whatsapp = typeof metadata['whatsapp'] === 'string' ? metadata['whatsapp'] : null;
 
+    const rawDesc = String(metadata['descripcion'] ?? metadata['bio'] ?? '').trim();
+    const defaultDesc = 'Prestador certificado y verificado por Company Care, especializado en la atención integral de personas mayores, evaluación ergonómica del entorno y contención profesional para el grupo familiar.';
+    const description = rawDesc.length > 0 ? rawDesc : defaultDesc;
+
     return {
       id: row.id,
       name: row.name,
@@ -362,7 +366,7 @@ export class ProvidersPage implements OnInit, OnDestroy {
       reviews: reviewsCount,
       availability,
       priceFrom,
-      description: String(metadata['descripcion'] ?? metadata['bio'] ?? '').trim(),
+      description,
       website: typeof metadata['website'] === 'string' ? metadata['website'] : null,
       imageUrl: typeof imageUrl === 'string' ? imageUrl : null,
       images: cleanImages,

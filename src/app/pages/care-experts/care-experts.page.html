@@ -1,4 +1,4 @@
-﻿<app-site-header></app-site-header>
+<app-site-header></app-site-header>
 
 <main class="care-experts-page" *ngIf="!expertMode">
   <div *ngIf="loading" class="ce-feedback ce-feedback--loading">
@@ -317,61 +317,57 @@
           <p class="ce-advisor-visual__body">{{ advisorVisualBody }}</p>
 
           <div class="ce-advisor-visual__stage">
-            <div class="ce-visual-chat" *ngIf="advisorVisualAccent === 'chat'">
-              <div class="ce-visual-step">
-                <mat-icon>looks_one</mat-icon>
-                <div>
-                  <strong>Canal</strong>
-                  <span>{{ channel }}</span>
+            <!-- Polished Care Expert Visual Card -->
+            <div class="ce-visual-card-wrapper">
+              
+              <!-- Expert Header Banner -->
+              <div class="ce-visual-expert-header">
+                <div class="ce-visual-expert-avatar">
+                  <mat-icon>health_and_safety</mat-icon>
+                </div>
+                <div class="ce-visual-expert-meta">
+                  <div class="ce-visual-expert-name">Equipo Care Experts</div>
+                  <div class="ce-visual-expert-status">
+                    <span class="status-pulse"></span>
+                    Especialistas Gerontológicos
+                  </div>
                 </div>
               </div>
-              <div class="ce-visual-step">
-                <mat-icon>looks_two</mat-icon>
-                <div>
-                  <strong>Tema</strong>
-                  <span>{{ topic }}</span>
-                </div>
-              </div>
-              <div class="ce-visual-step">
-                <mat-icon>looks_3</mat-icon>
-                <div>
-                  <strong>Siguiente paso</strong>
-                  <span>{{ advisorStep === 1 ? 'Agrega contexto o agenda' : 'Confirma y envia' }}</span>
-                </div>
-              </div>
-            </div>
 
-            <div class="ce-visual-device" *ngIf="advisorVisualAccent !== 'chat'">
-              <div class="ce-visual-device__screen">
-                <div class="ce-visual-device__avatar"></div>
-                <div class="ce-visual-device__line is-strong"></div>
-                <div class="ce-visual-device__line"></div>
-                <div class="ce-visual-device__line"></div>
-                <div class="ce-visual-device__actions">
-                  <span *ngIf="advisorVisualAccent === 'video'">
-                    <mat-icon>videocam</mat-icon>
-                  </span>
-                  <span *ngIf="advisorVisualAccent === 'call'">
-                    <mat-icon>call</mat-icon>
-                  </span>
-                  <span>
-                    <mat-icon>chat</mat-icon>
-                  </span>
+              <!-- Selected Channel Card -->
+              <div class="ce-visual-channel-preview">
+                <div class="channel-preview-badge">
+                  <mat-icon *ngIf="channel === 'Chat'">chat_bubble</mat-icon>
+                  <mat-icon *ngIf="channel === 'Videollamada'">videocam</mat-icon>
+                  <mat-icon *ngIf="channel === 'Llamada'">call</mat-icon>
+                  <span>{{ channel || 'Llamada' }}</span>
                 </div>
+                <p class="channel-preview-text">
+                  {{ channel === 'Chat' ? 'Respuesta escrita con seguimiento directo' : (channel === 'Videollamada' ? 'Reunión virtual cara a cara' : 'Evaluación telefónica personalizada') }}
+                </p>
               </div>
-            </div>
 
-            <div class="ce-visual-card">
-              <mat-icon>assignment</mat-icon>
-              <div>
-                <strong>{{ channel }}</strong>
-                <p>{{ topic }}</p>
-              </div>
+              <!-- Key Benefits List -->
+              <ul class="ce-visual-features">
+                <li>
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Orientación profesional y plan de acción</span>
+                </li>
+                <li>
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Derivación a prestadores y centros auditados</span>
+                </li>
+                <li>
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Respuesta rápida y seguimiento coordinado</span>
+                </li>
+              </ul>
+
             </div>
           </div>
 
           <div class="ce-advisor-visual__note">
-            <mat-icon>lock</mat-icon>
+            <mat-icon>security</mat-icon>
             <span>{{ advisorVisualNote }}</span>
           </div>
         </aside>

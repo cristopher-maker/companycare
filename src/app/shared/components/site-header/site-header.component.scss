@@ -11,7 +11,8 @@
 }
 
 :host ::ng-deep .cc-mark {
-  background: linear-gradient(135deg, #f8dfd6 0%, #f27a5e 100%);
-  color: #682a20;
-  box-shadow: 0 8px 18px rgba(242, 122, 94, 0.24);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
 }

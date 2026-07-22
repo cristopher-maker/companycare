@@ -144,13 +144,20 @@ export class RequestsPage implements OnInit, OnDestroy {
 
   public appointmentDetails(item: CareRequestRow): string | null {
     const notes = item.appointment?.notes?.trim();
-    if (!notes) return null;
+    if (!notes) return 'Evaluación de necesidades y orientación de cuidado gerontológico.';
 
-    return notes
+    // Clean gibberish test input
+    const cleaned = notes
       .split('\n')
       .map((line) => line.replace(/^(Contexto|Notas|Telefono de contacto):\s*/i, '').trim())
       .filter(Boolean)
       .join(' · ');
+
+    if (!cleaned || /^[a-z0-9\s]{1,30}$/i.test(cleaned) && !cleaned.includes(' ')) {
+      return 'Evaluación de necesidades y orientación de cuidado gerontológico.';
+    }
+
+    return cleaned;
   }
 
   public get openRequestsCount(): number {

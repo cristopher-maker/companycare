@@ -10,7 +10,7 @@
       <div class="vouchers-hero__copy">
         <p class="vouchers-hero__eyebrow">Beneficios activos</p>
         <h1>Vouchers disponibles</h1>
-        <p>Revisa descuentos habilitados, codigos de uso y beneficios activos para tus colaboradores.</p>
+        <p>Revisa descuentos habilitados, códigos de uso y beneficios activos para ti y tu grupo familiar.</p>
       </div>
 
       <button type="button" class="vouchers-hero__refresh" (click)="refresh()" [disabled]="loading" aria-label="Actualizar vouchers">
@@ -23,19 +23,19 @@
       <article class="vouchers-overview__card vouchers-overview__card--primary">
         <span>Total activos</span>
         <strong>{{ items.length }}</strong>
-        <p>Vouchers visibles para asignacion y uso.</p>
+        <p>Vouchers listos para aplicar en servicios de cuidado.</p>
       </article>
 
       <article class="vouchers-overview__card">
         <span>Por porcentaje</span>
         <strong>{{ percentageCount }}</strong>
-        <p>Descuentos proporcionales sobre el servicio.</p>
+        <p>Descuentos proporcionales directos.</p>
       </article>
 
       <article class="vouchers-overview__card">
         <span>Monto fijo</span>
         <strong>{{ fixedAmountCount }}</strong>
-        <p>Beneficios con rebaja directa en valor.</p>
+        <p>Rebajas en dinero y sesiones gratuitas.</p>
       </article>
     </section>
 
@@ -55,30 +55,44 @@
     <div *ngIf="!loading && !error && !items.length" class="vouchers-state">
       <mat-icon class="vouchers-state__icon" aria-hidden="true">confirmation_number</mat-icon>
       <h2>No hay vouchers disponibles</h2>
-      <p>Cuando existan beneficios activos para tu cuenta, apareceran aqui con su codigo y descuento.</p>
+      <p>Cuando existan beneficios activos para tu cuenta, aparecerán aquí con su código y descuento.</p>
     </div>
 
     <section *ngIf="!loading && items.length" class="vouchers-grid" aria-label="Listado de vouchers">
       <article *ngFor="let item of items" class="voucher-card">
         <div class="voucher-card__head">
           <div>
-            <div class="voucher-card__label">Voucher activo</div>
+            <div class="voucher-card__category">{{ item.category || 'Beneficio exclusivo' }}</div>
             <h3>{{ item.title }}</h3>
           </div>
-          <span class="voucher-card__badge">Activo</span>
+          <span class="voucher-card__badge">{{ discountLabel(item) }}</span>
         </div>
 
         <p class="voucher-card__description">
-          {{ item.description || 'Beneficio disponible para uso segun condiciones definidas por Company Care.' }}
+          {{ item.description || 'Beneficio disponible para uso según condiciones definidas por Company Care.' }}
         </p>
 
-        <div class="voucher-card__meta">
-          <div class="voucher-card__code">
-            <span>Codigo</span>
-            <strong>{{ item.code }}</strong>
+        <div class="voucher-card__footer">
+          <div class="voucher-card__code-box">
+            <span class="code-label">Código de descuento</span>
+            <div class="code-value-wrap">
+              <code class="code-value">{{ item.code }}</code>
+              <button
+                type="button"
+                class="copy-btn"
+                [class.is-copied]="copiedCode === item.code"
+                (click)="copyCode(item.code)"
+                aria-label="Copiar código"
+              >
+                <mat-icon>{{ copiedCode === item.code ? 'check' : 'content_copy' }}</mat-icon>
+                <span>{{ copiedCode === item.code ? 'Copiado' : 'Copiar' }}</span>
+              </button>
+            </div>
           </div>
-          <div class="voucher-card__discount">
-            {{ discountLabel(item) }}
+
+          <div class="voucher-card__expiry" *ngIf="item.expires_at">
+            <mat-icon>event</mat-icon>
+            <span>Válido hasta {{ item.expires_at }}</span>
           </div>
         </div>
       </article>

@@ -99,31 +99,41 @@
           <div class="theme-control-group">
             <h4>Colores</h4>
             <div class="theme-color-grid">
-              <label class="theme-color-field">
-                <span>Primario</span>
-                <input type="color" [(ngModel)]="parent.brandingDraft.erp_primary_color">
-                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_primary_color" placeholder="#123c4a">
-              </label>
-              <label class="theme-color-field">
-                <span>Acento</span>
-                <input type="color" [(ngModel)]="parent.brandingDraft.erp_accent_color">
-                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_accent_color" placeholder="#f27a5e">
-              </label>
-              <label class="theme-color-field">
-                <span>Fondo</span>
-                <input type="color" [(ngModel)]="parent.brandingDraft.erp_background_color">
-                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_background_color" placeholder="#f8fafc">
-              </label>
-              <label class="theme-color-field">
-                <span>Superficie</span>
-                <input type="color" [(ngModel)]="parent.brandingDraft.erp_surface_color">
-                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_surface_color" placeholder="#ffffff">
-              </label>
-              <label class="theme-color-field">
-                <span>Texto</span>
-                <input type="color" [(ngModel)]="parent.brandingDraft.erp_text_color">
-                <input class="field-input" [(ngModel)]="parent.brandingDraft.erp_text_color" placeholder="#0f172a">
-              </label>
+              <div class="theme-color-card">
+                <span class="theme-color-card__label">Primario</span>
+                <div class="theme-color-card__input-wrap">
+                  <input type="color" [(ngModel)]="parent.brandingDraft.erp_primary_color">
+                  <input type="text" class="field-input" [(ngModel)]="parent.brandingDraft.erp_primary_color" placeholder="#5d87ff">
+                </div>
+              </div>
+              <div class="theme-color-card">
+                <span class="theme-color-card__label">Acento</span>
+                <div class="theme-color-card__input-wrap">
+                  <input type="color" [(ngModel)]="parent.brandingDraft.erp_accent_color">
+                  <input type="text" class="field-input" [(ngModel)]="parent.brandingDraft.erp_accent_color" placeholder="#fa896b">
+                </div>
+              </div>
+              <div class="theme-color-card">
+                <span class="theme-color-card__label">Fondo</span>
+                <div class="theme-color-card__input-wrap">
+                  <input type="color" [(ngModel)]="parent.brandingDraft.erp_background_color">
+                  <input type="text" class="field-input" [(ngModel)]="parent.brandingDraft.erp_background_color" placeholder="#f4f6fa">
+                </div>
+              </div>
+              <div class="theme-color-card">
+                <span class="theme-color-card__label">Superficie</span>
+                <div class="theme-color-card__input-wrap">
+                  <input type="color" [(ngModel)]="parent.brandingDraft.erp_surface_color">
+                  <input type="text" class="field-input" [(ngModel)]="parent.brandingDraft.erp_surface_color" placeholder="#ffffff">
+                </div>
+              </div>
+              <div class="theme-color-card">
+                <span class="theme-color-card__label">Texto</span>
+                <div class="theme-color-card__input-wrap">
+                  <input type="color" [(ngModel)]="parent.brandingDraft.erp_text_color">
+                  <input type="text" class="field-input" [(ngModel)]="parent.brandingDraft.erp_text_color" placeholder="#2a3547">
+                </div>
+              </div>
             </div>
           </div>
 
@@ -170,7 +180,10 @@
             <input class="field-input" [(ngModel)]="parent.brandingDraft.logo_url" placeholder="https://empresa.com/logo.svg">
           </label>
 
-          <button class="btn-primary" (click)="parent.saveBranding()">Guardar apariencia</button>
+          <button class="btn-primary btn-save-branding" (click)="parent.saveBranding()">
+            <mat-icon>save</mat-icon>
+            Guardar apariencia
+          </button>
         </div>
 
         <div class="theme-preview">

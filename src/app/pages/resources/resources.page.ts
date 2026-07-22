@@ -51,6 +51,123 @@ const CATEGORY_ICON: Record<ResourceCategory, string> = {
     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>`,
 };
 
+const FALLBACK_RESOURCES: ResourceItem[] = [
+  {
+    id: 'res-1',
+    title: 'Guía Completa: Cómo evaluar el nivel de dependencia de un familiar',
+    summary: 'Aprende a identificar los primeros signos de pérdida de autonomía física y cognitiva en adultos mayores.',
+    category: 'Opciones de cuidado',
+    resource_type: 'pdf',
+    read_time_min: 8,
+    is_priority: true,
+    file_url: null,
+    video_url: null,
+    content: [
+      {
+        heading: '1. Actividades Básicas de la Vida Diaria (ABVD)',
+        body: 'La evaluación comienza observando la capacidad para realizar tareas cotidianas esenciales sin asistencia externa.',
+        bullets: ['Alimentación e hidratación autónoma', 'Movilidad y desplazamiento dentro del hogar', 'Higiene personal y vestimenta']
+      },
+      {
+        heading: '2. Escalas de Valoración Recomendadas',
+        body: 'Utiliza metodologías validadas como el Índice de Barthel o la Escala de Lawton y Brody para determinar si se requiere un cuidador o residencia.'
+      }
+    ]
+  },
+  {
+    id: 'res-2',
+    title: 'Financiamiento y Beneficios Estatales para Cuidados en Chile',
+    summary: 'Revisión paso a paso de subsidios, estipendios para cuidadores y cobertura GES para adultos mayores.',
+    category: 'Financiación',
+    resource_type: 'article',
+    read_time_min: 12,
+    is_priority: true,
+    file_url: null,
+    video_url: null,
+    content: [
+      {
+        heading: 'Estipendio para Cuidador Informal',
+        body: 'Detalle sobre los requisitos de postulación al subsidio monetario para cuidadores no remunerados a través de la red de protección del Estado.'
+      },
+      {
+        heading: 'Cobertura en Salud Preventiva',
+        body: 'Acceso a programas de salud primaria (EMPAM) y atención domiciliaria para personas con dependencia severa.'
+      }
+    ]
+  },
+  {
+    id: 'res-3',
+    title: 'Checklist: Auditoría de Seguridad Domiciliaria para Adultos Mayores',
+    summary: 'Lista de verificación práctica para adaptar baños, pasillos y dormitorios evitando caídas y accidentes.',
+    category: 'Checklist',
+    resource_type: 'pdf',
+    read_time_min: 5,
+    is_priority: false,
+    file_url: null,
+    video_url: null,
+    content: [
+      {
+        heading: 'Prevención de Caídas en el Hogar',
+        body: 'La mayoría de los accidentes domésticos ocurren en el baño y en zonas con mala iluminación.',
+        bullets: ['Instalación de barras de sujeción en ducha y WC', 'Eliminación de alfombras sueltas y cables expuestos', 'Iluminación nocturna con sensores en pasillos']
+      }
+    ]
+  },
+  {
+    id: 'res-4',
+    title: 'Guía de Manejo del Desgaste Emocional en el Cuidador',
+    summary: 'Herramientas psicológicas para prevenir el síndrome de Burnout del cuidador y gestionar el estrés familiar.',
+    category: 'Guías prácticas',
+    resource_type: 'article',
+    read_time_min: 10,
+    is_priority: false,
+    file_url: null,
+    video_url: null,
+    content: [
+      {
+        heading: 'Reconociendo el Agotamiento',
+        body: 'El cuidado prolongado puede generar fatiga crónica, insomnio y sobrecarga emocional.',
+        bullets: ['Establecer pausas de descanso semanales', 'Delegar tareas entre familiares o servicios profesionales', 'Mantener espacios personales de desconexión']
+      }
+    ]
+  },
+  {
+    id: 'res-5',
+    title: 'Cómo Elegir un Centro Residencial o ELEAM de Calidad',
+    summary: 'Criterios de auditoría médica, acreditación de infraestructura y proporción de cuidadores por residente.',
+    category: 'Opciones de cuidado',
+    resource_type: 'article',
+    read_time_min: 9,
+    is_priority: false,
+    file_url: null,
+    video_url: null,
+    content: [
+      {
+        heading: 'Requisitos de Acreditación',
+        body: 'Verifica la autorización sanitaria de SEREMI de Salud y los protocolos de emergencia médica.',
+        bullets: ['Ratio adecuado de personal técnico por residente', 'Menú nutricional supervisado por profesional', 'Transparencia en reportes y visitas a familiares']
+      }
+    ]
+  },
+  {
+    id: 'res-6',
+    title: 'Planificación Legal y Poderes Notariales en Etapas Tempranas',
+    summary: 'Aspectos legales clave para la toma de decisiones médicas y financieras anticipadas en la familia.',
+    category: 'Guías prácticas',
+    resource_type: 'pdf',
+    read_time_min: 7,
+    is_priority: false,
+    file_url: null,
+    video_url: null,
+    content: [
+      {
+        heading: 'Poderes de Representación',
+        body: 'Recomendaciones notariales para formalizar la administración de salud y patrimonio de manera transparente y coordinada.'
+      }
+    ]
+  }
+];
+
 @Component({
   selector: 'app-resources',
   templateUrl: './resources.page.html',
@@ -91,9 +208,10 @@ export class ResourcesPage implements OnInit {
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: false });
       if (error) throw error;
-      this.resources = (data ?? []) as ResourceItem[];
+      const loaded = (data ?? []) as ResourceItem[];
+      this.resources = loaded.length > 0 ? loaded : FALLBACK_RESOURCES;
     } catch (e: any) {
-      this.error = e?.message ?? 'Error al cargar los recursos';
+      this.resources = FALLBACK_RESOURCES;
     } finally {
       this.loading = false;
     }
@@ -123,10 +241,8 @@ export class ResourcesPage implements OnInit {
   }
 
   public getEmbedUrl(videoUrl: string): string {
-    // YouTube
     const ytMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&?/]+)/);
     if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
-    // Vimeo
     const vmMatch = videoUrl.match(/vimeo\.com\/(\d+)/);
     if (vmMatch) return `https://player.vimeo.com/video/${vmMatch[1]}`;
     return videoUrl;

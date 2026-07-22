@@ -1,15 +1,15 @@
 :host {
   display: block;
 
-  --primary: #123c4a;
-  --primary-dark: #0b2832;
-  --accent: #f27a5e;
-  --accent-strong: #d85f46;
-  --text-primary: #17242b;
-  --text-secondary: #64727a;
+  --primary: #123C4F;
+  --primary-dark: #0d2e3d;
+  --accent: #2EC4B6;
+  --accent-strong: #25a89c;
+  --text-primary: #2C3E50;
+  --text-secondary: #6B7B85;
   --text-tertiary: #93a0a5;
-  --bg-secondary: #fbfaf7;
-  --border-light: #dce7e5;
+  --bg-secondary: #FCFBF9;
+  --border-light: #d6e4e2;
   --border-medium: #c8d8d5;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(0, 0, 0, 0.06);
   --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.06), 0 20px 48px rgba(0, 0, 0, 0.1);
@@ -23,7 +23,7 @@
   flex-direction: column;
   overflow: hidden;
   background: linear-gradient(180deg, #ffffff 0%, var(--bg-secondary) 100%);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Montserrat', sans-serif;
   padding-top: 64px;
 }
 
@@ -70,7 +70,7 @@
     radial-gradient(circle at 78% 46%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 22%),
     url('../../../assets/img/carousel-3.webp') 72% 18% / cover no-repeat,
     linear-gradient(110deg, rgba(11, 40, 50, 0.97) 38%, rgba(18, 60, 74, 0.86) 100%),
-    linear-gradient(135deg, #0b2832 0%, #123c4a 62%, #6ba6b8 100%);
+    linear-gradient(135deg, #0d2e3d 0%, #123C4F 62%, #5dd8cd 100%);
   overflow: hidden;
   box-shadow: var(--shadow-elevated);
   display: grid;
@@ -457,7 +457,7 @@
       linear-gradient(180deg, rgba(11, 40, 50, 0.92) 0%, rgba(11, 40, 50, 0.76) 54%, rgba(11, 40, 50, 0.8) 100%),
       radial-gradient(circle at 70% 28%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 24%),
       url('../../../assets/img/carousel-3.webp') 64% 14% / cover no-repeat,
-      linear-gradient(135deg, #0b2832 0%, #123c4a 72%, #6ba6b8 100%);
+      linear-gradient(135deg, #0d2e3d 0%, #123C4F 72%, #5dd8cd 100%);
   }
 }
 

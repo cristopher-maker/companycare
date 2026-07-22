@@ -27,16 +27,16 @@ $app-theme: mat.define-theme((
 :root {
   @include mat.all-component-themes($app-theme);
 
-  --cc-color-primary: #123c4a;
-  --cc-color-primary-dark: #0b2832;
-  --cc-color-primary-soft: #e8f0ef;
-  --cc-color-accent: #f27a5e;
-  --cc-color-accent-dark: #d85f46;
-  --cc-color-sage: #2f8f83;
-  --cc-color-ink: #17242b;
-  --cc-color-muted: #64727a;
+  --cc-color-primary: #123C4F;
+  --cc-color-primary-dark: #0d2e3d;
+  --cc-color-primary-soft: #E9F9F6;
+  --cc-color-accent: #2EC4B6;
+  --cc-color-accent-dark: #25a89c;
+  --cc-color-sage: #2EC4B6;
+  --cc-color-ink: #2C3E50;
+  --cc-color-muted: #6B7B85;
   --cc-color-line: #dce7e5;
-  --cc-color-surface: #fbfaf7;
+  --cc-color-surface: #FCFBF9;
 }
 
 // Comment out the line below if you want to use the pre-defined typography utility classes.
@@ -79,26 +79,19 @@ body {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.cc-nav--scrolled {
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  background: rgba(0, 0, 0, 0.94);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.26);
-}
-
+.cc-nav--scrolled,
 .cc-nav--light {
-  background: rgba(0, 0, 0, 0.94);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  background: rgba(18, 60, 79, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(18, 60, 79, 0.3);
 }
 
 .cc-nav--light .cc-menu-btn {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .cc-nav--light .cc-brand .cc-brand-text .name {
@@ -106,11 +99,11 @@ body {
 }
 
 .cc-nav--light .cc-brand .cc-brand-text .sub {
-  color: rgba(255, 255, 255, 0.56);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .cc-nav--light .cc-nav-links a {
-  color: rgba(255, 255, 255, 0.74);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .cc-nav--light .cc-nav-links a:hover,
@@ -120,8 +113,8 @@ body {
 
 .cc-nav--light .cc-nav-actions .btn-ghost {
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .cc-menu-btn {
@@ -140,7 +133,7 @@ body {
   
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, rgba(242, 122, 94, 0.22), rgba(47, 143, 131, 0.18));
+    background: linear-gradient(135deg, rgba(46, 196, 182, 0.22), rgba(46, 196, 182, 0.12));
 }
 }
 .cc-nav-left {
@@ -156,16 +149,11 @@ body {
   cursor: pointer;
 
   .cc-mark {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-  
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    font-size: 11px;
-    font-weight: 700;
+    width: 34px;
+    height: 34px;
+    background: transparent !important;
+    border-radius: 0;
+    object-fit: contain;
   }
 
   .cc-brand-text {
@@ -211,7 +199,7 @@ body {
       bottom: 0;
       height: 3px;
       border-radius: 999px;
-      background: linear-gradient(90deg, var(--cc-color-accent), #f6a06d);
+      background: linear-gradient(90deg, var(--cc-color-accent), #5dd8cd);
 
     }
 
@@ -224,10 +212,10 @@ body {
 @keyframes activeNavPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(246, 160, 109, 0);
+    box-shadow: 0 0 0 rgba(46, 196, 182, 0);
   }
   50% {
-    box-shadow: 0 0 16px rgba(246, 160, 109, 0.62);
+    box-shadow: 0 0 16px rgba(46, 196, 182, 0.62);
   }
 }
 
@@ -259,7 +247,7 @@ body {
     font-size: 12px;
     padding: 8px 18px;
     font-weight: 700;
-    box-shadow: 0 10px 22px rgba(242, 122, 94, 0.26);
+    box-shadow: 0 10px 22px rgba(46, 196, 182, 0.26);
     cursor: pointer;
   }
 }
@@ -271,4 +259,4 @@ body {
 }
 
 html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+body { margin: 0; font-family: 'Montserrat', sans-serif; }

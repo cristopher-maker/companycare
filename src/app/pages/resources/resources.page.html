@@ -1,209 +1,176 @@
 <app-site-header></app-site-header>
 
-<main class="page">
-  <div class="page__container">
+<main class="resources-page">
 
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero__icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-        </svg>
+  <!-- ─── HERO HEADER ──────────────────────────────────────────────── -->
+  <section class="resources-hero" aria-label="Cabecera de recursos">
+    <div class="resources-hero__container">
+      <div class="resources-kicker">
+        <span class="resources-kicker__dot"></span>
+        Biblioteca de Recursos
       </div>
-      <div class="hero__text">
-        <h1 class="hero__title">Biblioteca de Recursos</h1>
-        <p class="hero__subtitle">Guías, videos y herramientas para tomar mejores decisiones.</p>
-      </div>
-    </section>
-
-    <!-- Barra de búsqueda + filtros -->
-    <div class="controls">
-      <div class="controls__search">
-        <svg class="controls__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input
-          type="search"
-          class="controls__search-input"
-          placeholder="Buscar guía, video o checklist..."
-          [(ngModel)]="searchQuery"
-        />
-      </div>
-      <div class="filters" role="tablist">
-        <button type="button" role="tab" class="filters__pill" [class.filters__pill--active]="selectedCategory === 'Todos'" (click)="setCategory('Todos')">Todos</button>
-        <button
-          *ngFor="let c of categories; trackBy: trackByCat"
-          type="button"
-          role="tab"
-          class="filters__pill"
-          [class.filters__pill--active]="selectedCategory === c"
-          (click)="setCategory(c)"
-        >{{ c }}</button>
-      </div>
-    </div>
-
-    <!-- Loading -->
-    <div class="state state--loading" *ngIf="loading">
-      <div class="state__spinner"></div>
-      <p>Cargando recursos...</p>
-    </div>
-
-    <!-- Error -->
-    <div class="state state--error" *ngIf="!loading && error">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <p>{{ error }}</p>
-      <button class="state__retry" (click)="loadResources()">Reintentar</button>
-    </div>
-
-    <!-- Grid -->
-    <div class="grid" *ngIf="!loading && !error">
-      <article
-        *ngFor="let r of filteredResources; trackBy: trackById"
-        class="card"
-        [class]="'card card--' + categoryKey(r.category)"
-        (click)="open(r)"
-        role="button"
-        tabindex="0"
-        (keyup.enter)="open(r)"
-      >
-        <div class="card__body">
-          <div class="card__top">
-            <div class="card__icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="categoryIconPath(r.category)"></svg>
-            </div>
-            <div class="card__badges">
-              <span class="card__type-badge card__type-badge--{{ r.resource_type }}">
-                <mat-icon class="card__type-icon">{{ typeIcon(r.resource_type) }}</mat-icon>
-                {{ typeLabel(r.resource_type) }}
-              </span>
-              <span *ngIf="r.is_priority" class="card__badge">Prioritario</span>
-            </div>
-          </div>
-          <h3 class="card__title">{{ r.title }}</h3>
-          <p class="card__summary">{{ r.summary }}</p>
-        </div>
-
-        <div class="card__footer">
-          <span class="card__cat-label">{{ r.category }}</span>
-          <span class="card__read-btn">
-            <ng-container *ngIf="r.resource_type === 'video'">Ver video</ng-container>
-            <ng-container *ngIf="r.resource_type === 'pdf'">Descargar PDF</ng-container>
-            <ng-container *ngIf="r.resource_type === 'article'">Leer más</ng-container>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </span>
-        </div>
-      </article>
-
-      <p *ngIf="filteredResources.length === 0 && !loading" class="grid__empty">
-        {{ searchQuery ? 'Sin resultados para "' + searchQuery + '"' : 'No hay recursos en esta categoría.' }}
+      <h1 class="resources-hero__title">
+        Guías, checklists y contenidos<br>
+        <span class="highlight">para tomar decisiones con criterio.</span>
+      </h1>
+      <p class="resources-hero__subtitle">
+        Información clara y estructurada para acompañar el cuidado de un familiar mayor en cada etapa del proceso.
       </p>
-    </div>
 
-  </div>
-</main>
-
-<app-site-footer></app-site-footer>
-
-<!-- ===== DRAWER ===== -->
-<div
-  class="drawer-backdrop"
-  [class.drawer-backdrop--visible]="activeResource"
-  (click)="closeDrawer()"
-  aria-hidden="true"
-></div>
-
-<aside
-  class="drawer"
-  [class.drawer--open]="activeResource"
-  role="dialog"
-  aria-modal="true"
-  [attr.aria-label]="activeResource?.title"
->
-  <ng-container *ngIf="activeResource as r">
-
-    <!-- Header -->
-    <div class="drawer__header" [class]="'drawer__header drawer__header--' + categoryKey(r.category)">
-      <div class="drawer__header-top">
-        <div class="drawer__icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="categoryIconPath(r.category)"></svg>
+      <!-- SEARCH & FILTER BAR -->
+      <div class="resources-toolbar">
+        <div class="resources-search-box">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="Buscar por tema, palabra clave o guía..."
+            aria-label="Buscar recurso"
+          />
+          <button *ngIf="searchQuery" type="button" class="clear-btn" (click)="searchQuery = ''">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
-        <button type="button" class="drawer__close" (click)="closeDrawer()" aria-label="Cerrar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+
+        <div class="resources-categories">
+          <button
+            type="button"
+            class="category-pill"
+            [class.is-active]="selectedCategory === 'Todos'"
+            (click)="setCategory('Todos')"
+          >
+            Todos
+          </button>
+          <button
+            *ngFor="let cat of categories; trackBy: trackByCat"
+            type="button"
+            class="category-pill"
+            [class.is-active]="selectedCategory === cat"
+            (click)="setCategory(cat)"
+          >
+            {{ cat }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── MAIN CONTENT GRID ────────────────────────────────────────── -->
+  <div class="resources-shell">
+    <section class="resources-section" aria-label="Listado de recursos">
+
+      <!-- LOADING STATE -->
+      <div class="resources-loading" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Cargando biblioteca de recursos...</p>
+      </div>
+
+      <!-- ERROR STATE -->
+      <div class="resources-error" *ngIf="error && !loading">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ error }}</p>
+        <button type="button" class="btn-retry" (click)="loadResources()">Reintentar</button>
+      </div>
+
+      <!-- EMPTY SEARCH STATE -->
+      <div class="resources-empty" *ngIf="!loading && !error && filteredResources.length === 0">
+        <mat-icon>search_off</mat-icon>
+        <h3>No se encontraron resultados</h3>
+        <p>Prueba con otra palabra clave o selecciona la categoría "Todos".</p>
+        <button type="button" class="btn-reset" (click)="selectedCategory = 'Todos'; searchQuery = ''">
+          Restablecer filtros
         </button>
       </div>
-      <div class="drawer__meta">
-        <span class="drawer__cat-label">{{ r.category }}</span>
-        <span class="drawer__type-badge">
-          <mat-icon style="font-size:14px;width:14px;height:14px">{{ typeIcon(r.resource_type) }}</mat-icon>
-          {{ typeLabel(r.resource_type) }}
+
+      <!-- RESOURCE CARDS GRID -->
+      <div class="resources-grid" *ngIf="!loading && !error && filteredResources.length > 0">
+        <article
+          class="resource-card"
+          *ngFor="let res of filteredResources; trackBy: trackById"
+          (click)="open(res)"
+        >
+          <div class="resource-card__header">
+            <span class="resource-badge resource-badge--{{ categoryKey(res.category) }}">
+              {{ res.category }}
+            </span>
+            <span class="resource-type-tag">
+              <mat-icon>{{ typeIcon(res.resource_type) }}</mat-icon>
+              {{ typeLabel(res.resource_type) }}
+            </span>
+          </div>
+
+          <h3 class="resource-card__title">{{ res.title }}</h3>
+          <p class="resource-card__summary">{{ res.summary }}</p>
+
+          <div class="resource-card__footer">
+            <span class="read-time">
+              <mat-icon>schedule</mat-icon>
+              {{ res.read_time_min }} min lectura
+            </span>
+            <span class="read-more">
+              Ver recurso
+              <mat-icon>arrow_forward</mat-icon>
+            </span>
+          </div>
+        </article>
+      </div>
+
+    </section>
+  </div>
+
+</main>
+
+<!-- ─── RESOURCE DRAWER MODAL ────────────────────────────────────── -->
+<div class="resource-drawer-backdrop" *ngIf="activeResource" (click)="closeDrawer()">
+  <div class="resource-drawer" (click)="$event.stopPropagation()">
+    <header class="resource-drawer__header">
+      <div class="drawer-header-meta">
+        <span class="resource-badge resource-badge--{{ categoryKey(activeResource.category) }}">
+          {{ activeResource.category }}
+        </span>
+        <span class="read-time">
+          <mat-icon>schedule</mat-icon>
+          {{ activeResource.read_time_min }} min
         </span>
       </div>
-      <h2 class="drawer__title">{{ r.title }}</h2>
-      <span *ngIf="r.read_time_min" class="drawer__read-time">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        {{ r.read_time_min }} min de lectura
-      </span>
-    </div>
+      <button type="button" class="close-btn" (click)="closeDrawer()" aria-label="Cerrar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
 
-    <!-- Body -->
-    <div class="drawer__body">
+    <div class="resource-drawer__content">
+      <h2 class="drawer-title">{{ activeResource.title }}</h2>
+      <p class="drawer-lead">{{ activeResource.summary }}</p>
 
-      <!-- Video embed -->
-      <div class="drawer__video-wrap" *ngIf="r.resource_type === 'video' && r.video_url">
+      <div class="drawer-media" *ngIf="activeResource.video_url">
         <iframe
-          [src]="getEmbedUrl(r.video_url) | trustUrl"
-          class="drawer__video"
-          allowfullscreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          [src]="getEmbedUrl(activeResource.video_url)"
           frameborder="0"
-          title="{{ r.title }}"
+          allowfullscreen
         ></iframe>
       </div>
 
-      <!-- PDF download button -->
-      <a
-        *ngIf="r.resource_type === 'pdf' && r.file_url"
-        [href]="r.file_url"
-        target="_blank"
-        rel="noopener"
-        class="drawer__download-btn"
-      >
-        <mat-icon>download</mat-icon>
-        Descargar PDF
-      </a>
+      <div class="drawer-sections">
+        <div
+          class="drawer-section"
+          *ngFor="let sec of activeResource.content; trackBy: trackByHeading"
+        >
+          <h3>{{ sec.heading }}</h3>
+          <p>{{ sec.body }}</p>
+          <ul *ngIf="sec.bullets && sec.bullets.length > 0">
+            <li *ngFor="let b of sec.bullets">{{ b }}</li>
+          </ul>
+        </div>
+      </div>
 
-      <!-- Content sections -->
-      <section
-        *ngFor="let section of r.content; trackBy: trackByHeading"
-        class="drawer__section"
-      >
-        <h3 class="drawer__section-title">{{ section.heading }}</h3>
-        <p class="drawer__section-body">{{ section.body }}</p>
-        <ul *ngIf="section.bullets?.length" class="drawer__bullets">
-          <li *ngFor="let b of section.bullets">{{ b }}</li>
-        </ul>
-      </section>
-
-      <!-- CTA -->
-      <div class="drawer__cta">
-        <p class="drawer__cta-text">¿Necesitas orientación personalizada sobre este tema?</p>
-        <a routerLink="/care-experts" class="drawer__cta-btn" (click)="closeDrawer()">
-          Hablar con un Care Expert
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-          </svg>
+      <div class="drawer-actions" *ngIf="activeResource.file_url">
+        <a [href]="activeResource.file_url" target="_blank" class="btn-download">
+          <mat-icon>download</mat-icon>
+          Descargar documento PDF
         </a>
       </div>
     </div>
+  </div>
+</div>
 
-  </ng-container>
-</aside>
+<app-site-footer></app-site-footer>

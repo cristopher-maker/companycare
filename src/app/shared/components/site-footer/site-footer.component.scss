@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 
 .cc-footer {
   background:
-    radial-gradient(circle at top right, rgba(242, 122, 94, 0.14), transparent 28%),
-    #000000;
+    radial-gradient(circle at top right, rgba(46, 196, 182, 0.14), transparent 28%),
+    #123C4F;
   color: #ffffff;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   padding: 64px 0 0;
   border-top: none;
 }
@@ -67,7 +67,7 @@
 .cc-btn-reserve {
   display: inline-block;
   margin-top: 18px;
-  background: #f27a5e;
+  background: #2EC4B6;
   color: #ffffff;
   padding: 12px 22px;
   border-radius: 999px;
@@ -75,12 +75,12 @@
   font-weight: 700;
   border: none;
   text-decoration: none;
-  box-shadow: 0 10px 22px rgba(242, 122, 94, 0.24);
+  box-shadow: 0 10px 22px rgba(46, 196, 182, 0.24);
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .cc-btn-reserve:hover {
-  background: #d85f46;
+  background: #25a89c;
   transform: translateY(-2px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
 }
@@ -173,7 +173,7 @@
 }
 
 .cc-social-btn:hover svg {
-  stroke: #f27a5e;
+  stroke: #2EC4B6;
 }
 
 .cc-trust-logos {
@@ -184,7 +184,7 @@
 
 .cc-trust-logo {
   background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(242, 122, 94, 0.18);
+  border: 1px solid rgba(46, 196, 182, 0.18);
   border-radius: 999px;
   padding: 7px 12px;
   font-size: 11px;

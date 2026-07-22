@@ -38,9 +38,10 @@ export class SiteHeaderComponent implements OnInit {
   }
 
   private checkIfTransparent(url: string) {
-    // Solo es transparente en el Home. En las demás, empieza oscuro.
-    this.isTransparentPage = url.includes('/home') || url.includes('/packages') || url.includes('/about') || url === '/';
-    this.isLightPage = url.includes('/services');
+    // Solo es transparente sobre el hero del Home. En las demás páginas tiene fondo visible.
+    const cleanUrl = url ? url.split('?')[0].split('#')[0] : '';
+    this.isTransparentPage = cleanUrl.endsWith('/home') || cleanUrl === '/' || cleanUrl === '';
+    this.isLightPage = !this.isTransparentPage;
   }
 
   @HostListener('window:scroll', [])
