@@ -20,9 +20,9 @@
 
       <div class="menu-top">
         <div class="menu-brand">
-          <div class="brand-avatar">CC</div>
+          <img class="brand-avatar-img" src="assets/img/logo_cover_1.png" alt="CompanyCare" />
           <div class="brand-meta">
-            <div id="menu-title" class="brand-name">Company Care</div>
+            <div id="menu-title" class="brand-name"><strong>Company</strong>Care</div>
             <div class="brand-sub">{{ auth.user?.email ?? 'Portal de beneficios' }}</div>
           </div>
         </div>
@@ -30,7 +30,7 @@
         <button
           type="button"
           class="collapse-btn"
-          aria-label="Cerrar menu"
+          aria-label="Cerrar menú"
           (click)="closeMenu()"
         >
           <mat-icon class="icon" aria-hidden="true">arrow_back</mat-icon>
@@ -52,7 +52,7 @@
 
       <nav class="menu-nav">
         <div class="menu-section">
-          <div class="menu-section__label">Navegacion</div>
+          <div class="menu-section__label">Navegación</div>
           <ul class="menu-list">
             <li *ngFor="let p of primaryPages">
               <a
@@ -61,6 +61,7 @@
                 routerLinkActive="is-active"
                 [routerLinkActiveOptions]="{ exact: p.url === '/home' || p.url === '/dashboard' }"
                 class="menu-link"
+                (click)="closeMenu()"
               >
                 <mat-icon class="icon menu-link__icon" aria-hidden="true">{{ p.icon }}</mat-icon>
                 <span class="item-label">{{ p.title }}</span>
@@ -70,7 +71,7 @@
         </div>
 
         <div class="menu-section" *ngIf="secondaryPages.length">
-          <div class="menu-section__label">Informacion</div>
+          <div class="menu-section__label">Información</div>
           <ul class="menu-list menu-list--secondary">
             <li *ngFor="let p of secondaryPages">
               <a
@@ -78,6 +79,7 @@
                 [queryParams]="p.queryParams || null"
                 routerLinkActive="is-active"
                 class="menu-link"
+                (click)="closeMenu()"
               >
                 <mat-icon class="icon menu-link__icon" aria-hidden="true">{{ p.icon }}</mat-icon>
                 <span class="item-label">{{ p.title }}</span>
@@ -90,7 +92,7 @@
       <div class="menu-bottom">
         <button type="button" (click)="authAction()" class="menu-link menu-link--button">
           <mat-icon class="icon menu-link__icon" aria-hidden="true">{{ auth.user ? 'logout' : 'login' }}</mat-icon>
-          <span class="item-label">{{ auth.user ? 'Cerrar sesion' : 'Ingresar' }}</span>
+          <span class="item-label">{{ auth.user ? 'Cerrar sesión' : 'Ingresar' }}</span>
         </button>
       </div>
     </div>
