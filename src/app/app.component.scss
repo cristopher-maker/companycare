@@ -119,9 +119,9 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background: #2EC4B6;
+    background: #F27A5E;
     color: #ffffff;
-    border-color: #2EC4B6;
+    border-color: #F27A5E;
   }
 }
 
@@ -147,7 +147,7 @@
   pointer-events: none;
 
   mat-icon {
-    color: #2EC4B6;
+    color: #F27A5E;
   }
 }
 
@@ -169,9 +169,9 @@
   }
 
   &:focus {
-    border-color: #2EC4B6;
+    border-color: #F27A5E;
     background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.2);
+    box-shadow: 0 0 0 3px rgba(242, 122, 94, 0.2);
   }
 }
 
@@ -185,7 +185,7 @@
   padding: 6px 12px 14px;
   box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: rgba(46, 196, 182, 0.4) transparent;
+  scrollbar-color: rgba(242, 122, 94, 0.4) transparent;
 }
 
 .menu-nav::-webkit-scrollbar {
@@ -197,7 +197,7 @@
 }
 
 .menu-nav::-webkit-scrollbar-thumb {
-  background: rgba(46, 196, 182, 0.4);
+  background: rgba(242, 122, 94, 0.4);
   border-radius: 999px;
 }
 
@@ -211,7 +211,7 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #2EC4B6;
+  color: #F27A5E;
 }
 
 .menu-list {
@@ -241,17 +241,17 @@
     color: #ffffff;
 
     .menu-link__icon {
-      color: #2EC4B6;
+      color: #F27A5E;
     }
   }
 
   &.is-active {
-    background: rgba(46, 196, 182, 0.18);
-    border-color: rgba(46, 196, 182, 0.4);
-    color: #2EC4B6;
+    background: rgba(242, 122, 94, 0.18);
+    border-color: rgba(242, 122, 94, 0.4);
+    color: #F27A5E;
 
     .menu-link__icon {
-      color: #2EC4B6;
+      color: #F27A5E;
     }
 
     .item-label {

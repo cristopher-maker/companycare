@@ -4,8 +4,8 @@
 
 $navy:        #123C4F;
 $navy-mid:    #0d2e3d;
-$orange:      #156860; // Corporate dark teal
-$orange-dark: #0e4b45;
+$orange:      #F27A5E; // Corporate warm coral orange
+$orange-dark: #D85F46;
 $white:       #ffffff;
 $text-body:   #2C3E50;
 $text-muted:  #6B7B85;
@@ -125,11 +125,11 @@ $accent-map: (
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #ffffff;
-  background: #2EC4B6;
+  background: #F27A5E;
   padding: 6px 16px;
   border-radius: 100px;
   margin-bottom: 1.25rem;
-  box-shadow: 0 4px 12px rgba(46, 196, 182, 0.25);
+  box-shadow: 0 4px 12px rgba(242, 122, 94, 0.25);
 
   &__dot {
     width: 6px;
@@ -141,7 +141,7 @@ $accent-map: (
 
   &--light {
     color: #ffffff;
-    background: #2EC4B6;
+    background: #F27A5E;
 
     .services-kicker__dot {
       background: $white;
@@ -154,12 +154,12 @@ $accent-map: (
   font-weight: 700;
   padding: 7px 16px;
   border-radius: 999px;
-  background: #2EC4B6;
+  background: #F27A5E;
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(46, 196, 182, 0.25);
+  box-shadow: 0 4px 12px rgba(242, 122, 94, 0.25);
   transition: all 0.2s ease;
 
   .phase-dot {
