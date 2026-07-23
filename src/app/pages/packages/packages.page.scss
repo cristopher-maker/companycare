@@ -69,7 +69,9 @@
   margin-top: -64px;
   padding: 112px 48px 80px;
   color: #fff;
-  background: linear-gradient(135deg, #0d2e3d 0%, #123C4F 62%, #245667 100%);
+  background: #0d2e3d;
+  min-height: 440px;
+  contain: layout paint;
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
   gap: 36px;
@@ -89,6 +91,7 @@
 .hero::before {
   background: url('../../../assets/img/carousel-2.webp') right center / cover no-repeat;
   z-index: -2;
+  transition: opacity 0.4s ease;
 }
 
 .hero::after {

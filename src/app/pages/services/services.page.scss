@@ -235,6 +235,10 @@ $accent-map: (
 .services-hero__photo-card {
   position: relative;
   width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 400px;
+  background: #0d2e3d;
+  contain: layout paint;
   border-top-left-radius: 28px;
   border-bottom-left-radius: 28px;
   border-top-right-radius: 0;
@@ -243,7 +247,6 @@ $accent-map: (
   box-shadow: -10px 20px 50px rgba(18, 60, 79, 0.12);
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-right: none;
-  background: $white;
 
   @media (max-width: 960px) {
     border-radius: 24px;

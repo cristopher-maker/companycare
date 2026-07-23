@@ -69,10 +69,13 @@
     width: 100%;
     max-width: 320px;
     height: 240px;
+    aspect-ratio: 4 / 3;
+    background: #0d2e3d;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
     border: 2px solid rgba(255, 255, 255, 0.2);
+    contain: layout paint;
 
     .hero-img {
       width: 100%;
@@ -81,6 +84,7 @@
       object-position: center;
       display: block;
       transition: transform 0.4s ease;
+      will-change: transform;
     }
 
     &:hover .hero-img {
