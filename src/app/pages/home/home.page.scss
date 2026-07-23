@@ -96,7 +96,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(105deg, rgba(13, 46, 61, 0.95) 45%, rgba(18, 60, 79, 0.75) 100%);
+    background: linear-gradient(110deg, rgba(14, 75, 69, 0.82) 0%, rgba(30, 140, 130, 0.65) 45%, rgba(46, 196, 182, 0.55) 100%);
     z-index: -1;
 }
 
@@ -123,23 +123,23 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    background: linear-gradient(135deg, #FFF7F0 0%, #FFEDE4 100%);
-    color: #C0392B;
+    background: #E9F9F6;
+    color: #156860;
     padding: 8px 18px;
     border-radius: 30px;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 13px;
     letter-spacing: 0.01em;
     margin-bottom: 28px;
-    border: 1.5px solid rgba(46, 196, 182, 0.25);
-    box-shadow: 0 2px 12px rgba(46, 196, 182, 0.10);
+    border: 1.5px solid rgba(46, 196, 182, 0.4);
+    box-shadow: 0 4px 16px rgba(46, 196, 182, 0.15);
     animation: fadeInUp 0.6s ease-out;
 }
 
 .hero-badge-dot {
     width: 8px;
     height: 8px;
-    background: var(--accent);
+    background: #2EC4B6;
     border-radius: 50%;
     animation: pulse-dot 2s infinite;
     box-shadow: 0 0 0 0 rgba(46, 196, 182, 0.6);
@@ -206,7 +206,7 @@
     animation: fadeInUp 0.6s ease-out 0.2s both;
 }
 
-/* ============ HERO SEARCH BOX ============ */
+/* ============ HERO SEARCH BOX (GLASSMORPHISM RESTORED) ============ */
 .hero-search {
     display: flex;
     width: 100%;
@@ -221,7 +221,7 @@
     transition: var(--transition-smooth);
     position: relative;
     z-index: 3;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
     animation: fadeInUp 0.6s ease-out 0.3s both;
     background-clip: padding-box;
 }
@@ -282,8 +282,8 @@
     border-radius: 1px;
 }
 .hs-go {
-    background: linear-gradient(135deg, #123C4F 0%, #0d2e3d 100%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, #2EC4B6 0%, #156860 100%);
+    border: none;
     width: 50px;
     height: 50px;
     border-radius: 16px;
@@ -292,7 +292,7 @@
     justify-content: center;
     cursor: pointer;
     transition: var(--transition-smooth);
-    box-shadow: 0 6px 20px rgba(18, 60, 79, 0.35);
+    box-shadow: 0 6px 20px rgba(46, 196, 182, 0.35);
     flex-shrink: 0;
 }
 .hs-go svg {
@@ -403,16 +403,17 @@
 }
 .section-kicker {
     display: inline-block;
-    background: linear-gradient(135deg, #FFF7F0, #FFEDE4);
-    color: var(--accent);
-    font-weight: 700;
+    background: #2EC4B6;
+    color: #ffffff;
+    font-weight: 800;
     text-transform: uppercase;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.08em;
     padding: 6px 16px;
     border-radius: 20px;
     margin-bottom: 16px;
-    border: 1px solid rgba(46, 196, 182, 0.2);
+    border: none;
+    box-shadow: 0 4px 12px rgba(46, 196, 182, 0.25);
 }
 .section-h2 {
     font-size: 36px;
