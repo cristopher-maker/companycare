@@ -440,21 +440,20 @@
     gap: 24px;
 }
 .svc-card {
-    background: #E9F9F6;
-    border: 2px solid #2EC4B6;
-    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, #2EC4B6 0%, #3BDEC9 100%);
+    border: none;
+    border-radius: 24px;
     padding: 36px 30px 32px;
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
     cursor: pointer;
-    color: #123C4F;
-    box-shadow: 0 8px 24px rgba(46, 196, 182, 0.12);
+    color: #ffffff;
+    box-shadow: 0 10px 30px rgba(46, 196, 182, 0.28);
 }
 .svc-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 16px 36px rgba(46, 196, 182, 0.25);
-    background: #ffffff;
+    box-shadow: 0 18px 42px rgba(46, 196, 182, 0.42);
 }
 
 .svc-icon {
@@ -467,8 +466,10 @@
     margin-bottom: 22px;
     position: relative;
     z-index: 1;
-    background: #2EC4B6 !important;
-    box-shadow: 0 4px 14px rgba(46, 196, 182, 0.35);
+    background: rgba(255, 255, 255, 0.28) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 .svc-icon svg {
     width: 26px;
@@ -483,7 +484,7 @@
 .svc-icon.purple,
 .svc-icon.coral,
 .svc-icon.green {
-    background: #2EC4B6 !important;
+    background: rgba(255, 255, 255, 0.28) !important;
 }
 .svc-icon.teal svg,
 .svc-icon.blue svg,
@@ -499,18 +500,20 @@
     font-size: 20px;
     font-weight: 800;
     margin-bottom: 12px;
-    color: #123C4F;
+    color: #ffffff;
     letter-spacing: -0.01em;
     position: relative;
     z-index: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 .svc-desc {
-    color: #0D2E3D;
+    color: #ffffff;
     line-height: 1.6;
     font-size: 14.5px;
     font-weight: 600;
     position: relative;
     z-index: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 .svc-link {
     display: none;
