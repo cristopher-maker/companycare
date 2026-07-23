@@ -177,6 +177,8 @@
                 *ngIf="p.imageUrl && !p.imgFailed" 
                 [src]="p.imageUrl" 
                 alt="{{ p.name }}" 
+                loading="lazy"
+                decoding="async"
                 (error)="onImgError($event, p)" 
               />
               <div *ngIf="!p.imageUrl || p.imgFailed" class="provider-card__placeholder">
@@ -294,6 +296,8 @@
             *ngIf="selectedProvider.imageUrl && !selectedProvider.imgFailed" 
             [src]="selectedProvider.imageUrl" 
             alt="{{ selectedProvider.name }}" 
+            loading="lazy"
+            decoding="async"
             (error)="onImgError($event, selectedProvider)" 
           />
           <div *ngIf="!selectedProvider.imageUrl || selectedProvider.imgFailed" class="detail-modal__banner-placeholder">
@@ -339,6 +343,8 @@
                   <img 
                     [src]="img" 
                     alt="Foto {{ i + 1 }} de {{ selectedProvider.name }}" 
+                    loading="lazy"
+                    decoding="async"
                     (error)="removeSelectedImage(i)" 
                   />
                 </div>

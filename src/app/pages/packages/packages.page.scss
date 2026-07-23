@@ -3,9 +3,9 @@
 
   --primary: #123C4F;
   --primary-dark: #0d2e3d;
-  --accent: #2EC4B6;
-  --accent-strong: #25a89c;
-  --accent-glow: #5dd8cd;
+  --accent: #156860;
+  --accent-strong: #0e4b45;
+  --accent-glow: #1f8a80;
   --sky: #6ba6b8;
   --emerald: #10b981;
   --text-primary: #2C3E50;
@@ -1023,7 +1023,7 @@
         width: 5px;
         height: 5px;
         border-radius: 50%;
-        background: #2EC4B6;
+        background: #156860;
         display: inline-block;
       }
     }
@@ -1061,21 +1061,23 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #2EC4B6;
-    color: #ffffff;
+    background: #ffffff;
+    color: #123C4F;
     font-family: 'Montserrat', sans-serif;
     font-size: 13.5px;
-    font-weight: 700;
+    font-weight: 800;
     padding: 12px 24px;
     border-radius: 999px;
+    border: none;
     text-decoration: none;
     transition: all 0.25s ease;
-    box-shadow: 0 6px 18px rgba(46, 196, 182, 0.28);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
 
     &:hover {
-      background: #25a89c;
+      background: #E9F9F6;
+      color: #0d2e3d;
       transform: translateY(-2px);
-      box-shadow: 0 10px 22px rgba(46, 196, 182, 0.38);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
     }
 
     svg {

@@ -2,111 +2,151 @@
 
 <main class="contact-page">
   <div class="contact-shell">
+    
+    <!-- Hero Banner -->
     <section class="contact-hero">
       <div class="contact-hero__copy">
-        <span class="contact-hero__eyebrow">Contacto</span>
-        <h1>Hablemos con contexto, no con un formulario frío</h1>
+        <span class="contact-hero__eyebrow">Contacto Corporativo</span>
+        <h1>Hablemos con contexto,<br>no con un formulario frío</h1>
         <p>
-          Completa el formulario y te ayudaremos a coordinar el siguiente paso para tu empresa
-          o colaborador.
+          Completa tus datos y nos pondremos en contacto para orientarte con una propuesta concreta para tu empresa o colaboradores.
         </p>
 
         <div class="contact-hero__chips">
-          <span>Beneficios corporativos</span>
-          <span>Care Experts</span>
-          <span>Residencias y apoyo</span>
+          <span><mat-icon>check_circle</mat-icon> Beneficios corporativos</span>
+          <span><mat-icon>check_circle</mat-icon> Care Experts</span>
+          <span><mat-icon>check_circle</mat-icon> Residencias y cuidado senior</span>
         </div>
       </div>
 
-      <div class="contact-hero__visual" aria-label="Atención y acompañamiento">
-        <div class="contact-visual-card contact-visual-card--floating">
-          <strong>Respuesta inicial</strong>
-          <p>Te orientamos según urgencia, tamaño de empresa y tipo de necesidad.</p>
+      <div class="contact-hero__visual">
+        <div class="hero-image-wrap">
+          <img src="assets/img/carousel-3.webp" alt="Atención y acompañamiento corporativo" class="hero-img" />
+          <div class="hero-img-badge">
+            <mat-icon>verified</mat-icon>
+            <div>
+              <strong>Respuesta en < 24 hrs</strong>
+              <span>Orientación personalizada</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
+    <!-- Main 2-Column Section -->
     <section class="contact-layout">
-      <aside class="contact-info">
-        <div class="contact-info__card">
+      
+      <!-- Left Panel: Corporate Info Card -->
+      <aside class="contact-info-panel">
+        <div class="panel-header">
+          <mat-icon class="panel-icon">support_agent</mat-icon>
           <h2>Qué puedes esperar</h2>
-          <div class="contact-info__list">
-            <article class="contact-info__item">
-              <strong>Respuesta clara</strong>
-              <p>Revisamos tu mensaje y te orientamos con una propuesta concreta según la necesidad.</p>
-            </article>
-            <article class="contact-info__item">
+          <p>Orientación profesional, humana y confidencial desde el primer contacto.</p>
+        </div>
+
+        <div class="info-features">
+          <div class="feature-item">
+            <div class="feature-icon"><mat-icon>mark_email_read</mat-icon></div>
+            <div class="feature-text">
+              <strong>Respuesta clara en 24h</strong>
+              <p>Revisamos tu requerimiento y te orientamos con una propuesta adaptada a tu dotación o caso particular.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><mat-icon>event_available</mat-icon></div>
+            <div class="feature-text">
               <strong>Coordinación simple</strong>
-              <p>Si corresponde, agendamos una llamada o reunión para revisar detalles y próximos pasos.</p>
-            </article>
-            <article class="contact-info__item">
-              <strong>Contexto protegido</strong>
-              <p>La información que compartes se usa solo para preparar una mejor orientación.</p>
-            </article>
+              <p>Agendamos una reunión breve para revisar detalles sin compromiso.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><mat-icon>lock</mat-icon></div>
+            <div class="feature-text">
+              <strong>Información protegida</strong>
+              <p>Tratamos todos los datos de tu organización de forma estrictamente confidencial.</p>
+            </div>
           </div>
         </div>
 
-        <div class="contact-info__meta">
-          <div>
-            <span>Empresas</span>
-            <p>Programas de acompañamiento y beneficios de cuidado.</p>
+        <div class="panel-channels">
+          <div class="channel-block">
+            <span class="channel-tag">Empresas</span>
+            <p>Programas corporativos de salud y cuidado para RR.HH. y Bienestar.</p>
           </div>
-          <div>
-            <span>Colaboradores</span>
-            <p>Orientación inicial para cuidado, residencia y coordinación.</p>
+          <div class="channel-block">
+            <span class="channel-tag">Colaboradores</span>
+            <p>Orientación experta inicial en residencias, enfermería y cuidado mayor.</p>
           </div>
         </div>
       </aside>
 
+      <!-- Right Panel: Contact Form Card -->
       <div class="contact-card">
         <div class="contact-card__head">
           <h2>Escríbenos</h2>
-          <p>Te contactaremos para continuar la conversación y definir el mejor siguiente paso.</p>
+          <p>Te responderemos a la brevedad para coordinar la mejor alternativa.</p>
         </div>
 
         <form class="contact-form" [formGroup]="form" (ngSubmit)="submit()">
           <div class="form-grid">
             <div class="form-field">
-              <label for="name">Nombre</label>
-              <input id="name" type="text" formControlName="name" placeholder="Tu nombre completo" />
+              <label for="name">Nombre completo *</label>
+              <div class="input-wrap">
+                <mat-icon>person_outline</mat-icon>
+                <input id="name" type="text" formControlName="name" placeholder="Ej.: Constanza Silva" />
+              </div>
             </div>
             <div class="form-field">
-              <label for="email">Email</label>
-              <input id="email" type="email" formControlName="email" placeholder="nombre@empresa.com" />
+              <label for="email">Correo electrónico *</label>
+              <div class="input-wrap">
+                <mat-icon>mail_outline</mat-icon>
+                <input id="email" type="email" formControlName="email" placeholder="nombre@empresa.com" />
+              </div>
             </div>
           </div>
 
           <div class="form-field">
             <label for="company">Empresa <span>(opcional)</span></label>
-            <input id="company" type="text" formControlName="company" placeholder="Nombre de tu empresa" />
+            <div class="input-wrap">
+              <mat-icon>business</mat-icon>
+              <input id="company" type="text" formControlName="company" placeholder="Nombre de tu empresa" />
+            </div>
           </div>
 
           <div class="form-field">
             <label for="message">¿En qué podemos ayudarte?</label>
-            <textarea
-              id="message"
-              rows="5"
-              formControlName="message"
-              placeholder="Ej.: Queremos conocer cómo apoyar a colaboradores que cuidan a un familiar mayor y qué tipo de acompañamiento ofrece Company Care."
-            ></textarea>
+            <div class="input-wrap input-wrap--textarea">
+              <textarea
+                id="message"
+                rows="4"
+                formControlName="message"
+                placeholder="Cuéntanos sobre las necesidades de tu empresa o la situación de cuidado que deseas evaluar..."
+              ></textarea>
+            </div>
           </div>
 
           <div class="form-feedback" *ngIf="error">
-            <p class="error">{{ error }}</p>
+            <p class="error"><mat-icon>error_outline</mat-icon> {{ error }}</p>
           </div>
           <div class="form-feedback" *ngIf="success">
-            <p class="success">{{ success }}</p>
+            <p class="success"><mat-icon>check_circle_outline</mat-icon> {{ success }}</p>
           </div>
 
           <div class="contact-form__actions">
-            <p class="contact-form__note">Respuesta prioritaria para orientación inicial y casos corporativos.</p>
+            <p class="contact-form__note">
+              <mat-icon>shield</mat-icon>
+              Respuesta prioritaria en menos de 24 hrs. Sin compromiso.
+            </p>
             <button type="submit" class="contact-form__submit" [disabled]="loading">
               <span *ngIf="!loading">Enviar mensaje</span>
-              <span *ngIf="loading">Enviando...</span>
+              <span *ngIf="loading">Enviando mensaje...</span>
             </button>
           </div>
         </form>
       </div>
+
     </section>
   </div>
 

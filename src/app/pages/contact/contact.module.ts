@@ -2,6 +2,8 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
+import { MatIconModule } from '@angular/material/icon';
+
 import { ContactPageRoutingModule } from './contact-routing.module';
 import { ContactPage } from './contact.page';
 
@@ -14,6 +16,7 @@ import { SiteFooterComponent } from '../../shared/components/site-footer/site-fo
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    MatIconModule,
     ContactPageRoutingModule,
     SiteHeaderComponent,
     SiteFooterComponent 

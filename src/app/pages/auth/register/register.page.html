@@ -1,28 +1,32 @@
-<main class="register w-full h-screen flex items-center justify-center p-4">
-  <div class="topbar absolute top-4 left-4">
-    <a routerLink="/login" aria-label="Volver al login" class="back inline-flex items-center justify-center w-10 h-10 rounded-full text-white hover:bg-white/10 transition-colors">
+<main class="register-page">
+  <!-- Topbar back button -->
+  <div class="topbar">
+    <a routerLink="/login" aria-label="Volver al inicio de sesión" class="back-btn">
       <mat-icon>arrow_back</mat-icon>
+      <span>Volver a iniciar sesión</span>
     </a>
   </div>
 
-  <div class="shell w-full max-w-md">
-    <div class="auth-stage" aria-hidden="true">
-      <div class="auth-shape auth-shape--blue"></div>
-      <div class="auth-shape auth-shape--orange"></div>
+  <div class="register-container">
+    
+    <!-- Brand Header -->
+    <div class="register-brand">
+      <img class="brand-logo" src="assets/img/logo_cover_1.png" alt="CompanyCare" />
+      <div class="brand-info">
+        <h1 class="brand-title"><strong>Company</strong>Care</h1>
+        <span class="brand-sub">by Senior Advisor</span>
+      </div>
     </div>
-    <div class="card" role="region" aria-label="Registro">
-      <div class="brand">
-        <div class="mark">CC</div>
-        <div class="brand-text">
-          <div class="name">Company Care</div>
-          <div class="sub">by Senior Advisor</div>
-        </div>
+
+    <!-- Register Card -->
+    <div class="register-card" role="region" aria-label="Crear cuenta">
+      <div class="card-header">
+        <h2>Crear Cuenta</h2>
+        <p>Selecciona tu rol e ingresa tus datos para registrarte.</p>
       </div>
 
-      <h1 class="title">Crear cuenta</h1>
-      <p class="hint">Elige el tipo de cuenta para configurar tu acceso.</p>
-
-      <div class="role" role="tablist" aria-label="Tipo de cuenta">
+      <!-- Role Selector -->
+      <div class="role-selector" role="tablist" aria-label="Tipo de cuenta">
         <button
           type="button"
           class="role-btn"
@@ -31,7 +35,7 @@
           role="tab"
           [attr.aria-selected]="role === 'employee'"
         >
-          Empleado
+          Colaborador / Empleado
         </button>
         <button
           type="button"
@@ -41,95 +45,122 @@
           role="tab"
           [attr.aria-selected]="role === 'company_admin'"
         >
-          Empresa
+          Administrador Empresa
         </button>
       </div>
 
-      <form class="form" (ngSubmit)="submit()">
-        <label class="pill" *ngIf="role !== 'company_admin'" aria-label="Nombre">
-          <input
-            [(ngModel)]="fullName"
-            name="fullName"
-            type="text"
-            autocomplete="name"
-            placeholder="Nombre y apellido"
-            required
-          />
-          <mat-icon>person_outline</mat-icon>
-        </label>
+      <form class="register-form" (ngSubmit)="submit()">
+        
+        <!-- Full Name (Employee) -->
+        <div class="form-group" *ngIf="role !== 'company_admin'">
+          <label for="fullName" class="form-label">Nombre completo</label>
+          <div class="input-wrap">
+            <mat-icon class="input-icon">person_outline</mat-icon>
+            <input
+              id="fullName"
+              [(ngModel)]="fullName"
+              name="fullName"
+              type="text"
+              autocomplete="name"
+              placeholder="Juan Pérez"
+              required
+            />
+          </div>
+        </div>
 
-        <label class="pill" *ngIf="role === 'company_admin'" aria-label="RUT empresa">
-          <input
-            [(ngModel)]="companyRut"
-            name="companyRut"
-            type="text"
-            inputmode="text"
-            autocomplete="off"
-            placeholder="RUT empresa (ej: 12.345.678-9)"
-            required
-          />
-          <mat-icon>badge</mat-icon>
-        </label>
+        <!-- Company Name (Company Admin) -->
+        <div class="form-group" *ngIf="role === 'company_admin'">
+          <label for="companyName" class="form-label">Nombre de la empresa</label>
+          <div class="input-wrap">
+            <mat-icon class="input-icon">business</mat-icon>
+            <input
+              id="companyName"
+              [(ngModel)]="companyName"
+              name="companyName"
+              type="text"
+              placeholder="Empresa S.A."
+              required
+            />
+          </div>
+        </div>
 
-        <label class="pill" *ngIf="role === 'company_admin'" aria-label="Empresa">
-          <input
-            [(ngModel)]="companyName"
-            name="companyName"
-            type="text"
-            autocomplete="organization"
-            placeholder="Nombre de la empresa"
-            required
-          />
-          <mat-icon>business</mat-icon>
-        </label>
+        <!-- Company RUT (Company Admin) -->
+        <div class="form-group" *ngIf="role === 'company_admin'">
+          <label for="companyRut" class="form-label">RUT Empresa</label>
+          <div class="input-wrap">
+            <mat-icon class="input-icon">badge</mat-icon>
+            <input
+              id="companyRut"
+              [(ngModel)]="companyRut"
+              name="companyRut"
+              type="text"
+              placeholder="76.123.456-7"
+              required
+            />
+          </div>
+        </div>
 
-        <label class="pill" aria-label="Email">
-          <input
-            [(ngModel)]="email"
-            name="email"
-            type="email"
-            autocomplete="email"
-            placeholder="Email"
-            required
-          />
-          <mat-icon>mail_outline</mat-icon>
-        </label>
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email" class="form-label">Correo electrónico corporativo</label>
+          <div class="input-wrap">
+            <mat-icon class="input-icon">mail_outline</mat-icon>
+            <input
+              id="email"
+              [(ngModel)]="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              placeholder="tu.correo@empresa.com"
+              required
+            />
+          </div>
+        </div>
 
-        <label class="pill" aria-label="Contraseña">
-          <input
-            [(ngModel)]="password"
-            name="password"
-            [type]="showPassword ? 'text' : 'password'"
-            autocomplete="new-password"
-            placeholder="Contraseña"
-            required
-          />
-          <button
-            type="button"
-            class="icon-btn"
-            (click)="showPassword = !showPassword"
-            [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-          >
-            <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-        </label>
+        <!-- Password -->
+        <div class="form-group">
+          <label for="password" class="form-label">Contraseña</label>
+          <div class="input-wrap">
+            <mat-icon class="input-icon">lock_outline</mat-icon>
+            <input
+              id="password"
+              [(ngModel)]="password"
+              name="password"
+              [type]="showPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+              placeholder="Mínimo 6 caracteres"
+              required
+            />
+            <button
+              class="toggle-pwd-btn"
+              type="button"
+              [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              (click)="togglePasswordVisibility()"
+            >
+              <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+        </div>
 
-        <div class="msg error" *ngIf="error">{{ error }}</div>
-        <div class="msg success" *ngIf="success">{{ success }}</div>
+        <!-- Messages -->
+        <div class="alert alert--error" *ngIf="error">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error }}</span>
+        </div>
 
-        <button class="primary" type="submit" [disabled]="loading">
-          <svg *ngIf="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span *ngIf="!loading">Crear cuenta</span>
+        <!-- Submit Button -->
+        <button class="btn-submit" type="submit" [disabled]="loading" [attr.aria-busy]="loading">
+          <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+          <span *ngIf="!loading">Crear mi cuenta</span>
         </button>
 
-        <div class="bottom">
-          <span class="muted">¿Ya tienes cuenta?</span>
-          <a class="link" routerLink="/login">Ingresar</a>
+        <!-- Login Link Footer -->
+        <div class="login-footer">
+          <span>¿Ya tienes una cuenta?</span>
+          <a class="link-login" routerLink="/login">Inicia sesión</a>
         </div>
       </form>
     </div>
+
   </div>
 </main>

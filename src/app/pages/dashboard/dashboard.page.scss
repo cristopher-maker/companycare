@@ -38,7 +38,7 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   align-items: center;
   justify-content: center;
   padding: 10px 22px;
-  background: #2EC4B6;
+  background: #123C4F;
   color: $white;
   font-size: 14px;
   font-weight: 600;
@@ -48,7 +48,7 @@ $shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   text-decoration: none;
   transition: background 0.15s, transform 0.1s;
 
-  &:hover  { background: #25a89c; }
+  &:hover  { background: #0d2e3d; }
   &:active { transform: scale(0.98); }
   &:disabled { opacity: 0.55; cursor: not-allowed; }
 }

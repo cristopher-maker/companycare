@@ -24,6 +24,10 @@ export class RegisterPage implements OnDestroy {
   public error: string | null = null;
   public success: string | null = null;
 
+  public togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
   private readonly sessionSub: Subscription;
 
   constructor(

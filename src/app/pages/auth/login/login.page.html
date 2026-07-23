@@ -1,72 +1,113 @@
-<!--
-  NOTA DE MIGRACIÓN:
-  - <ion-content> se reemplaza por <main>.
-  - Los inputs y botones de Ionic se reemplaza por elementos HTML estándar con clases de Tailwind.
-  - <ion-icon> y <img src="svg/..."> se reemplazan por <mat-icon>.
-  - <ion-spinner> se reemplaza por un SVG de spinner.
--->
-<main class="login relative w-full h-screen flex items-center justify-center p-4">
-  <div class="topbar absolute top-4 left-4">
-    <a routerLink="/home" aria-label="Volver al inicio" class="back inline-flex items-center justify-center w-10 h-10 rounded-full text-white hover:bg-white/10 transition-colors">
+<main class="login-page">
+  <!-- Topbar back button -->
+  <div class="topbar">
+    <a routerLink="/home" aria-label="Volver al inicio" class="back-btn">
       <mat-icon>arrow_back</mat-icon>
+      <span>Volver al inicio</span>
     </a>
   </div>
-  <div class="shell w-full max-w-md">
-    <div class="auth-stage" aria-hidden="true">
-      <div class="auth-shape auth-shape--blue"></div>
-      <div class="auth-shape auth-shape--orange"></div>
+
+  <div class="login-container">
+    
+    <!-- Brand Header -->
+    <div class="login-brand">
+      <img class="brand-logo" src="assets/img/logo_cover_1.png" alt="CompanyCare" />
+      <div class="brand-info">
+        <h1 class="brand-title"><strong>Company</strong>Care</h1>
+        <span class="brand-sub">by Senior Advisor</span>
+      </div>
     </div>
-    <div class="card" role="region" aria-label="Acceso">
-      <h1 class="title">{{ mode === 'Ingresar' ? 'Ingresar' : 'Link mágico' }}</h1>
 
-      <form class="form" (ngSubmit)="submit()">
-        <label class="pill" aria-label="Email">
-          <input [(ngModel)]="email" name="email" type="email" autocomplete="email" placeholder="Email" required />
-          <mat-icon>person_outline</mat-icon>
-        </label>
+    <!-- Login Card -->
+    <div class="login-card" role="region" aria-label="Acceso a la plataforma">
+      <div class="card-header">
+        <h2>{{ mode === 'Ingresar' ? 'Iniciar Sesión' : 'Acceso con Link Mágico' }}</h2>
+        <p>Ingresa tus credenciales para acceder a tu portal corporativo.</p>
+      </div>
 
-        <label class="pill" *ngIf="mode !== 'Magic link'" aria-label="Contraseña">
-          <input
-            [(ngModel)]="password"
-            name="password"
-            [type]="showPassword ? 'text' : 'password'"
-            autocomplete="current-password"
-            placeholder="Contraseña"
-            required
-          />
-          <button class="pill__icon-button" type="button" [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'" (click)="togglePasswordVisibility()">
-            <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-        </label>
-
-        <div class="row" *ngIf="mode !== 'Magic link'">
-          <label class="remember">
-            <input [(ngModel)]="rememberMe" name="rememberMe" type="checkbox" />
-            <span>Recordarme</span>
-          </label>
-          <button class="link" type="button" (click)="forgotPassword()">
-            Olvidé mi contraseña
-          </button>
+      <form class="login-form" (ngSubmit)="submit()">
+        <!-- Email field -->
+        <div class="form-group">
+          <label for="email" class="form-label">Correo electrónico</label>
+          <div class="input-wrap">
+            <mat-icon class="input-icon">mail_outline</mat-icon>
+            <input
+              id="email"
+              [(ngModel)]="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              placeholder="tu.correo@empresa.com"
+              required
+            />
+          </div>
         </div>
 
-        <div class="msg error" *ngIf="error">{{ error }}</div>
-        <div class="msg success" *ngIf="success">{{ success }}</div>
+        <!-- Password field -->
+        <div class="form-group" *ngIf="mode !== 'Magic link'">
+          <div class="label-row">
+            <label for="password" class="form-label">Contraseña</label>
+            <button class="link-forgot" type="button" (click)="forgotPassword()">
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+          <div class="input-wrap">
+            <mat-icon class="input-icon">lock_outline</mat-icon>
+            <input
+              id="password"
+              [(ngModel)]="password"
+              name="password"
+              [type]="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              required
+            />
+            <button
+              class="toggle-pwd-btn"
+              type="button"
+              [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              (click)="togglePasswordVisibility()"
+            >
+              <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+        </div>
 
-        <button class="primary" type="submit" [disabled]="loading" [attr.aria-busy]="loading">
-          <span *ngIf="loading" class="login-spinner" aria-hidden="true"></span>
-          <span *ngIf="!loading">{{ mode === 'Ingresar' ? 'Ingresar' : 'Enviar link' }}</span>
+        <!-- Remember me -->
+        <div class="form-options" *ngIf="mode !== 'Magic link'">
+          <label class="remember-checkbox">
+            <input [(ngModel)]="rememberMe" name="rememberMe" type="checkbox" />
+            <span>Recordar mi sesión</span>
+          </label>
+        </div>
+
+        <!-- Messages -->
+        <div class="alert alert--error" *ngIf="error">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error }}</span>
+        </div>
+        <div class="alert alert--success" *ngIf="success">
+          <mat-icon>check_circle_outline</mat-icon>
+          <span>{{ success }}</span>
+        </div>
+
+        <!-- Submit Button -->
+        <button class="btn-submit" type="submit" [disabled]="loading" [attr.aria-busy]="loading">
+          <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+          <span *ngIf="!loading">{{ mode === 'Ingresar' ? 'Ingresar a mi cuenta' : 'Enviar enlace mágico' }}</span>
         </button>
 
-
-        <button class="link" type="button" *ngIf="mode === 'Magic link'" (click)="mode = 'Ingresar'">
+        <button class="btn-switch-mode" type="button" *ngIf="mode === 'Magic link'" (click)="mode = 'Ingresar'">
           Volver a contraseña
         </button>
 
-        <div class="register-line">
-          <span>¿No tienes cuenta?</span>
-          <button class="link" type="button" (click)="goRegister()">Regístrate</button>
+        <!-- Register Link Footer -->
+        <div class="register-footer">
+          <span>¿Aún no tienes cuenta?</span>
+          <button class="link-register" type="button" (click)="goRegister()">Regístrate aquí</button>
         </div>
       </form>
     </div>
+
   </div>
 </main>

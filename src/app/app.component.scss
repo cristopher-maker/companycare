@@ -68,11 +68,12 @@
 .brand-avatar-img {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: 0;
   object-fit: contain;
-  background: rgba(46, 196, 182, 0.15);
-  border: 1px solid rgba(46, 196, 182, 0.3);
-  padding: 4px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .brand-meta {
@@ -90,7 +91,7 @@
 
   strong {
     font-weight: 900;
-    color: #2EC4B6;
+    color: #ffffff;
   }
 }
 

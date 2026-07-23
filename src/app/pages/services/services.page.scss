@@ -4,8 +4,8 @@
 
 $navy:        #123C4F;
 $navy-mid:    #0d2e3d;
-$orange:      #2EC4B6; // Unified brand accent
-$orange-dark: #25a89c;
+$orange:      #156860; // Corporate dark teal
+$orange-dark: #0e4b45;
 $white:       #ffffff;
 $text-body:   #2C3E50;
 $text-muted:  #6B7B85;
@@ -604,17 +604,20 @@ $accent-map: (
 }
 
 .services-btn--cta {
-  background: $orange;
-  color: $white;
+  background: #ffffff;
+  color: #123C4F;
   border: none;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   padding: 14px 30px;
   border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease;
 
   &:hover {
-    background: $orange-dark;
+    background: #E9F9F6;
+    color: #0d2e3d;
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba($orange, 0.4);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
   }
 }
