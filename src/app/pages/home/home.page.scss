@@ -123,26 +123,26 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    background: #FFF0EB;
-    color: #D85F46;
+    background: #F27A5E;
+    color: #ffffff;
     padding: 8px 18px;
     border-radius: 30px;
     font-weight: 800;
     font-size: 13px;
     letter-spacing: 0.01em;
     margin-bottom: 28px;
-    border: 1.5px solid rgba(242, 122, 94, 0.4);
-    box-shadow: 0 4px 16px rgba(242, 122, 94, 0.15);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 16px rgba(242, 122, 94, 0.35);
     animation: fadeInUp 0.6s ease-out;
 }
 
 .hero-badge-dot {
     width: 8px;
     height: 8px;
-    background: #F27A5E;
+    background: #ffffff;
     border-radius: 50%;
     animation: pulse-dot 2s infinite;
-    box-shadow: 0 0 0 0 rgba(242, 122, 94, 0.6);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);
 }
 
 @keyframes pulse-dot {
@@ -178,26 +178,18 @@
 }
 
 .hero-h1 span {
-    color: #FF6B4A;
+    color: #ffffff;
     background: none;
     -webkit-background-clip: unset;
-    -webkit-text-fill-color: #FF6B4A;
+    -webkit-text-fill-color: #ffffff;
     background-clip: unset;
     position: relative;
-    display: inline-block;
-    text-shadow: 0 2px 12px rgba(255, 255, 255, 0.8);
+    display: inline;
+    text-shadow: 0 2px 10px rgba(11, 40, 50, 0.6);
 }
 
 .hero-h1 span::after {
-    content: '';
-    position: absolute;
-    bottom: 4px;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    background: rgba(255, 107, 74, 0.4);
-    border-radius: 3px;
-    z-index: -1;
+    display: none;
 }
 
 .hero-desc {
@@ -265,9 +257,10 @@
 }
 .hs-label {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.6);
+    color: #ffffff;
+    opacity: 0.85;
     text-transform: uppercase;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 0.08em;
     margin-bottom: 2px;
 }
