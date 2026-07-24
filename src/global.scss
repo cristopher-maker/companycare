@@ -29,13 +29,13 @@ $app-theme: mat.define-theme((
 
   --cc-color-primary: #123C4F;
   --cc-color-primary-dark: #0d2e3d;
-  --cc-color-primary-soft: #FFF0EB;
-  --cc-color-accent: #F27A5E;
-  --cc-color-accent-dark: #D85F46;
-  --cc-color-sage: #F27A5E;
+  --cc-color-primary-soft: #EBFBFF;
+  --cc-color-accent: #4AE8FF;
+  --cc-color-accent-dark: #27D5EE;
+  --cc-color-sage: #4AE8FF;
   --cc-color-ink: #2C3E50;
   --cc-color-muted: #6B7B85;
-  --cc-color-line: #FCE6E0;
+  --cc-color-line: #E3FAFF;
   --cc-color-surface: #FCFBF9;
 }
 
@@ -207,7 +207,7 @@ body {
       bottom: 0;
       height: 3px;
       border-radius: 999px;
-      background: linear-gradient(90deg, #F27A5E, #FF8C73);
+      background: #4AE8FF;
 
     }
 
@@ -220,10 +220,10 @@ body {
 @keyframes activeNavPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(242, 122, 94, 0);
+    box-shadow: 0 0 0 rgba(74, 232, 255, 0);
   }
   50% {
-    box-shadow: 0 0 16px rgba(242, 122, 94, 0.62);
+    box-shadow: 0 0 16px rgba(74, 232, 255, 0.62);
   }
 }
 
@@ -248,14 +248,14 @@ body {
   }
 
   .btn-glow {
-    background: linear-gradient(135deg, #F27A5E, #FF6B4A);
+    background: #4AE8FF;
     border: none;
     border-radius: 8px;
-    color: #ffffff;
+    color: #042433;
     font-size: 12px;
     padding: 8px 18px;
     font-weight: 800;
-    box-shadow: 0 6px 18px rgba(242, 122, 94, 0.4);
+    box-shadow: 0 6px 18px rgba(74, 232, 255, 0.4);
     cursor: pointer;
     transition: all 0.2s ease;
 

@@ -4,8 +4,8 @@
 
 $navy:        #123C4F;
 $navy-mid:    #0d2e3d;
-$orange:      #F27A5E; // Corporate warm coral orange
-$orange-dark: #D85F46;
+$orange:      #4AE8FF; // Bright sky cyan accent
+$orange-dark: #27D5EE;
 $white:       #ffffff;
 $text-body:   #2C3E50;
 $text-muted:  #6B7B85;
@@ -124,27 +124,27 @@ $accent-map: (
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #ffffff;
-  background: #F27A5E;
+  color: #042433;
+  background: #4AE8FF;
   padding: 6px 16px;
   border-radius: 100px;
   margin-bottom: 1.25rem;
-  box-shadow: 0 4px 12px rgba(242, 122, 94, 0.25);
+  box-shadow: 0 4px 12px rgba(74, 232, 255, 0.25);
 
   &__dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #ffffff;
+    background: #042433;
     flex-shrink: 0;
   }
 
   &--light {
-    color: #ffffff;
-    background: #F27A5E;
+    color: #042433;
+    background: #4AE8FF;
 
     .services-kicker__dot {
-      background: $white;
+      background: #042433;
     }
   }
 }
@@ -154,25 +154,25 @@ $accent-map: (
   font-weight: 700;
   padding: 7px 16px;
   border-radius: 999px;
-  background: #F27A5E;
-  color: #ffffff;
+  background: #4AE8FF;
+  color: #042433;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(242, 122, 94, 0.25);
+  box-shadow: 0 4px 12px rgba(74, 232, 255, 0.25);
   transition: all 0.2s ease;
 
   .phase-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: $orange;
+    background: #042433;
     display: inline-block;
   }
 
   &:hover {
-    background: $orange;
-    color: $white;
+    background: #4AE8FF;
+    color: #042433;
 
     .phase-dot {
       background: $white;
