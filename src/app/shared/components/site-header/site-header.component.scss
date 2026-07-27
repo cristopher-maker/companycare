@@ -11,8 +11,9 @@
 }
 
 :host ::ng-deep .cc-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  border-radius: 0;
   object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(18%) sepia(26%) saturate(1635%) hue-rotate(156deg) brightness(96%) contrast(92%) !important;
 }

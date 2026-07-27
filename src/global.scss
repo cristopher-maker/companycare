@@ -79,50 +79,80 @@ body {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.cc-nav--scrolled,
-.cc-nav--light {
+.cc-nav--scrolled {
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  background: rgba(18, 60, 79, 0.95) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(18, 60, 79, 0.96) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 10px 30px rgba(18, 60, 79, 0.3);
+
+  .cc-menu-btn {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+  .cc-brand .cc-mark {
+    filter: brightness(0) invert(1) !important;
+  }
+  .cc-brand .cc-brand-text .name { color: #ffffff; strong { color: #ffffff; } }
+  .cc-brand .cc-brand-text .sub { color: rgba(255, 255, 255, 0.85); }
+  .cc-nav-links a { color: rgba(255, 255, 255, 0.85); &:hover, &.active-link { color: #ffffff; } }
+  .cc-nav-actions .btn-ghost { color: #ffffff; border-color: rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.08); }
+  .cc-nav-actions .btn-glow { background: #4AE8FF; color: #042433; }
 }
 
-.cc-nav--light .cc-menu-btn {
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
-
-.cc-nav--light .cc-brand .cc-brand-text .name {
-  color: #ffffff;
-}
-
-.cc-nav--light .cc-brand .cc-brand-text .sub {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.cc-nav--light .cc-nav-links a {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.cc-nav--light .cc-nav-links a:hover,
-.cc-nav--light .cc-nav-links a.active-link {
-  color: #ffffff;
-}
-
-.cc-nav--light .cc-nav-actions .btn-ghost {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.06);
+.cc-nav:not(.cc-nav--scrolled) {
+  .cc-menu-btn {
+    border-color: rgba(18, 60, 79, 0.2);
+    background: rgba(18, 60, 79, 0.08);
+    color: #123C4F;
+  }
+  .cc-brand .cc-mark {
+    filter: brightness(0) saturate(100%) invert(18%) sepia(26%) saturate(1635%) hue-rotate(156deg) brightness(96%) contrast(92%) !important;
+  }
+  .cc-brand .cc-brand-text .name {
+    color: #123C4F;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    strong { color: #123C4F; font-weight: 800; }
+  }
+  .cc-brand .cc-brand-text .sub {
+    color: #123C4F;
+    font-size: 10px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+  .cc-nav-links a {
+    color: #123C4F;
+    font-weight: 700;
+    &:hover, &.active-link {
+      color: #123C4F;
+    }
+    &.active-link::after {
+      background: #123C4F;
+    }
+  }
+  .cc-nav-actions .btn-ghost {
+    color: #123C4F;
+    border-color: rgba(18, 60, 79, 0.3);
+    background: rgba(18, 60, 79, 0.08);
+    font-weight: 700;
+  }
+  .cc-nav-actions .btn-glow {
+    background: #123C4F;
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(18, 60, 79, 0.25);
+  }
 }
 
 .cc-menu-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
@@ -139,41 +169,44 @@ body {
 .cc-nav-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .cc-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
 
   .cc-mark {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     background: transparent !important;
     border: none !important;
     border-radius: 0;
     padding: 0;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    filter: brightness(0) saturate(100%) invert(18%) sepia(26%) saturate(1635%) hue-rotate(156deg) brightness(96%) contrast(92%) !important;
   }
 
   .cc-brand-text {
     .name {
-      font-size: 14px;
-      font-weight: 600;
-      color: #ffffff;
-      line-height: 1.2;
+      font-size: 24px;
+      font-weight: 400;
+      color: #123C4F;
+      line-height: 1;
+      letter-spacing: -0.03em;
       
       strong {
-        font-weight: 900;
-        color: #ffffff;
+        font-weight: 800;
+        color: #123C4F;
       }
     }
     .sub {
       font-size: 10px;
-      color: rgba(255, 255, 255, 0.65);
+      color: #123C4F;
+      font-weight: 600;
+      opacity: 0.8;
     }
   }
 }
@@ -189,14 +222,14 @@ body {
     position: relative;
     padding-bottom: 6px;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.7);
+    color: #123C4F;
     text-decoration: none;
-    font-weight: 400;
+    font-weight: 700;
     transition: color 0.2s ease;
 
     &:hover,
     &.active-link {
-      color: #ffffff;
+      color: #042433;
     }
 
     &.active-link::after {
