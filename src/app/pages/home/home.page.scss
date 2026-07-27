@@ -382,7 +382,7 @@
     padding: 60px 0;
     position: relative;
     z-index: 1;
-    background: #f0f4f6;
+    background: #4AE8FF;
 }
 .showcase-image-container {
     max-width: var(--max-width);
@@ -393,9 +393,8 @@
     position: relative;
     border-radius: 28px;
     overflow: hidden;
-    box-shadow: 0 20px 48px rgba(18, 60, 79, 0.12);
-    border: 1.5px solid rgba(46, 196, 182, 0.2);
-    background: #FCFBF9;
+    box-shadow: 0 20px 48px rgba(4, 36, 51, 0.16);
+    border: none;
 }
 .showcase-pure-img {
     width: 100%;
