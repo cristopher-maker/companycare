@@ -86,31 +86,45 @@
       <div class="resources-grid" *ngIf="!loading && !error && filteredResources.length > 0">
         <article
           class="resource-card"
+          [class.resource-card--has-thumb]="res.resource_type === 'video'"
           *ngFor="let res of filteredResources; trackBy: trackById"
           (click)="open(res)"
         >
-          <div class="resource-card__header">
-            <span class="resource-badge resource-badge--{{ categoryKey(res.category) }}">
-              {{ res.category }}
-            </span>
-            <span class="resource-type-tag">
-              <mat-icon>{{ typeIcon(res.resource_type) }}</mat-icon>
-              {{ typeLabel(res.resource_type) }}
-            </span>
+          <!-- LOTTIE STYLE VIDEO THUMBNAIL PREVIEW -->
+          <div class="resource-card__thumb" *ngIf="res.resource_type === 'video'">
+            <img [src]="getThumbnail(res)" [alt]="res.title" class="thumb-img" />
+            <div class="play-overlay">
+              <div class="play-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
+            <span class="thumb-duration">{{ getDurationText(res) }} video</span>
           </div>
 
-          <h3 class="resource-card__title">{{ res.title }}</h3>
-          <p class="resource-card__summary">{{ res.summary }}</p>
+          <div class="resource-card__body">
+            <div class="resource-card__header">
+              <span class="resource-badge resource-badge--{{ categoryKey(res.category) }}">
+                {{ res.category }}
+              </span>
+              <span class="resource-type-tag" [class.resource-type-tag--video]="res.resource_type === 'video'">
+                <mat-icon>{{ typeIcon(res.resource_type) }}</mat-icon>
+                {{ typeLabel(res.resource_type) }}
+              </span>
+            </div>
 
-          <div class="resource-card__footer">
-            <span class="read-time">
-              <mat-icon>schedule</mat-icon>
-              {{ res.read_time_min }} min lectura
-            </span>
-            <span class="read-more">
-              Ver recurso
-              <mat-icon>arrow_forward</mat-icon>
-            </span>
+            <h3 class="resource-card__title">{{ res.title }}</h3>
+            <p class="resource-card__summary">{{ res.summary }}</p>
+
+            <div class="resource-card__footer">
+              <span class="read-time">
+                <mat-icon>schedule</mat-icon>
+                {{ getDurationText(res) }} {{ res.resource_type === 'video' ? 'video' : 'lectura' }}
+              </span>
+              <span class="read-more">
+                {{ res.resource_type === 'video' ? 'Ver video' : 'Ver recurso' }}
+                <mat-icon>arrow_forward</mat-icon>
+              </span>
+            </div>
           </div>
         </article>
       </div>
@@ -143,11 +157,22 @@
       <p class="drawer-lead">{{ activeResource.summary }}</p>
 
       <div class="drawer-media" *ngIf="activeResource.video_url">
-        <iframe
-          [src]="getEmbedUrl(activeResource.video_url)"
-          frameborder="0"
-          allowfullscreen
-        ></iframe>
+        <ng-container *ngIf="isDirectVideo(activeResource.video_url); else iframeEmbed">
+          <video
+            [src]="activeResource.video_url"
+            controls
+            playsinline
+            preload="metadata"
+            style="width: 100%; max-height: 380px; border-radius: 16px; background: #000; display: block;"
+          ></video>
+        </ng-container>
+        <ng-template #iframeEmbed>
+          <iframe
+            [src]="getEmbedUrl(activeResource.video_url) | trustUrl"
+            frameborder="0"
+            allowfullscreen
+          ></iframe>
+        </ng-template>
       </div>
 
       <div class="drawer-sections">

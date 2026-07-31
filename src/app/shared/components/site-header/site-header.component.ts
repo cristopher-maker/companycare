@@ -41,7 +41,8 @@ export class SiteHeaderComponent implements OnInit {
     // Solo es transparente sobre el hero del Home. En las demás páginas tiene fondo visible.
     const cleanUrl = url ? url.split('?')[0].split('#')[0] : '';
     this.isTransparentPage = cleanUrl.endsWith('/home') || cleanUrl === '/' || cleanUrl === '';
-    this.isLightPage = !this.isTransparentPage;
+    const isDarkNavPage = cleanUrl.includes('/resources');
+    this.isLightPage = !this.isTransparentPage && !isDarkNavPage;
   }
 
   @HostListener('window:scroll', [])

@@ -53,6 +53,42 @@ const CATEGORY_ICON: Record<ResourceCategory, string> = {
 
 const FALLBACK_RESOURCES: ResourceItem[] = [
   {
+    id: 'res-v1',
+    title: '4 Pilares del Cuidado Senior',
+    summary: 'Video explicativo con los 4 pilares fundamentales para acompañar el cuidado integral de un familiar adulto mayor.',
+    category: 'Guías prácticas',
+    resource_type: 'video',
+    read_time_min: 3,
+    is_priority: true,
+    file_url: null,
+    video_url: 'https://youtu.be/0DBr6_GmlQU',
+    content: [
+      {
+        heading: 'Los 4 Pilares del Cuidado',
+        body: 'En este video se detallan los ejes esenciales para la atención preventiva y el bienestar de los adultos mayores.',
+        bullets: ['Salud física y nutrición adaptada', 'Bienestar emocional y estimulación cognitiva', 'Seguridad en el hogar y prevención de accidentes', 'Gestión legal, administrativa y previsional']
+      }
+    ]
+  },
+  {
+    id: 'res-v2',
+    title: 'Asesorías Care Experts v3',
+    summary: 'Video orientativo v3 sobre el funcionamiento de las sesiones personalizadas con especialistas en gerontología y trabajo social.',
+    category: 'Opciones de cuidado',
+    resource_type: 'video',
+    read_time_min: 2,
+    is_priority: true,
+    file_url: null,
+    video_url: 'https://youtu.be/mWqy2uipk3c',
+    content: [
+      {
+        heading: 'Modelo de Asesoría Profesional',
+        body: 'Explicación del proceso de acompañamiento continuo desde la primera consulta por chat o videollamada.',
+        bullets: ['Evaluación gerontológica inicial', 'Elaboración de plan de cuidados a la medida', 'Coordinación con la red de proveedores verificados']
+      }
+    ]
+  },
+  {
     id: 'res-1',
     title: 'Guía Completa: Cómo evaluar el nivel de dependencia de un familiar',
     summary: 'Aprende a identificar los primeros signos de pérdida de autonomía física y cognitiva en adultos mayores.',
@@ -242,10 +278,32 @@ export class ResourcesPage implements OnInit {
 
   public getEmbedUrl(videoUrl: string): string {
     const ytMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&?/]+)/);
-    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
     const vmMatch = videoUrl.match(/vimeo\.com\/(\d+)/);
     if (vmMatch) return `https://player.vimeo.com/video/${vmMatch[1]}`;
     return videoUrl;
+  }
+
+  public getThumbnail(res: ResourceItem): string {
+    if (res.video_url) {
+      const ytMatch = res.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&?/]+)/);
+      if (ytMatch) {
+        return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+      }
+    }
+    return 'assets/img/home-1.jpg';
+  }
+
+  public getDurationText(res: ResourceItem): string {
+    if (res.id === 'res-v1') return '2:39 min';
+    if (res.id === 'res-v2') return '1:53 min';
+    return `${res.read_time_min} min`;
+  }
+
+  public isDirectVideo(videoUrl: string | null): boolean {
+    if (!videoUrl) return false;
+    const lower = videoUrl.toLowerCase();
+    return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.mov') || lower.includes('/assets/');
   }
 
   public typeIcon(type: ResourceType): string {
