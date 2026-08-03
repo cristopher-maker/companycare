@@ -31,9 +31,10 @@ $surface:     #FCFBF9;
 // ─────────────────────────────────────────────────────────────────────────────
 
 .resources-hero {
-  background: $surface;
+  background: #90EEFC;
   padding: 50px 0 60px;
-  border-bottom: 1px solid rgba(18, 60, 79, 0.06);
+  border-bottom: 1.5px solid #6CE3F7;
+  box-shadow: 0 6px 24px rgba(144, 238, 252, 0.25);
 
   &__container {
     max-width: 1200px;
@@ -44,21 +45,23 @@ $surface:     #FCFBF9;
   &__title {
     font-size: clamp(32px, 3.8vw, 44px);
     font-weight: 800;
-    color: $navy;
+    color: #061922;
     line-height: 1.18;
     letter-spacing: -0.02em;
     margin: 0 0 1rem;
 
     .highlight {
-      color: $orange;
+      color: #042433;
       font-weight: 800;
+      text-decoration: none;
     }
   }
 
   &__subtitle {
     font-size: 16px;
     line-height: 1.65;
-    color: #4A5568;
+    color: #0B2B3A;
+    font-weight: 600;
     max-width: 620px;
     margin: 0 0 2.5rem;
   }
@@ -69,20 +72,21 @@ $surface:     #FCFBF9;
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: $orange;
-  background: rgba($orange, 0.08);
+  color: #061922;
+  background: #ffffff;
   padding: 6px 14px;
   border-radius: 100px;
   margin-bottom: 1.25rem;
+  box-shadow: 0 2px 8px rgba(6, 25, 34, 0.1);
 
   &__dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: $orange;
+    background: #061922;
   }
 }
 
@@ -122,8 +126,8 @@ $surface:     #FCFBF9;
     transition: all 0.2s ease;
 
     &:focus {
-      border-color: $orange;
-      box-shadow: 0 6px 20px rgba($orange, 0.18);
+      border-color: #6CE3F7;
+      box-shadow: 0 6px 20px rgba(144, 238, 252, 0.3);
     }
   }
 
@@ -161,22 +165,23 @@ $surface:     #FCFBF9;
   font-weight: 600;
   padding: 8px 18px;
   border-radius: 999px;
-  background: $white;
-  color: $navy;
-  border: 1px solid $border;
+  background: #ffffff;
+  color: #061922;
+  border: 1.5px solid rgba(6, 25, 34, 0.12);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: $orange;
-    color: $orange;
+    border-color: #061922;
+    color: #061922;
   }
 
   &.is-active {
-    background: $orange;
-    color: $white;
-    border-color: $orange;
-    box-shadow: 0 6px 16px rgba($orange, 0.3);
+    background: #061922;
+    color: #ffffff;
+    border-color: #061922;
+    font-weight: 700;
+    box-shadow: 0 6px 16px rgba(6, 25, 34, 0.25);
   }
 }
 

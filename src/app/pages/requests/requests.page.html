@@ -169,6 +169,7 @@
           </span>
 
           <a
+            *ngIf="item.channel === 'Chat'"
             [routerLink]="['/care-experts']"
             [queryParams]="{ request: item.id }"
             class="request-btn request-btn--primary"
