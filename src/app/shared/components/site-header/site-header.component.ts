@@ -38,15 +38,16 @@ export class SiteHeaderComponent implements OnInit {
   }
 
   private checkIfTransparent(url: string) {
-    // Solo es transparente sobre el hero del Home. En las demás páginas tiene fondo visible.
     const cleanUrl = url ? url.split('?')[0].split('#')[0] : '';
-    this.isTransparentPage = cleanUrl.endsWith('/home') || cleanUrl === '/' || cleanUrl === '';
-    const isDarkNavPage = cleanUrl.includes('/resources');
-    this.isLightPage = !this.isTransparentPage && !isDarkNavPage;
+    // Páginas con fondo Hero oscuro que llevan Navbar Transparente con texto e icono blanco antes del scroll:
+    const isDarkHeroPage = cleanUrl.endsWith('/home') || cleanUrl === '/' || cleanUrl === '' || cleanUrl.includes('/packages');
+    this.isTransparentPage = isDarkHeroPage && !this.isScrolled;
+    this.isLightPage = false;
   }
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
     this.isScrolled = window.scrollY > 50;
+    this.checkIfTransparent(this.router.url);
   }
 }

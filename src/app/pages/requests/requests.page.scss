@@ -52,10 +52,10 @@ app-requests {
   gap: 20px;
   align-items: center;
   padding: 30px;
-  border: 1px solid $border-color;
-  border-radius: $radius-lg;
-  background: #ffffff;
-  box-shadow: $shadow-sm;
+  border: 1.5px solid #6CE3F7;
+  border-radius: 20px;
+  background: #90EEFC;
+  box-shadow: 0 8px 32px rgba(144, 238, 252, 0.35);
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -71,39 +71,42 @@ app-requests {
     display: grid;
     place-items: center;
     border-radius: 16px;
-    background: $mint-soft;
-    color: $teal;
-    border: 1px solid rgba(46, 196, 182, 0.25);
+    background: #ffffff;
+    color: #061922;
+    border: 1px solid #6CE3F7;
+    box-shadow: 0 2px 8px rgba(6, 25, 34, 0.08);
 
     mat-icon {
       font-size: 28px;
       width: 28px;
       height: 28px;
+      color: #061922;
     }
   }
 
   &__copy {
     h2 {
       margin: 4px 0 6px;
-      color: $navy;
+      color: #061922;
       font-size: 26px;
-      font-weight: 800;
+      font-weight: 900;
       letter-spacing: -0.02em;
       line-height: 1.2;
     }
 
     p {
       margin: 0;
-      color: $text-muted;
+      color: #0B2B3A;
       font-size: 14.5px;
+      font-weight: 500;
       line-height: 1.5;
     }
   }
 
   &__eyebrow {
-    color: $teal;
-    font-size: 11px;
-    font-weight: 800;
+    color: #0088A8;
+    font-size: 12px;
+    font-weight: 900;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -115,21 +118,20 @@ app-requests {
     gap: 8px;
     min-height: 44px;
     padding: 0 20px;
-    border: 1px solid $border-color;
-    border-radius: $radius-md;
+    border: 1.5px solid rgba(6, 25, 34, 0.15);
+    border-radius: 12px;
     background: #ffffff;
-    color: $navy;
+    color: #061922;
     font-family: 'Montserrat', sans-serif;
     font-size: 13.5px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 12px rgba(6, 25, 34, 0.08);
     transition: all 0.2s ease;
 
     &:hover:not(:disabled) {
-      background: $mint-soft;
-      border-color: $teal;
-      color: $teal-dark;
+      background: #ffffff;
+      border-color: #061922;
     }
 
     &:disabled {
@@ -167,38 +169,41 @@ app-requests {
     align-items: center;
     gap: 18px;
     padding: 22px 24px;
-    border: 1px solid $border-color;
-    border-radius: $radius-lg;
-    background: #ffffff;
-    box-shadow: $shadow-sm;
+    border: 1.5px solid #6CE3F7;
+    border-radius: 20px;
+    background: #90EEFC;
+    box-shadow: 0 6px 20px rgba(144, 238, 252, 0.3);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: $shadow-md;
+      box-shadow: 0 10px 28px rgba(144, 238, 252, 0.45);
     }
 
     &--total {
-      border-left: 4px solid $navy;
+      border-left: 4px solid #123C4F;
       .requests-overview__icon-box {
-        background: rgba(18, 60, 79, 0.08);
-        color: $navy;
+        background: #ffffff;
+        color: #123C4F;
+        border: 1px solid #6CE3F7;
       }
     }
 
     &--active {
-      border-left: 4px solid $teal;
+      border-left: 4px solid #0088A8;
       .requests-overview__icon-box {
-        background: $mint-soft;
-        color: $teal-dark;
+        background: #ffffff;
+        color: #0088A8;
+        border: 1px solid #6CE3F7;
       }
     }
 
     &--closed {
-      border-left: 4px solid #6B7B85;
+      border-left: 4px solid #061922;
       .requests-overview__icon-box {
-        background: #f1f5f9;
-        color: #6B7B85;
+        background: #ffffff;
+        color: #061922;
+        border: 1px solid #6CE3F7;
       }
     }
   }
@@ -210,6 +215,7 @@ app-requests {
     display: grid;
     place-items: center;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(6, 25, 34, 0.08);
 
     mat-icon {
       font-size: 22px;
@@ -225,7 +231,7 @@ app-requests {
   }
 
   &__label {
-    color: $text-muted;
+    color: #0B2B3A;
     font-size: 11.5px;
     font-weight: 800;
     text-transform: uppercase;
@@ -233,9 +239,9 @@ app-requests {
   }
 
   &__value {
-    color: $navy;
+    color: #061922;
     font-size: 26px;
-    font-weight: 800;
+    font-weight: 900;
     line-height: 1.1;
   }
 }
@@ -621,30 +627,31 @@ app-requests {
   text-align: center;
   gap: 12px;
   padding: 48px 30px;
-  border: 1px solid $border-color;
-  border-radius: $radius-lg;
-  background: #ffffff;
-  box-shadow: $shadow-sm;
+  border: 1.5px solid #6CE3F7;
+  border-radius: 24px;
+  background: #90EEFC;
+  box-shadow: 0 8px 32px rgba(144, 238, 252, 0.35);
 
   &__icon {
     font-size: 48px !important;
     width: 48px !important;
     height: 48px !important;
-    color: $teal;
+    color: #061922;
     margin-bottom: 8px;
   }
 
   h3 {
     margin: 0;
-    font-size: 20px;
-    font-weight: 800;
-    color: $navy;
+    font-size: 22px;
+    font-weight: 900;
+    color: #061922;
   }
 
   p {
     margin: 0;
-    color: $text-muted;
-    font-size: 14.5px;
+    color: #0B2B3A;
+    font-size: 15px;
+    font-weight: 500;
     max-width: 48ch;
     line-height: 1.5;
   }
@@ -653,20 +660,22 @@ app-requests {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 42px;
-    padding: 0 24px;
-    border-radius: $radius-pill;
-    background: $teal;
+    min-height: 44px;
+    padding: 0 28px;
+    border-radius: 12px;
+    background: #123C4F;
     color: #ffffff;
     font-family: 'Montserrat', sans-serif;
     font-weight: 800;
     font-size: 14px;
     text-decoration: none;
-    box-shadow: 0 4px 12px rgba(46, 196, 182, 0.25);
+    box-shadow: 0 6px 18px rgba(18, 60, 79, 0.25);
     margin-top: 8px;
+    transition: all 0.2s ease;
 
     &:hover {
-      background: $teal-dark;
+      background: #0d2e3d;
+      transform: translateY(-1px);
     }
   }
 }

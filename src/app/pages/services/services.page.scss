@@ -194,16 +194,18 @@ $accent-map: (
   cursor: pointer;
 
   &--primary {
-    background: $orange;
-    color: $white;
-    border: 1px solid $orange;
-    box-shadow: 0 8px 24px rgba($orange, 0.22);
+    background: #4AE8FF;
+    color: #061922;
+    font-weight: 800;
+    border: 1px solid #4AE8FF;
+    box-shadow: 0 8px 24px rgba(74, 232, 255, 0.3);
 
     &:hover {
-      background: $orange-dark;
-      border-color: $orange-dark;
+      background: #27D5EE;
+      color: #061922;
+      border-color: #27D5EE;
       transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba($orange, 0.32);
+      box-shadow: 0 12px 28px rgba(39, 213, 238, 0.4);
     }
   }
 
@@ -387,20 +389,20 @@ $accent-map: (
 }
 
 .service-card {
-  background: $white;
-  border: 1px solid $border;
-  border-radius: 20px;
+  background: #90EEFC;
+  border: 1.5px solid #6CE3F7;
+  border-radius: 24px;
   padding: 2rem 1.75rem;
   display: flex;
   flex-direction: column;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 8px 32px rgba(144, 238, 252, 0.35);
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(18, 60, 79, 0.08);
-    border-color: rgba($orange, 0.4);
+    box-shadow: 0 12px 36px rgba(144, 238, 252, 0.5);
+    border-color: #061922;
   }
 
   &__top {
@@ -413,17 +415,20 @@ $accent-map: (
   &__icon {
     width: 48px;
     height: 48px;
-    border-radius: 12px;
-    background: rgba($orange, 0.08);
-    color: $orange;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #061922;
+    border: 1px solid #6CE3F7;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 8px rgba(6, 25, 34, 0.08);
 
     mat-icon {
       font-size: 24px;
       width: 24px;
       height: 24px;
+      color: #061922;
     }
   }
 
@@ -431,13 +436,13 @@ $accent-map: (
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: $orange;
+    background: #0088A8;
   }
 
   &__title {
     font-size: 20px;
-    font-weight: 700;
-    color: $navy;
+    font-weight: 900;
+    color: #061922;
     line-height: 1.3;
     margin: 0 0 0.75rem;
   }
@@ -445,23 +450,24 @@ $accent-map: (
   &__description {
     font-size: 14px;
     line-height: 1.6;
-    color: $text-muted;
+    color: #0B2B3A;
+    font-weight: 500;
     margin: 0 0 1.5rem;
     flex: 1;
   }
 
   &__divider {
     height: 1px;
-    background: $border;
+    background: rgba(6, 25, 34, 0.12);
     margin-bottom: 1.25rem;
   }
 
   &__label {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 900;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: $text-muted;
+    color: #0088A8;
     margin-bottom: 0.75rem;
   }
 
@@ -475,11 +481,11 @@ $accent-map: (
 
     li {
       font-size: 13.5px;
-      color: $text-body;
+      color: #061922;
       display: flex;
       align-items: center;
       gap: 10px;
-      font-weight: 500;
+      font-weight: 700;
     }
   }
 
@@ -487,7 +493,7 @@ $accent-map: (
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: $orange;
+    background: #061922;
     flex-shrink: 0;
   }
 }
@@ -516,36 +522,40 @@ $accent-map: (
 }
 
 .services-step {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: #90EEFC;
+  border: 1.5px solid #6CE3F7;
+  border-radius: 20px;
   padding: 2rem 1.5rem;
+  box-shadow: 0 6px 20px rgba(144, 238, 252, 0.25);
 
   &__index {
     font-size: 14px;
-    font-weight: 800;
-    color: $orange;
-    background: rgba($orange, 0.1);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    font-weight: 900;
+    color: #061922;
+    background: #ffffff;
+    border: 1px solid #6CE3F7;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 1.25rem;
+    box-shadow: 0 2px 6px rgba(6, 25, 34, 0.08);
   }
 
   &__title {
     font-size: 17px;
-    font-weight: 700;
-    color: $navy;
+    font-weight: 900;
+    color: #061922;
     margin: 0 0 0.5rem;
   }
 
   &__text {
     font-size: 13.5px;
     line-height: 1.6;
-    color: $text-muted;
+    color: #0B2B3A;
+    font-weight: 500;
     margin: 0;
   }
 }
