@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { UiService } from '../../core/services/ui.service';
+import { FollowupService, PatientFollowup, PatientStatus, FollowupType, PATIENT_STATUS_CONFIG, FOLLOWUP_TYPE_CONFIG } from '../../core/services/followup.service';
 
 type DashboardMode = 'public' | 'employee' | 'company';
 
@@ -47,6 +48,7 @@ type EmployeeCareIntakeDraft = {
   dependencyLevel: string;
   city: string;
   postalCode: string;
+  hasTwoFloors: string;
   supportNetwork: string;
   budgetMonthlyMax: number | null;
   funding: string;
@@ -97,11 +99,17 @@ export class DashboardPage implements OnInit, OnDestroy {
   public employeeCareIntakeUpdatedAt: string | null = null;
   public employeeCareIntakeDraft: EmployeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
 
+  // Followup tracking
+  public latestFollowup: PatientFollowup | null = null;
+  public followupHistory: PatientFollowup[] = [];
+  public showFollowupHistory = false;
+
   private unsub?: { data: { subscription: { unsubscribe: () => void } } };
 
   constructor(
     private readonly supabase: SupabaseService,
     public readonly ui: UiService,
+    private readonly followupService: FollowupService,
   ) {}
 
   public ngOnInit(): void {
@@ -218,6 +226,30 @@ export class DashboardPage implements OnInit, OnDestroy {
     return map[value ?? ''] ?? value ?? 'Sin dato';
   }
 
+  public housingTypeLabel(value: string | null | undefined): string {
+    const map: Record<string, string> = {
+      house_1f:      'Casa de 1 piso (Sin escaleras)',
+      house_2f:      'Casa de 2 o más pisos (Con escaleras)',
+      dept_elevator: 'Departamento con ascensor',
+      dept_stairs:   'Departamento sin ascensor (Escaleras)',
+      adapted:       'Vivienda adaptada (Con rampa / Salvaescaleras)',
+      yes:           'Casa de 2 o más pisos (Con escaleras)',
+      no:            'Casa de 1 piso / Depto con ascensor',
+    };
+    return map[value ?? ''] ?? value ?? 'Sin dato';
+  }
+
+  public requestStatusLabel(status: string | null | undefined): string {
+    const map: Record<string, string> = {
+      open: 'Abierta',
+      assigned: 'Asignada',
+      in_progress: 'En proceso',
+      resolved: 'Resuelta',
+      closed: 'Cerrada',
+    };
+    return map[status ?? ''] ?? status ?? 'Solicitud';
+  }
+
   public async saveEmployeeCareIntake(): Promise<void> {
     const userId = (await this.supabase.client.auth.getSession()).data.session?.user?.id ?? null;
     if (!userId) return;
@@ -244,6 +276,7 @@ export class DashboardPage implements OnInit, OnDestroy {
         location: {
           city: this.employeeCareIntakeDraft.city.trim() || null,
           postal_code: this.employeeCareIntakeDraft.postalCode.trim() || null,
+          has_two_floors: this.employeeCareIntakeDraft.hasTwoFloors || 'house_1f',
         },
         family_context: {
           support_network: this.employeeCareIntakeDraft.supportNetwork.trim() || null,
@@ -389,6 +422,9 @@ export class DashboardPage implements OnInit, OnDestroy {
     if (companyId) {
       await this.loadEmployeeCareIntake(userId, this.employeeCareIntakeOpen);
     }
+
+    // Load followup data
+    await this.loadFollowupData(userId);
   }
 
   private async loadCompanyDashboard(companyId: string | null): Promise<void> {
@@ -495,6 +531,7 @@ export class DashboardPage implements OnInit, OnDestroy {
         dependencyLevel:  p?.care_receiver?.dependency_level ?? 'medium',
         city:             p?.location?.city ?? p?.location?.comuna ?? '',
         postalCode:       p?.location?.postal_code ?? '',
+        hasTwoFloors:     p?.location?.has_two_floors ?? 'house_1f',
         supportNetwork:   p?.family_context?.support_network ?? '',
         budgetMonthlyMax: p?.budget?.monthly_max ?? p?.budget?.weekly_max ?? null,
         funding:          p?.budget?.funding ?? 'self_funder',
@@ -521,6 +558,7 @@ export class DashboardPage implements OnInit, OnDestroy {
       dependencyLevel:  'medium',
       city:             '',
       postalCode:       '',
+      hasTwoFloors:     'house_1f',
       supportNetwork:   '',
       budgetMonthlyMax: null,
       funding:          'self_funder',
@@ -531,5 +569,38 @@ export class DashboardPage implements OnInit, OnDestroy {
       notes:            '',
       amenities:        { ensuite: false, garden: false, library: false, pets: false },
     };
+  }
+
+  // ── Followup Tracking ──────────────────────────────────
+
+  public getFollowupStatusColor(status: string): string {
+    return PATIENT_STATUS_CONFIG[status as PatientStatus]?.color ?? '#6B7B85';
+  }
+
+  public getFollowupStatusIcon(status: string): string {
+    return PATIENT_STATUS_CONFIG[status as PatientStatus]?.icon ?? 'help';
+  }
+
+  public getFollowupStatusLabel(status: string): string {
+    return PATIENT_STATUS_CONFIG[status as PatientStatus]?.label ?? status;
+  }
+
+  public getFollowupTypeIcon(type: string): string {
+    return FOLLOWUP_TYPE_CONFIG[type as FollowupType]?.icon ?? 'note';
+  }
+
+  public getFollowupTypeLabel(type: string): string {
+    return FOLLOWUP_TYPE_CONFIG[type as FollowupType]?.label ?? type;
+  }
+
+  private async loadFollowupData(userId: string): Promise<void> {
+    try {
+      this.latestFollowup = await this.followupService.getLatestFollowup(userId);
+      if (this.latestFollowup) {
+        this.followupHistory = await this.followupService.getFollowupHistory(userId);
+      }
+    } catch (err) {
+      console.warn('Could not load followup data:', err);
+    }
   }
 }

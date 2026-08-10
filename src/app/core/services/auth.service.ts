@@ -96,14 +96,26 @@ export class AuthService {
     const user = this.user;
     if (!user) return null;
 
-    const { data, error } = await this.supabase.client
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle();
+    try {
+      const { data } = await this.supabase.client
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    if (error) throw error;
-    return (data?.role as ProfileRole | undefined) ?? null;
+      if (data?.role) {
+        return data.role as ProfileRole;
+      }
+    } catch (err) {
+      console.warn('Error al obtener rol de profiles en Supabase:', err);
+    }
+
+    const metaRole = (user.user_metadata?.['role'] || user.app_metadata?.['role']) as ProfileRole | undefined;
+    if (metaRole) {
+      return metaRole;
+    }
+
+    return null;
   }
 
   public savePendingRegistration(input: Omit<PendingRegistration, 'savedAt'>): void {

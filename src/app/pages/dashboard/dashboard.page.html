@@ -42,20 +42,101 @@
 
       <div class="dash-stats" *ngIf="stats.length">
         <div class="dash-stat" *ngFor="let s of stats">
+          <div class="dash-stat__content">
+            <div class="dash-stat__value">{{ s.value }}</div>
+            <div class="dash-stat__label">{{ s.label }}</div>
+          </div>
           <div class="dash-stat__icon">
             <mat-icon>{{ s.icon }}</mat-icon>
           </div>
-          <div class="dash-stat__value">{{ s.value }}</div>
-          <div class="dash-stat__label">{{ s.label }}</div>
         </div>
       </div>
+
+      <!-- Estado de tu Familiar -->
+      <section class="dash-followup" *ngIf="mode === 'employee' && latestFollowup">
+        <div class="dash-followup__head">
+          <div class="dash-followup__icon">
+            <mat-icon>monitor_heart</mat-icon>
+          </div>
+          <div>
+            <h2 class="dash-followup__title">Estado de tu Familiar</h2>
+            <p class="dash-followup__subtitle">Seguimiento actualizado por tu Care Expert</p>
+          </div>
+        </div>
+
+        <div class="dash-followup__card">
+          <div class="dash-followup__status-row">
+            <span class="dash-followup__badge" [style.background]="getFollowupStatusColor(latestFollowup.patient_status)">
+              <mat-icon>{{ getFollowupStatusIcon(latestFollowup.patient_status) }}</mat-icon>
+              {{ getFollowupStatusLabel(latestFollowup.patient_status) }}
+            </span>
+            <span class="dash-followup__priority" *ngIf="latestFollowup.priority === 'alta' || latestFollowup.priority === 'urgente'">
+              <mat-icon>priority_high</mat-icon> {{ latestFollowup.priority === 'urgente' ? 'Urgente' : 'Alta prioridad' }}
+            </span>
+          </div>
+
+          <p class="dash-followup__note">{{ latestFollowup.note }}</p>
+
+          <div class="dash-followup__meta">
+            <div class="dash-followup__meta-item" *ngIf="latestFollowup.followup_type">
+              <mat-icon>{{ getFollowupTypeIcon(latestFollowup.followup_type) }}</mat-icon>
+              <span>Último contacto: {{ getFollowupTypeLabel(latestFollowup.followup_type) }}</span>
+            </div>
+            <div class="dash-followup__meta-item" *ngIf="latestFollowup.expert_name">
+              <mat-icon>person</mat-icon>
+              <span>Atendido por: {{ latestFollowup.expert_name }}</span>
+            </div>
+            <div class="dash-followup__meta-item" *ngIf="latestFollowup.next_followup_date">
+              <mat-icon>event</mat-icon>
+              <span>Próximo seguimiento: {{ latestFollowup.next_followup_date | date:'dd MMM yyyy' }}</span>
+            </div>
+            <div class="dash-followup__meta-item">
+              <mat-icon>schedule</mat-icon>
+              <span>Actualizado: {{ latestFollowup.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+
+          <div class="dash-followup__actions">
+            <button type="button" class="dash-followup__btn dash-followup__btn--history" (click)="showFollowupHistory = !showFollowupHistory">
+              <mat-icon>{{ showFollowupHistory ? 'expand_less' : 'history' }}</mat-icon>
+              {{ showFollowupHistory ? 'Ocultar historial' : 'Ver historial completo' }}
+            </button>
+            <a class="dash-followup__btn dash-followup__btn--contact" routerLink="/care-experts">
+              <mat-icon>chat</mat-icon>
+              Contactar Expert
+            </a>
+          </div>
+        </div>
+
+        <!-- Timeline History -->
+        <div class="dash-followup__timeline" *ngIf="showFollowupHistory && followupHistory.length > 0">
+          <div class="dash-followup__timeline-title">Historial de Seguimiento</div>
+          <div class="dash-followup__timeline-item" *ngFor="let f of followupHistory">
+            <div class="dash-followup__timeline-dot" [style.background]="getFollowupStatusColor(f.patient_status)"></div>
+            <div class="dash-followup__timeline-content">
+              <div class="dash-followup__timeline-head">
+                <span class="dash-followup__timeline-date">{{ f.created_at | date:'dd MMM yyyy, HH:mm' }}</span>
+                <span class="dash-followup__timeline-type">
+                  <mat-icon>{{ getFollowupTypeIcon(f.followup_type) }}</mat-icon>
+                  {{ getFollowupTypeLabel(f.followup_type) }}
+                </span>
+              </div>
+              <div class="dash-followup__timeline-status" [style.color]="getFollowupStatusColor(f.patient_status)">
+                {{ getFollowupStatusLabel(f.patient_status) }}
+              </div>
+              <p class="dash-followup__timeline-note">{{ f.note }}</p>
+              <p class="dash-followup__timeline-expert">— {{ f.expert_name || 'Care Expert' }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div class="dash-grid" *ngIf="mode !== 'public'">
         <section class="dash-card dash-card--wide" *ngIf="mode === 'employee'">
           <div class="dash-card__head">
             <h2 class="dash-card__title">Mi ficha de cuidado</h2>
-            <button type="button" class="dash-card__action" (click)="openEmployeeCareIntake()">
-              {{ employeeCareIntakeId ? 'Editar ficha' : 'Completar ficha' }}
+            <button type="button" class="dash-card__action" (click)="openEmployeeCareIntake()" *ngIf="employeeCareIntakeId">
+              Editar ficha
             </button>
           </div>
 
@@ -70,7 +151,7 @@
                 <span class="intake-summary__val">{{ careTypeLabel(employeeCareIntakeDraft.careType) }}</span>
               </div>
               <div class="intake-summary__item">
-                <span class="intake-summary__key">Relacion</span>
+                <span class="intake-summary__key">Relación</span>
                 <span class="intake-summary__val">{{ employeeCareIntakeDraft.caregiverRelation || 'Sin dato' }}</span>
               </div>
               <div class="intake-summary__item">
@@ -81,6 +162,10 @@
                 <span class="intake-summary__key">Contacto preferido</span>
                 <span class="intake-summary__val">{{ preferredContactLabel(employeeCareIntakeDraft.preferredContact) }}</span>
               </div>
+              <div class="intake-summary__item">
+                <span class="intake-summary__key">Accesibilidad vivienda</span>
+                <span class="intake-summary__val">{{ housingTypeLabel(employeeCareIntakeDraft.hasTwoFloors) }}</span>
+              </div>
             </div>
             <p class="intake-summary__date" *ngIf="employeeCareIntakeUpdatedAt">
               Actualizado el {{ employeeCareIntakeUpdatedAt | date:'dd/MM/yyyy HH:mm' }}
@@ -88,10 +173,20 @@
           </div>
 
           <ng-template #noIntake>
-            <div class="dash-card__empty">
-              <mat-icon>note_add</mat-icon>
-              <p>Completa tu ficha para que el experto vea tu contexto desde el primer contacto.</p>
-              <button type="button" class="btn-primary btn--sm" (click)="openEmployeeCareIntake()">Completar ahora</button>
+            <div class="dash-intake-promo">
+              <div class="dash-intake-promo__icon">
+                <mat-icon>assignment_add</mat-icon>
+              </div>
+              <div class="dash-intake-promo__content">
+                <h3 class="dash-intake-promo__title">Completa tu ficha de cuidado una sola vez</h3>
+                <p class="dash-intake-promo__text">
+                  Registra el contexto de tu familiar (nivel de dependencia, accesibilidad de la vivienda, necesidades) para agilizar tus asesorías y recibir orientación personalizada desde el primer contacto.
+                </p>
+              </div>
+              <button type="button" class="dash-intake-promo__btn" (click)="openEmployeeCareIntake()">
+                <mat-icon>edit_note</mat-icon>
+                Completar mi ficha ahora
+              </button>
             </div>
           </ng-template>
         </section>
@@ -112,7 +207,12 @@
               <a routerLink="/requests">
                 <div class="request-list__main">
                   <span class="request-list__topic">{{ r.topic }}</span>
-                  <span class="request-list__meta">{{ r.channel }} - {{ r.status }}</span>
+                  <div class="request-list__meta-row">
+                    <span class="request-list__channel">{{ r.channel }}</span>
+                    <span class="request-list__status-badge" [class]="'request-list__status-badge--' + r.status">
+                      {{ requestStatusLabel(r.status) }}
+                    </span>
+                  </div>
                 </div>
                 <span class="request-list__date">{{ r.created_at | date:'dd/MM' }}</span>
               </a>
@@ -269,6 +369,16 @@
               <label for="postalCode">Codigo postal</label>
               <input id="postalCode" type="text" [(ngModel)]="employeeCareIntakeDraft.postalCode" name="postalCode" />
             </div>
+          </div>
+          <div class="form-field form-field--full">
+            <label for="hasTwoFloors">Características de la vivienda y accesibilidad</label>
+            <select id="hasTwoFloors" [(ngModel)]="employeeCareIntakeDraft.hasTwoFloors" name="hasTwoFloors">
+              <option value="house_1f">Casa de 1 piso (Sin escaleras)</option>
+              <option value="house_2f">Casa de 2 o más pisos (Con escaleras)</option>
+              <option value="dept_elevator">Departamento con ascensor</option>
+              <option value="dept_stairs">Departamento sin ascensor (Piso por escalera)</option>
+              <option value="adapted">Vivienda adaptada (Con rampa / Salvaescaleras)</option>
+            </select>
           </div>
           <div class="form-field">
             <label for="supportNetwork">Red de apoyo actual</label>

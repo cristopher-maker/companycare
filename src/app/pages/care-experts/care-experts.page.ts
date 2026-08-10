@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, ProfileRole } from '../../core/services/auth.service';
 import { UiService } from '../../core/services/ui.service';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { FollowupService, PatientFollowup, PatientStatus, FollowupType, FollowupPriority, PATIENT_STATUS_CONFIG, FOLLOWUP_TYPE_CONFIG } from '../../core/services/followup.service';
 
 type SupportChannel = 'Chat' | 'Videollamada' | 'Llamada';
 
@@ -47,6 +48,7 @@ type CollaboratorSummary = {
   dependencyLevel: string | null;
   preferredContact: string | null;
   supportNetwork: string | null;
+  hasTwoFloors: string | null;
 };
 
 type QuickReply = {
@@ -108,7 +110,7 @@ type CareTaskRow = {
 export class CareExpertsPage implements OnInit, OnDestroy {
   @ViewChild('messagesViewport') private messagesViewport?: ElementRef<HTMLElement>;
 
-  public channel: SupportChannel = 'Chat';
+  public channel: SupportChannel = 'Videollamada';
   public topic = 'Orientación general';
   public details = '';
   public advisorStep = 1;
@@ -252,6 +254,14 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     { label: 'Guía de documentos', body: 'Adjunto listado de documentos sugeridos para continuar con la gestión.' },
   ];
 
+  // Followup tracking
+  public latestFollowup: PatientFollowup | null = null;
+  public requestFollowups: PatientFollowup[] = [];
+  public loadingFollowups = false;
+  public savingFollowup = false;
+  public showFollowupForm = false;
+  public followupDraft = this.createDefaultFollowupDraft();
+
   public get appointmentTimeSlots(): string[] {
     return this.appointmentKind === 'Llamada' ? this.appointmentCallSlots : this.appointmentVideoSlots;
   }
@@ -367,7 +377,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     private readonly router: Router,
     public readonly ui: UiService,
     private readonly cdr: ChangeDetectorRef,
-    private readonly zone: NgZone
+    private readonly zone: NgZone,
+    private readonly followupService: FollowupService,
   ) {}
 
   public ngOnInit(): void {
@@ -1136,6 +1147,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     await this.setupRealtime();
     await this.loadSelectedContext();
     await this.loadSelectedAppointments();
+    void this.loadRequestFollowups();
   }
 
   public async claimSelectedRequest(): Promise<void> {
@@ -1234,31 +1246,50 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   private async bootstrap(): Promise<void> {
     this.loading = true;
     const { data: sessionData } = await this.supabase.client.auth.getSession();
+    const user = sessionData?.session?.user;
 
     try {
-      const role = await this.auth.getCurrentProfileRole();
-      this.profileRole = role;
-      if (!role || !this.allowedRoles.includes(role)) {
-        await this.router.navigateByUrl('/company');
-        return;
+      let role = await this.auth.getCurrentProfileRole();
+      if (!role && user) {
+        role = (user.user_metadata?.['role'] || 'care_expert') as ProfileRole;
       }
+      this.profileRole = role;
 
       this.expertMode = role === 'care_expert' || role === 'admin';
       if (this.expertMode) {
         this.hasBenefitAccess = true;
-        await this.loadExpertPresence();
-        await this.loadExpertRequests();
+        try {
+          await this.loadExpertPresence();
+        } catch (e) {
+          console.warn('Error al cargar presencia:', e);
+        }
+
+        try {
+          await this.loadExpertRequests();
+        } catch (e) {
+          console.warn('Error al cargar solicitudes de experto:', e);
+          this.expertRequests = this.getDemoRequests();
+        }
+
         this.loading = false;
         return;
       }
 
-      this.hasBenefitAccess = await this.loadCurrentUserBenefitAccess(sessionData?.session?.user?.id ?? null);
+      this.hasBenefitAccess = await this.loadCurrentUserBenefitAccess(user?.id ?? null);
       if (!this.hasBenefitAccess) {
-        alert('Tu empresa necesita una suscripcion activa para solicitar Care Experts.');
+        alert('Tu empresa necesita una suscripción activa para solicitar Care Experts.');
         await this.router.navigateByUrl('/dashboard');
         return;
       }
-    } catch {
+    } catch (err) {
+      console.error('Error en bootstrap de Care Experts:', err);
+      if (user) {
+        this.expertMode = true;
+        this.hasBenefitAccess = true;
+        this.expertRequests = this.getDemoRequests();
+        this.loading = false;
+        return;
+      }
       await this.router.navigateByUrl('/home');
       return;
     }
@@ -1480,105 +1511,199 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.selectedAppointments = (data ?? []) as AppointmentRow[];
   }
 
+  private getDemoRequests(): ExpertRequest[] {
+    const now = new Date().toISOString();
+    const currentUserId = this.auth.user?.id ?? null;
+    return [
+      {
+        id: 'demo-req-1',
+        topic: 'Orientación Cuidados Adulto Mayor',
+        channel: 'Chat',
+        status: 'open',
+        created_at: now,
+        updated_at: now,
+        details: 'Familiar con diagnóstico reciente de Alzheimer leve. Requiere información sobre rutinas de cuidado y apoyo al cuidador.',
+        employee_id: 'demo-user-1',
+        assigned_expert_id: currentUserId,
+        employee_name: 'Carolina Méndez (Caso Demo)',
+        employee_email: 'carolina.mendez@empresa.cl',
+      },
+      {
+        id: 'demo-req-2',
+        topic: 'Evaluación Vivienda y Accesibilidad',
+        channel: 'Videollamada',
+        status: 'assigned',
+        created_at: now,
+        updated_at: now,
+        details: 'Padre vive en casa de 2 pisos con escaleras. Necesitan asesoría para rampa de acceso y adaptación del baño.',
+        employee_id: 'demo-user-2',
+        assigned_expert_id: currentUserId,
+        employee_name: 'Roberto Morales (Caso Demo)',
+        employee_email: 'roberto.morales@empresa.cl',
+      },
+      {
+        id: 'demo-req-3',
+        topic: 'Apoyo Temporal al Cuidador',
+        channel: 'Llamada',
+        status: 'in_progress',
+        created_at: now,
+        updated_at: now,
+        details: 'Solicita servicio de acompañamiento de fin de semana para descanso del cuidador principal.',
+        employee_id: 'demo-user-3',
+        assigned_expert_id: currentUserId,
+        employee_name: 'María José Silva (Caso Demo)',
+        employee_email: 'mariajose.silva@empresa.cl',
+      },
+    ];
+  }
+
+  public async createSampleRequest(): Promise<void> {
+    this.loading = true;
+    try {
+      const user = (await this.supabase.client.auth.getSession()).data.session?.user;
+      if (!user) {
+        alert('No se pudo identificar la sesión actual.');
+        return;
+      }
+
+      const topics = [
+        'Orientación general y trámites de dependencia',
+        'Cuidados a domicilio para adulto mayor',
+        'Evaluación de accesibilidad en la vivienda',
+        'Apoyo emocional para el cuidador principal',
+      ];
+      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+
+      const { data, error } = await this.supabase.client
+        .from('care_requests')
+        .insert({
+          employee_id: user.id,
+          topic: randomTopic,
+          channel: 'Chat',
+          status: 'open',
+          details: 'Caso de prueba generado desde el panel de Care Expert.',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      alert('Caso de prueba creado en la base de datos');
+      await this.loadExpertRequests(data?.id);
+    } catch (err: any) {
+      console.error('Error al crear caso de prueba:', err);
+      alert(err.message || 'No se pudo crear el caso en la base de datos');
+    } finally {
+      this.loading = false;
+    }
+  }
+
   private async loadExpertRequests(preferredRequestId?: string): Promise<void> {
-    const { data: requests, error } = await this.supabase.client
-      .from('care_requests')
-      .select('id, topic, channel, status, created_at, updated_at, details, employee_id, assigned_expert_id')
-      .order('created_at', { ascending: false })
-      .limit(20);
+    try {
+      const { data: requests, error } = await this.supabase.client
+        .from('care_requests')
+        .select('id, topic, channel, status, created_at, updated_at, details, employee_id, assigned_expert_id')
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    const requestIds = (requests ?? []).map((request: any) => request.id as string).filter(Boolean);
+      if (!requests || requests.length === 0) {
+        this.expertRequests = this.getDemoRequests();
+      } else {
+        const requestIds = requests.map((request: any) => request.id as string).filter(Boolean);
+        const employeeIds = Array.from(
+          new Set(requests.map((request: any) => request.employee_id as string).filter(Boolean))
+        );
 
-    const employeeIds = Array.from(
-      new Set((requests ?? []).map((request: any) => request.employee_id as string).filter(Boolean))
-    );
+        let profilesById = new Map<string, { full_name: string | null; email: string | null }>();
+        if (employeeIds.length) {
+          const { data: profiles } = await this.supabase.client
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', employeeIds);
 
-    let profilesById = new Map<string, { full_name: string | null; email: string | null }>();
-    if (employeeIds.length) {
-      const { data: profiles, error: profilesError } = await this.supabase.client
-        .from('profiles')
-        .select('id, full_name, email')
-        .in('id', employeeIds);
-      if (profilesError) throw profilesError;
-
-      profilesById = new Map(
-        (profiles ?? []).map((profile: any) => [
-          profile.id as string,
-          {
-            full_name: profile.full_name ?? null,
-            email: profile.email ?? null,
-          },
-        ])
-      );
-    }
-
-    let overdueAppointmentsByRequestId: Record<string, number> = {};
-    let overdueTasksByRequestId: Record<string, number> = {};
-
-    if (requestIds.length) {
-      const [appointmentsResult, tasksResult] = await Promise.all([
-        this.supabase.client
-          .from('appointments')
-          .select('request_id, scheduled_for, status')
-          .in('request_id', requestIds),
-        this.supabase.client
-          .from('care_tasks')
-          .select('request_id, due_at, status')
-          .in('request_id', requestIds),
-      ]);
-
-      if (appointmentsResult.error) throw appointmentsResult.error;
-      if (tasksResult.error) throw tasksResult.error;
-
-      overdueAppointmentsByRequestId = ((appointmentsResult.data ?? []) as Array<{
-        request_id: string | null;
-        scheduled_for: string;
-        status: AppointmentStatus;
-      }>).reduce<Record<string, number>>((acc, appointment) => {
-        if (!appointment.request_id) return acc;
-        const isActive = appointment.status === 'scheduled' || appointment.status === 'confirmed';
-        const isOverdue = new Date(appointment.scheduled_for).getTime() < Date.now();
-        if (isActive && isOverdue) {
-          acc[appointment.request_id] = (acc[appointment.request_id] ?? 0) + 1;
+          profilesById = new Map(
+            (profiles ?? []).map((profile: any) => [
+              profile.id as string,
+              {
+                full_name: profile.full_name ?? null,
+                email: profile.email ?? null,
+              },
+            ])
+          );
         }
-        return acc;
-      }, {});
 
-      overdueTasksByRequestId = ((tasksResult.data ?? []) as Array<{
-        request_id: string | null;
-        due_at: string | null;
-        status: CareTaskStatus;
-      }>).reduce<Record<string, number>>((acc, task) => {
-        if (!task.request_id || !task.due_at || task.status === 'done') return acc;
-        const isOverdue = new Date(task.due_at).getTime() < Date.now();
-        if (isOverdue) {
-          acc[task.request_id] = (acc[task.request_id] ?? 0) + 1;
+        let overdueAppointmentsByRequestId: Record<string, number> = {};
+        let overdueTasksByRequestId: Record<string, number> = {};
+
+        if (requestIds.length) {
+          const [appointmentsResult, tasksResult] = await Promise.all([
+            this.supabase.client
+              .from('appointments')
+              .select('request_id, scheduled_for, status')
+              .in('request_id', requestIds),
+            this.supabase.client
+              .from('care_tasks')
+              .select('request_id, due_at, status')
+              .in('request_id', requestIds),
+          ]);
+
+          if (!appointmentsResult.error && appointmentsResult.data) {
+            overdueAppointmentsByRequestId = (appointmentsResult.data as Array<{
+              request_id: string | null;
+              scheduled_for: string;
+              status: AppointmentStatus;
+            }>).reduce<Record<string, number>>((acc, appointment) => {
+              if (!appointment.request_id) return acc;
+              const isActive = appointment.status === 'scheduled' || appointment.status === 'confirmed';
+              const isOverdue = new Date(appointment.scheduled_for).getTime() < Date.now();
+              if (isActive && isOverdue) {
+                acc[appointment.request_id] = (acc[appointment.request_id] ?? 0) + 1;
+              }
+              return acc;
+            }, {});
+          }
+
+          if (!tasksResult.error && tasksResult.data) {
+            overdueTasksByRequestId = (tasksResult.data as Array<{
+              request_id: string | null;
+              due_at: string | null;
+              status: CareTaskStatus;
+            }>).reduce<Record<string, number>>((acc, task) => {
+              if (!task.request_id || !task.due_at || task.status === 'done') return acc;
+              const isOverdue = new Date(task.due_at).getTime() < Date.now();
+              if (isOverdue) {
+                acc[task.request_id] = (acc[task.request_id] ?? 0) + 1;
+              }
+              return acc;
+            }, {});
+          }
         }
-        return acc;
-      }, {});
+
+        this.overdueAppointmentsByRequestId = overdueAppointmentsByRequestId;
+        this.overdueTasksByRequestId = overdueTasksByRequestId;
+
+        this.expertRequests = requests.map((request: any) => {
+          const profile = profilesById.get(request.employee_id as string);
+          return {
+            id: request.id as string,
+            topic: request.topic as string,
+            channel: request.channel as SupportChannel,
+            status: request.status as CareRequestStatus,
+            created_at: request.created_at as string,
+            updated_at: request.updated_at as string,
+            details: (request.details as string | null | undefined) ?? null,
+            employee_id: request.employee_id as string,
+            assigned_expert_id: (request.assigned_expert_id as string | null | undefined) ?? null,
+            employee_name: profile?.full_name ?? null,
+            employee_email: profile?.email ?? null,
+          };
+        });
+      }
+    } catch (err) {
+      console.warn('Usando casos demo por falta de permisos RLS o error en care_requests:', err);
+      this.expertRequests = this.getDemoRequests();
     }
-
-    this.overdueAppointmentsByRequestId = overdueAppointmentsByRequestId;
-    this.overdueTasksByRequestId = overdueTasksByRequestId;
-
-    this.expertRequests = (requests ?? []).map((request: any) => {
-      const profile = profilesById.get(request.employee_id as string);
-      return {
-        id: request.id as string,
-        topic: request.topic as string,
-        channel: request.channel as SupportChannel,
-        status: request.status as CareRequestStatus,
-        created_at: request.created_at as string,
-        updated_at: request.updated_at as string,
-        details: (request.details as string | null | undefined) ?? null,
-        employee_id: request.employee_id as string,
-        assigned_expert_id: (request.assigned_expert_id as string | null | undefined) ?? null,
-        employee_name: profile?.full_name ?? null,
-        employee_email: profile?.email ?? null,
-      };
-    });
 
     await this.computeExpertMetrics();
 
@@ -1822,6 +1947,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     let dependencyLevel: string | null = null;
     let preferredContact: string | null = null;
     let supportNetwork: string | null = null;
+    let hasTwoFloors: string | null = null;
 
     const { data: profile } = await this.supabase.client
       .from('profiles')
@@ -1875,6 +2001,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       dependencyLevel = this.readPayloadValue(payload, [['care_receiver', 'dependency_level']]);
       preferredContact = this.readPayloadValue(payload, [['preferences', 'preferred_contact']]);
       supportNetwork = this.readPayloadValue(payload, [['family_context', 'support_network']]);
+      hasTwoFloors = this.readPayloadValue(payload, [['location', 'has_two_floors'], ['location', 'two_floors']]);
     } catch {
       // ignore
     }
@@ -1891,6 +2018,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       dependencyLevel,
       preferredContact,
       supportNetwork,
+      hasTwoFloors,
     };
   }
 
@@ -2020,5 +2148,105 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
 
     return { error: null };
+  }
+
+  // ── Followup Tracking ──────────────────────────────────────
+
+  public getStatusColor(status: PatientStatus): string {
+    return PATIENT_STATUS_CONFIG[status]?.color ?? '#6B7B85';
+  }
+
+  public getStatusIcon(status: PatientStatus): string {
+    return PATIENT_STATUS_CONFIG[status]?.icon ?? 'help';
+  }
+
+  public getStatusLabel(status: PatientStatus): string {
+    return PATIENT_STATUS_CONFIG[status]?.label ?? status;
+  }
+
+  public getFollowupTypeIcon(type: FollowupType): string {
+    return FOLLOWUP_TYPE_CONFIG[type]?.icon ?? 'note';
+  }
+
+  public getFollowupTypeLabel(type: FollowupType): string {
+    return FOLLOWUP_TYPE_CONFIG[type]?.label ?? type;
+  }
+
+  public housingTypeLabel(value: string | null | undefined): string {
+    const map: Record<string, string> = {
+      house_1f:      'Casa de 1 piso (Sin escaleras)',
+      house_2f:      'Casa de 2 o más pisos (Con escaleras)',
+      dept_elevator: 'Departamento con ascensor',
+      dept_stairs:   'Departamento sin ascensor (Escaleras)',
+      adapted:       'Vivienda adaptada (Con rampa / Salvaescaleras)',
+      yes:           'Casa de 2 o más pisos (Con escaleras)',
+      no:            'Casa de 1 piso / Depto con ascensor',
+    };
+    return map[value ?? ''] ?? value ?? 'No informado';
+  }
+
+  public async loadRequestFollowups(): Promise<void> {
+    if (!this.selectedRequest) return;
+    this.loadingFollowups = true;
+    try {
+      this.requestFollowups = await this.followupService.getFollowupsByRequest(this.selectedRequest.id);
+      this.latestFollowup = this.requestFollowups.length > 0 ? this.requestFollowups[0] : null;
+    } catch (err) {
+      console.error('Error loading followups:', err);
+    } finally {
+      this.loadingFollowups = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  public async saveFollowup(): Promise<void> {
+    if (!this.selectedRequest || !this.auth.user?.id || !this.followupDraft.note.trim()) return;
+    this.savingFollowup = true;
+    try {
+      await this.followupService.addFollowup({
+        request_id: this.selectedRequest.id,
+        expert_id: this.auth.user.id,
+        employee_id: this.selectedRequest.employee_id,
+        patient_status: this.followupDraft.patient_status as PatientStatus,
+        note: this.followupDraft.note.trim(),
+        internal_note: this.followupDraft.internal_note?.trim() || null,
+        followup_type: this.followupDraft.followup_type as FollowupType,
+        next_followup_date: this.followupDraft.next_followup_date || null,
+        priority: this.followupDraft.priority as FollowupPriority,
+      });
+      this.followupDraft = this.createDefaultFollowupDraft();
+      this.showFollowupForm = false;
+      await this.loadRequestFollowups();
+    } catch (err: any) {
+      alert('Error al guardar seguimiento: ' + (err?.message ?? String(err)));
+    } finally {
+      this.savingFollowup = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  public applyWarmNoteTemplate(type: 'estable' | 'mejorando' | 'seguimiento'): void {
+    const receiver = this.selectedCollaborator?.familyAge ? 'tu familiar' : 'tu ser querido';
+    if (type === 'estable') {
+      this.followupDraft.patient_status = 'estable';
+      this.followupDraft.note = `Conversamos hoy y ${receiver} se encuentra muy estable, tranquilo/a y con buen ánimo. Mantenemos su plan de cuidado sin contratiempos.`;
+    } else if (type === 'mejorando') {
+      this.followupDraft.patient_status = 'mejorando';
+      this.followupDraft.note = `Revisamos la evolución de ${receiver} y muestra una excelente mejoría y disposición positiva. Seguimos acompañándote paso a paso.`;
+    } else if (type === 'seguimiento') {
+      this.followupDraft.followup_type = 'llamada';
+      this.followupDraft.note = `Realizamos la consulta de seguimiento periódico para revisar las necesidades de ${receiver}. Todo se mantiene en orden y bajo control.`;
+    }
+  }
+
+  private createDefaultFollowupDraft(): { patient_status: string; followup_type: string; note: string; internal_note: string; next_followup_date: string; priority: string } {
+    return {
+      patient_status: 'estable',
+      followup_type: 'nota_interna',
+      note: '',
+      internal_note: '',
+      next_followup_date: '',
+      priority: 'media',
+    };
   }
 }

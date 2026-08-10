@@ -17,3 +17,80 @@
   object-fit: contain;
   filter: brightness(0) saturate(100%) invert(18%) sepia(26%) saturate(1635%) hue-rotate(156deg) brightness(96%) contrast(92%) !important;
 }
+
+.cc-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .btn-ghost {
+    background: rgba(255, 255, 255, 0.45);
+    color: #061922;
+    border: 1.5px solid #0088A8;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 20px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 8px rgba(0, 136, 168, 0.12);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      background: #0088A8;
+      color: #ffffff;
+      border-color: #0088A8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 136, 168, 0.3);
+    }
+  }
+
+  .btn-glow {
+    background: #0088A8;
+    color: #ffffff;
+    border: 1.5px solid #0088A8;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 22px;
+    box-shadow: 0 4px 14px rgba(0, 136, 168, 0.28);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      background: #006E88;
+      border-color: #006E88;
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 110, 136, 0.38);
+    }
+  }
+}
+
+/* Al hacer scroll sobre fondo azul marino oscuro (.cc-nav--scrolled) */
+.cc-nav--scrolled .cc-nav-actions {
+  .btn-ghost {
+    background: transparent !important;
+    color: #ffffff !important;
+    border: 1.5px solid #0088A8 !important;
+    box-shadow: none !important;
+
+    &:hover {
+      background: #0088A8 !important;
+      color: #ffffff !important;
+      border-color: #0088A8 !important;
+    }
+  }
+
+  .btn-glow {
+    background: #0088A8 !important;
+    color: #ffffff !important;
+    border: 1.5px solid #0088A8 !important;
+
+    &:hover {
+      background: #006E88 !important;
+      border-color: #006E88 !important;
+      color: #ffffff !important;
+    }
+  }
+}

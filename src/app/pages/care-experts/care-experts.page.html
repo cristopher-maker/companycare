@@ -59,24 +59,6 @@
                     <button
                       type="button"
                       class="ce-channel"
-                      [class.is-active]="channel === 'Chat'"
-                      (click)="selectChannel('Chat')"
-                    >
-                      <div class="ce-channel__icon-wrapper">
-                        <mat-icon>chat_bubble</mat-icon>
-                      </div>
-                      <div class="ce-channel__info">
-                        <div class="ce-channel__title">Chat</div>
-                        <div class="ce-channel__sub">Respuesta escrita</div>
-                      </div>
-                      <div class="ce-channel__check">
-                        <mat-icon *ngIf="channel === 'Chat'">check_circle</mat-icon>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      class="ce-channel"
                       [class.is-active]="channel === 'Videollamada'"
                       (click)="selectChannel('Videollamada')"
                     >
@@ -531,6 +513,9 @@
       <div *ngIf="!expertFilteredItems.length" class="ce-expert-app__empty">
         <mat-icon>inbox</mat-icon>
         <p>No hay casos en esta vista.</p>
+        <button type="button" class="followup-form__submit" (click)="createSampleRequest()" style="margin-top: 12px;">
+          <mat-icon>add</mat-icon> Generar caso de prueba
+        </button>
       </div>
 
       <ul *ngIf="expertFilteredItems.length" class="ce-expert-app__cases">
@@ -770,6 +755,124 @@
           </div>
         </section>
 
+        <section class="ce-expert-app__card ce-followup-tracker" *ngIf="selectedRequest">
+          <div class="ce-expert-app__card-head">
+            <h3 class="ce-expert-app__card-title">Evolución de su familiar</h3>
+            <mat-icon>monitor_heart</mat-icon>
+          </div>
+
+          <!-- Current Status Badge -->
+          <div class="followup-current" *ngIf="latestFollowup">
+            <div class="followup-current__badge" [style.background]="getStatusColor(latestFollowup.patient_status)">
+              <mat-icon>{{ getStatusIcon(latestFollowup.patient_status) }}</mat-icon>
+              {{ getStatusLabel(latestFollowup.patient_status) }}
+            </div>
+            <p class="followup-current__date">Última actualización: {{ latestFollowup.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+
+          <div class="followup-current followup-current--empty" *ngIf="!latestFollowup && !loadingFollowups">
+            <mat-icon>info_outline</mat-icon>
+            <p>Sin seguimiento registrado aún.</p>
+          </div>
+
+          <!-- Toggle Form -->
+          <button type="button" class="followup-toggle-btn" (click)="showFollowupForm = !showFollowupForm" *ngIf="selectedRequest.assigned_expert_id === auth.user?.id">
+            <mat-icon>{{ showFollowupForm ? 'close' : 'add' }}</mat-icon>
+            {{ showFollowupForm ? 'Cancelar' : 'Nueva nota de seguimiento' }}
+          </button>
+
+          <!-- New Followup Form -->
+          <div class="followup-form" *ngIf="showFollowupForm">
+            <label class="followup-form__field">
+              <span>Estado de su familiar</span>
+              <select [(ngModel)]="followupDraft.patient_status" class="ce-expert-app__select">
+                <option value="estable">Estable y tranquilo/a</option>
+                <option value="mejorando">Evolucionando muy bien</option>
+                <option value="sin_cambios">Estable / Sin novedades</option>
+                <option value="empeorando">Bajo monitoreo cercano</option>
+                <option value="requiere_atencion">Requiere atención especial</option>
+                <option value="alta">En casa / Con el alta</option>
+                <option value="derivado">Derivado a especialista</option>
+              </select>
+            </label>
+
+            <label class="followup-form__field">
+              <span>Tipo de contacto</span>
+              <select [(ngModel)]="followupDraft.followup_type" class="ce-expert-app__select">
+                <option value="llamada">Llamada</option>
+                <option value="videollamada">Videollamada</option>
+                <option value="chat">Chat</option>
+                <option value="presencial">Presencial</option>
+                <option value="nota_interna">Nota interna</option>
+              </select>
+            </label>
+
+            <div class="followup-form__field">
+              <span>Plantillas de respuesta rápida:</span>
+              <div class="followup-quick-templates">
+                <button type="button" class="followup-chip" (click)="applyWarmNoteTemplate('estable')">❤️ Estable y tranquilo/a</button>
+                <button type="button" class="followup-chip" (click)="applyWarmNoteTemplate('mejorando')">😊 Evolucionando muy bien</button>
+                <button type="button" class="followup-chip" (click)="applyWarmNoteTemplate('seguimiento')">📞 Consulta realizada</button>
+              </div>
+            </div>
+
+            <label class="followup-form__field">
+              <span>Mensaje para el colaborador</span>
+              <textarea [(ngModel)]="followupDraft.note" class="ce-expert-app__textarea" rows="3" placeholder="Ej: 'Hola, conversamos hoy con tu familiar y se encuentra muy estable, tranquilo/a y con buen ánimo. Mantenemos el plan de cuidado...'"></textarea>
+            </label>
+
+            <label class="followup-form__field">
+              <span>Nota interna (solo equipo)</span>
+              <textarea [(ngModel)]="followupDraft.internal_note" class="ce-expert-app__textarea followup-form__internal" rows="2" placeholder="Observaciones clínicas internas o confidenciales..."></textarea>
+            </label>
+
+            <label class="followup-form__field">
+              <span>Próximo seguimiento</span>
+              <input type="datetime-local" [(ngModel)]="followupDraft.next_followup_date" class="ce-input" />
+            </label>
+
+            <label class="followup-form__field">
+              <span>Prioridad</span>
+              <select [(ngModel)]="followupDraft.priority" class="ce-expert-app__select">
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+                <option value="urgente">Urgente</option>
+              </select>
+            </label>
+
+            <button type="button" class="followup-form__submit" [disabled]="savingFollowup || !followupDraft.note.trim()" (click)="saveFollowup()">
+              <mat-icon>save</mat-icon>
+              {{ savingFollowup ? 'Guardando...' : 'Guardar seguimiento' }}
+            </button>
+          </div>
+
+          <!-- Timeline -->
+          <div class="followup-timeline" *ngIf="requestFollowups.length > 0">
+            <div class="followup-timeline__title">Historial</div>
+            <div class="followup-timeline__item" *ngFor="let f of requestFollowups">
+              <div class="followup-timeline__dot" [style.background]="getStatusColor(f.patient_status)"></div>
+              <div class="followup-timeline__content">
+                <div class="followup-timeline__head">
+                  <span class="followup-timeline__date">{{ f.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                  <span class="followup-timeline__type">
+                    <mat-icon>{{ getFollowupTypeIcon(f.followup_type) }}</mat-icon>
+                    {{ getFollowupTypeLabel(f.followup_type) }}
+                  </span>
+                </div>
+                <div class="followup-timeline__status" [style.color]="getStatusColor(f.patient_status)">
+                  {{ getStatusLabel(f.patient_status) }}
+                </div>
+                <p class="followup-timeline__note">{{ f.note }}</p>
+                <p class="followup-timeline__internal" *ngIf="f.internal_note">
+                  <mat-icon>lock</mat-icon> {{ f.internal_note }}
+                </p>
+                <p class="followup-timeline__expert">— {{ f.expert_name || 'Expert' }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section *ngIf="selectedCollaborator" class="ce-expert-app__card">
           <div class="ce-expert-app__card-head">
             <h3 class="ce-expert-app__card-title">Ficha de contexto</h3>
@@ -823,6 +926,10 @@
             <div class="ce-expert-app__context-item">
               <span>Red de apoyo</span>
               <strong>{{ selectedCollaborator.supportNetwork || 'No informado' }}</strong>
+            </div>
+            <div class="ce-expert-app__context-item">
+              <span>Características vivienda</span>
+              <strong>{{ housingTypeLabel(selectedCollaborator.hasTwoFloors) }}</strong>
             </div>
           </div>
         </section>
@@ -882,6 +989,10 @@
           <div class="ce-context-sheet__item ce-context-sheet__item--wide">
             <span>Red de apoyo</span>
             <strong>{{ selectedCollaborator.supportNetwork || 'No informado' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Características vivienda</span>
+            <strong>{{ housingTypeLabel(selectedCollaborator.hasTwoFloors) }}</strong>
           </div>
           <div class="ce-context-sheet__item ce-context-sheet__item--wide" *ngIf="selectedRequest?.details">
             <span>Contexto de la solicitud</span>
