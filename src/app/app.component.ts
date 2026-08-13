@@ -30,6 +30,7 @@ export class AppComponent implements OnDestroy {
     '/tasks',
     '/vouchers',
     '/company',
+    '/company-requests',
   ]);
 
   private menuSub: Subscription;
@@ -45,6 +46,7 @@ export class AppComponent implements OnDestroy {
     { title: 'Mis tareas', url: '/tasks', icon: 'task_alt' },
     { title: 'Vouchers', url: '/vouchers', icon: 'local_activity' },
     { title: 'Administrar empresa', url: '/company', icon: 'business' },
+    { title: 'Monitoreo de casos', url: '/company-requests', icon: 'health_and_safety' },
     { title: 'Perfil', url: '/profile', icon: 'account_circle' },
     { title: 'Contacto', url: '/contact', icon: 'mail_outline' },
     { title: 'Nosotros', url: '/about', icon: 'info_outline' },
@@ -80,7 +82,7 @@ export class AppComponent implements OnDestroy {
   }
 
   public get visiblePages(): AppPage[] {
-    const isCompany = this.profileRole === 'company_admin' || this.profileRole === 'manager';
+    const isCompany = this.profileRole === 'company_admin' || this.profileRole === 'hr_admin' || this.profileRole === 'manager';
     const isCareExpert = this.profileRole === 'care_expert';
     const isEmployeeLike = this.profileRole === 'employee' || this.profileRole === 'admin';
 

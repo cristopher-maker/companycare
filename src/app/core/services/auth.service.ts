@@ -14,7 +14,7 @@ type PendingRegistration = {
   savedAt: number;
 };
 
-export type ProfileRole = 'employee' | 'admin' | 'company_admin' | 'manager' | 'care_expert';
+export type ProfileRole = 'employee' | 'admin' | 'company_admin' | 'hr_admin' | 'manager' | 'care_expert';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

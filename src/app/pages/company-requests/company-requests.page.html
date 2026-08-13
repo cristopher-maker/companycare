@@ -1,91 +1,180 @@
 <app-site-header></app-site-header>
 
-<main class="company-requests">
-  <div class="company-requests__wrap">
-    <section class="company-requests__hero">
-      <div class="company-requests__hero-icon" aria-hidden="true">
-        <mat-icon>business_center</mat-icon>
-      </div>
-
-      <div class="company-requests__hero-copy">
-        <p class="company-requests__eyebrow">Panel empresa</p>
-        <h1>Solicitudes de colaboradores</h1>
-        <p>
-          Revisa casos activos, responsables y estados de atencion para dar seguimiento desde RR.HH.
-        </p>
-      </div>
-
-      <button
-        type="button"
-        class="company-requests__refresh"
-        (click)="refresh()"
-        [disabled]="loading"
-        aria-label="Actualizar solicitudes"
-      >
-        <mat-icon [class.is-spinning]="loading" aria-hidden="true">refresh</mat-icon>
-        <span>Actualizar</span>
-      </button>
-    </section>
-
-    <section class="company-requests__stats" aria-label="Resumen de solicitudes">
-      <article class="company-requests__stat">
-        <span>Total</span>
-        <strong>{{ totalRequests }}</strong>
-      </article>
-      <article class="company-requests__stat">
-        <span>En seguimiento</span>
-        <strong>{{ openRequests }}</strong>
-      </article>
-      <article class="company-requests__stat">
-        <span>Cerradas</span>
-        <strong>{{ resolvedRequests }}</strong>
-      </article>
-    </section>
-
-    <div *ngIf="error" class="company-requests__state company-requests__state--error" role="alert">
-      <mat-icon aria-hidden="true">error</mat-icon>
+<main class="mon">
+  <!-- Hero -->
+  <header class="mon-hero">
+    <div class="mon-hero__left">
+      <div class="mon-hero__icon"><mat-icon>monitoring</mat-icon></div>
       <div>
-        <strong>No se pudieron cargar las solicitudes</strong>
-        <p>{{ error }}</p>
+        <h1 class="mon-hero__title">Monitoreo de Bienestar</h1>
+        <p class="mon-hero__sub">Estado en tiempo real de los casos de tus colaboradores</p>
       </div>
     </div>
+    <div class="mon-hero__right">
+      <span class="mon-hero__count">{{ items.length }} caso{{ items.length !== 1 ? 's' : '' }}</span>
+      <button class="mon-hero__refresh" (click)="refresh()" [disabled]="loading">
+        <mat-icon [class.mon-spin]="loading">sync</mat-icon>
+      </button>
+    </div>
+  </header>
 
-    <div *ngIf="loading" class="company-requests__loading" aria-label="Cargando solicitudes">
-      <div class="company-requests__skeleton"></div>
-      <div class="company-requests__skeleton"></div>
-      <div class="company-requests__skeleton"></div>
+  <!-- Priority Alert -->
+  <div class="mon-alert mon-alert--danger" *ngIf="urgentCount > 0">
+    <mat-icon>error</mat-icon>
+    <span><strong>{{ urgentCount }} urgente{{ urgentCount > 1 ? 's' : '' }}</strong> — requiere{{ urgentCount > 1 ? 'n' : '' }} atención inmediata</span>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="mon-stats">
+    <button class="mon-stat" *ngFor="let s of ['mejorando','estable','sin_cambios','empeorando','requiere_atencion']"
+            [class.mon-stat--active]="activePatientStatusFilter === s"
+            (click)="setPatientStatusFilter(s)">
+      <mat-icon [style.color]="patientStatusConfig[s].color">{{ patientStatusConfig[s].icon }}</mat-icon>
+      <span class="mon-stat__num">{{ statusCounts[s] || 0 }}</span>
+      <span class="mon-stat__label">{{ s === 'mejorando' ? 'Mejorando' : s === 'estable' ? 'Estable' : s === 'sin_cambios' ? 'Sin cambios' : s === 'empeorando' ? 'Empeorando' : 'Atención' }}</span>
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="mon-toolbar">
+    <div class="mon-search">
+      <mat-icon>search</mat-icon>
+      <input type="text" placeholder="Buscar colaborador, tema o nota..." [(ngModel)]="searchTerm">
+    </div>
+    <div class="mon-pills">
+      <button class="mon-pill" [class.mon-pill--on]="activeStatusFilter === 'Todos'" (click)="activeStatusFilter = 'Todos'">Todos</button>
+      <button class="mon-pill" [class.mon-pill--on]="activeStatusFilter === 'Activos'" (click)="activeStatusFilter = 'Activos'">Activos</button>
+      <button class="mon-pill" [class.mon-pill--on]="activeStatusFilter === 'Resueltos'" (click)="activeStatusFilter = 'Resueltos'">Resueltos</button>
+    </div>
+    <select class="mon-sort" [(ngModel)]="sortBy">
+      <option value="recent">Más recientes</option>
+      <option value="priority">Prioridad</option>
+      <option value="status">Estado paciente</option>
+    </select>
+  </div>
+
+  <!-- Loading -->
+  <div class="mon-loading" *ngIf="loading && items.length === 0">
+    <mat-icon class="mon-spin">hourglass_top</mat-icon>
+    <span>Cargando casos…</span>
+  </div>
+
+  <!-- Case List -->
+  <div class="mon-list" *ngIf="filteredItems.length > 0">
+    <!-- Table Header -->
+    <div class="mon-header">
+      <span class="mon-header__col mon-header__col--name">Colaborador</span>
+      <span class="mon-header__col mon-header__col--topic">Tema</span>
+      <span class="mon-header__col mon-header__col--status">Estado</span>
+      <span class="mon-header__col mon-header__col--health">Salud</span>
+      <span class="mon-header__col mon-header__col--date">Fecha</span>
     </div>
 
-    <section class="company-requests__list" *ngIf="!loading && !error && items.length" aria-label="Listado de solicitudes">
-      <article class="company-request-card" *ngFor="let item of items">
-        <div class="company-request-card__icon" aria-hidden="true">
-          <mat-icon>{{ item.channel === 'Videollamada' ? 'videocam' : item.channel === 'Llamada' ? 'call' : 'chat_bubble' }}</mat-icon>
-        </div>
+    <div *ngFor="let item of filteredItems" class="mon-item" [class.mon-item--open]="expandedId === item.id">
+      <!-- Row -->
+      <div class="mon-row" (click)="toggleExpand(item.id)">
+        <div class="mon-row__bar" [style.background]="getPriorityColor(item.priority)"></div>
 
-        <div class="company-request-card__main">
-          <div class="company-request-card__title">{{ item.topic }}</div>
-          <div class="company-request-card__meta">
-            <span>{{ item.channel }}</span>
-            <span class="company-request-card__dot" aria-hidden="true"></span>
-            <span>{{ item.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+        <div class="mon-row__cell mon-row__cell--name">
+          <div class="mon-avatar" [style.background]="'linear-gradient(135deg, ' + getPriorityColor(item.priority) + ', ' + patientStatusConfig[item.patient_status].color + ')'">
+            {{ getInitials(item.employee_name) }}
           </div>
-          <div class="company-request-card__person">
-            <mat-icon aria-hidden="true">person</mat-icon>
-            <span>{{ item.employee_name || 'Colaborador sin nombre' }}</span>
-            <span *ngIf="item.employee_email">· {{ item.employee_email }}</span>
+          <div class="mon-row__identity">
+            <span class="mon-row__name">{{ item.employee_name }}</span>
+            <span class="mon-row__email">{{ item.employee_email }}</span>
           </div>
         </div>
 
-        <span class="company-request-card__status" [ngClass]="statusClass(item.status)">
-          {{ statusLabel(item.status) }}
-        </span>
-      </article>
-    </section>
+        <div class="mon-row__cell mon-row__cell--topic">
+          <span class="mon-row__topic-text">{{ item.topic }}</span>
+          <span class="mon-row__note-preview">{{ item.last_note }}</span>
+        </div>
 
-    <div *ngIf="!loading && !error && items.length === 0" class="company-requests__state">
-      <mat-icon aria-hidden="true">forum</mat-icon>
-      <h2>No hay solicitudes recientes</h2>
-      <p>Cuando un colaborador pida apoyo, el caso aparecera aqui para seguimiento.</p>
+        <div class="mon-row__cell mon-row__cell--status">
+          <span class="mon-badge" [ngClass]="'mon-badge--' + item.status">
+            {{ item.status === 'open' ? 'Abierto' : item.status === 'in_progress' ? 'En Curso' : item.status === 'resolved' ? 'Resuelto' : 'Cerrado' }}
+          </span>
+        </div>
+
+        <div class="mon-row__cell mon-row__cell--health">
+          <div class="mon-health" [style.color]="patientStatusConfig[item.patient_status].color" [title]="getPatientStatusLabel(item.patient_status)">
+            <mat-icon>{{ patientStatusConfig[item.patient_status].icon }}</mat-icon>
+            <span>{{ getShortPatientStatusLabel(item.patient_status) }}</span>
+          </div>
+        </div>
+
+        <div class="mon-row__cell mon-row__cell--date">
+          <span class="mon-row__time">{{ timeAgo(item.created_at) }}</span>
+          <mat-icon class="mon-row__chevron" [class.mon-row__chevron--open]="expandedId === item.id">expand_more</mat-icon>
+        </div>
+      </div>
+
+      <!-- Expanded Detail Panel -->
+      <div class="mon-detail" *ngIf="expandedId === item.id">
+        <div class="mon-detail__grid">
+          <!-- Notes Section -->
+          <div class="mon-detail__section mon-detail__section--note">
+            <div class="mon-detail__label">Última nota del experto</div>
+            <p class="mon-detail__note">{{ item.last_note }}</p>
+          </div>
+
+          <!-- Info Grid -->
+          <div class="mon-detail__section mon-detail__section--info">
+            <div class="mon-detail__label">Información del caso</div>
+            <div class="mon-detail__info-grid">
+              <div class="mon-detail__field">
+                <span class="mon-detail__field-label">Prioridad</span>
+                <span class="mon-detail__field-value mon-detail__priority" [style.color]="getPriorityColor(item.priority)">
+                  <mat-icon>flag</mat-icon> {{ getPriorityLabel(item.priority) }}
+                </span>
+              </div>
+              <div class="mon-detail__field">
+                <span class="mon-detail__field-label">Canal</span>
+                <span class="mon-detail__field-value">
+                  <mat-icon>{{ item.channel_icon }}</mat-icon> {{ getChannelLabel(item.channel) }}
+                </span>
+              </div>
+              <div class="mon-detail__field">
+                <span class="mon-detail__field-label">Experto asignado</span>
+                <span class="mon-detail__field-value">
+                  <mat-icon>person</mat-icon> {{ item.expert_name || 'Sin asignar' }}
+                </span>
+              </div>
+              <div class="mon-detail__field">
+                <span class="mon-detail__field-label">Próximo seguimiento</span>
+                <span class="mon-detail__field-value">
+                  <mat-icon>event</mat-icon> {{ item.next_followup ? (item.next_followup | date:'dd/MM/yyyy') : 'Sin agendar' }}
+                </span>
+              </div>
+              <div class="mon-detail__field">
+                <span class="mon-detail__field-label">Fecha de creación</span>
+                <span class="mon-detail__field-value">
+                  <mat-icon>calendar_today</mat-icon> {{ item.created_at | date:'dd/MM/yyyy HH:mm' }}
+                </span>
+              </div>
+              <div class="mon-detail__field">
+                <span class="mon-detail__field-label">Estado del paciente</span>
+                <span class="mon-detail__field-value" [style.color]="patientStatusConfig[item.patient_status].color">
+                  <mat-icon>{{ patientStatusConfig[item.patient_status].icon }}</mat-icon> {{ getPatientStatusLabel(item.patient_status) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="mon-empty" *ngIf="!loading && filteredItems.length === 0">
+    <mat-icon>{{ error ? 'cloud_off' : (items.length > 0 ? 'filter_list_off' : 'monitor_heart') }}</mat-icon>
+    <h3 *ngIf="error">Error de conexión</h3>
+    <h3 *ngIf="!error && items.length === 0">Sin casos registrados</h3>
+    <h3 *ngIf="!error && items.length > 0">Sin resultados</h3>
+    <p *ngIf="error">{{ error }}</p>
+    <p *ngIf="!error && items.length === 0">Los casos aparecerán aquí una vez que los Care Experts registren seguimientos.</p>
+    <p *ngIf="!error && items.length > 0">Ajusta los filtros o el término de búsqueda.</p>
+    <button *ngIf="error" class="mon-btn" (click)="refresh()">Reintentar</button>
+    <button *ngIf="!error && items.length > 0" class="mon-btn" (click)="activeStatusFilter = 'Todos'; activePatientStatusFilter = 'all'; searchTerm = ''">Limpiar filtros</button>
   </div>
 </main>
