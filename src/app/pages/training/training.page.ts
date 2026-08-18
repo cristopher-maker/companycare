@@ -352,7 +352,47 @@ export class TrainingPage implements OnInit {
   }
 
   public async ngOnInit(): Promise<void> {
+    this.loadLocalData();
     await this.loadData();
+  }
+
+  private loadLocalData(): void {
+    try {
+      const userKey = this.userId || 'guest';
+      const enrollKey = `companycare:training:enrollments:${userKey}`;
+      const rawEnroll = localStorage.getItem(enrollKey);
+      if (rawEnroll) {
+        this.enrollments = JSON.parse(rawEnroll) as DbEnrollment[];
+      }
+
+      const checkKey = `companycare:training:checklist:${userKey}`;
+      const rawCheck = localStorage.getItem(checkKey);
+      if (rawCheck) {
+        this.checkedChecklistItems = JSON.parse(rawCheck) as Record<string, boolean>;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private saveLocalEnrollments(): void {
+    try {
+      const userKey = this.userId || 'guest';
+      const enrollKey = `companycare:training:enrollments:${userKey}`;
+      localStorage.setItem(enrollKey, JSON.stringify(this.enrollments));
+    } catch {
+      // ignore
+    }
+  }
+
+  private saveLocalChecklist(): void {
+    try {
+      const userKey = this.userId || 'guest';
+      const checkKey = `companycare:training:checklist:${userKey}`;
+      localStorage.setItem(checkKey, JSON.stringify(this.checkedChecklistItems));
+    } catch {
+      // ignore
+    }
   }
 
   private async loadData(): Promise<void> {
@@ -383,9 +423,23 @@ export class TrainingPage implements OnInit {
         .eq('user_id', userId)
         .not('course_id', 'is', null);
       if (enrollmentError) throw enrollmentError;
-      this.enrollments = (enrollmentData ?? []) as DbEnrollment[];
+      
+      const dbEnrollments = (enrollmentData ?? []) as DbEnrollment[];
+      if (dbEnrollments.length > 0) {
+        for (const dbE of dbEnrollments) {
+          const idx = this.enrollments.findIndex((e) => e.course_id === dbE.course_id);
+          if (idx >= 0) {
+            if ((dbE.progress_percent ?? 0) >= (this.enrollments[idx].progress_percent ?? 0)) {
+              this.enrollments[idx] = dbE;
+            }
+          } else {
+            this.enrollments.push(dbE);
+          }
+        }
+        this.saveLocalEnrollments();
+      }
     } catch {
-      // keep local enrollments array
+      // Handled via local storage
     }
   }
 
@@ -412,36 +466,30 @@ export class TrainingPage implements OnInit {
   }
 
   public async onCourseAction(course: CourseCard): Promise<void> {
-    const existing = this.enrollments.find((e) => e.course_id === course.id);
+    let existing = this.enrollments.find((e) => e.course_id === course.id);
+    const initialProgress = course.lessons.length ? Math.round(100 / course.lessons.length) : 25;
+
     if (!existing) {
-      this.enrollments.push({
+      existing = {
         course_id: course.id,
         status: 'enrolled',
-        progress_percent: 25,
+        progress_percent: initialProgress,
         last_accessed_at: new Date().toISOString(),
-      });
+      };
+      this.enrollments.push(existing);
+      this.saveLocalEnrollments();
     }
 
     this.openCourseModal(course);
-
-    if (this.userId) {
-      try {
-        if (course.state === 'not_started') {
-          await this.startCourse(course.id);
-        } else if (course.state === 'in_progress') {
-          await this.advanceCourse(course.id, course.progress);
-        } else {
-          await this.touchCourse(course.id);
-        }
-      } catch {
-        // Fallback handled locally
-      }
-    }
+    void this.saveEnrollmentProgress(course.id, existing.progress_percent, existing.status);
   }
 
   public openCourseModal(course: CourseCard): void {
     this.activeCourse = course;
-    this.activeLessonIndex = 0;
+    // Set active lesson to the next uncompleted lesson based on progress
+    const totalLessons = course.lessons.length || 1;
+    const completedLessons = Math.floor((course.progress / 100) * totalLessons);
+    this.activeLessonIndex = Math.min(totalLessons - 1, completedLessons);
     document.body.style.overflow = 'hidden';
   }
 
@@ -456,84 +504,71 @@ export class TrainingPage implements OnInit {
 
   public toggleCheckItem(item: string): void {
     this.checkedChecklistItems[item] = !this.checkedChecklistItems[item];
+    this.saveLocalChecklist();
   }
 
   public advanceActiveCourse(): void {
     if (!this.activeCourse) return;
     const totalLessons = this.activeCourse.lessons.length || 3;
-    const existing = this.enrollments.find((e) => e.course_id === this.activeCourse!.id);
-    
+    let existing = this.enrollments.find((e) => e.course_id === this.activeCourse!.id);
+
+    const completedLessonIndex = this.activeLessonIndex;
     if (this.activeLessonIndex < totalLessons - 1) {
       this.activeLessonIndex++;
     }
 
-    const nextProgress = Math.min(100, Math.round(((this.activeLessonIndex + 1) / totalLessons) * 100));
+    const calculatedProgress = Math.min(100, Math.round(((completedLessonIndex + 1) / totalLessons) * 100));
 
     if (existing) {
-      existing.progress_percent = Math.max(existing.progress_percent, nextProgress);
+      existing.progress_percent = Math.max(existing.progress_percent, calculatedProgress);
       if (existing.progress_percent >= 100) {
         existing.status = 'completed';
       }
       existing.last_accessed_at = new Date().toISOString();
     } else {
-      this.enrollments.push({
+      existing = {
         course_id: this.activeCourse.id,
-        status: nextProgress >= 100 ? 'completed' : 'enrolled',
-        progress_percent: nextProgress,
+        status: calculatedProgress >= 100 ? 'completed' : 'enrolled',
+        progress_percent: calculatedProgress,
         last_accessed_at: new Date().toISOString(),
-      });
+      };
+      this.enrollments.push(existing);
     }
 
+    // Persist progress to local storage immediately
+    this.saveLocalEnrollments();
+
+    // Persist progress to Supabase asynchronously
+    void this.saveEnrollmentProgress(this.activeCourse.id, existing.progress_percent, existing.status);
+
+    // Update active course card reference
     const updated = this.courseCards.find((c) => c.id === this.activeCourse!.id);
     if (updated) {
       this.activeCourse = updated;
     }
   }
 
-  private async startCourse(courseId: string): Promise<void> {
-    const userId = this.userId!;
+  private async saveEnrollmentProgress(courseId: string, progress: number, status: 'enrolled' | 'completed' | 'canceled'): Promise<void> {
+    this.saveLocalEnrollments();
+
+    const userId = this.userId;
+    if (!userId) return;
+
     const now = new Date().toISOString();
-
-    const { error } = await this.supabase.client.from('training_enrollments').upsert(
-      {
-        user_id: userId,
-        course_id: courseId,
-        status: 'enrolled',
-        progress_percent: 25,
-        last_accessed_at: now,
-      } as any,
-      { onConflict: 'user_id,course_id' }
-    );
-    if (error) throw error;
-  }
-
-  private async advanceCourse(courseId: string, currentProgress: number): Promise<void> {
-    const userId = this.userId!;
-    const next = Math.min(100, Math.max(0, currentProgress) + 25);
-    const now = new Date().toISOString();
-
-    const { error } = await this.supabase.client
-      .from('training_enrollments')
-      .update({
-        progress_percent: next,
-        status: next >= 100 ? 'completed' : 'enrolled',
-        last_accessed_at: now,
-      } as any)
-      .eq('user_id', userId)
-      .eq('course_id', courseId);
-    if (error) throw error;
-  }
-
-  private async touchCourse(courseId: string): Promise<void> {
-    const userId = this.userId!;
-    const now = new Date().toISOString();
-
-    const { error } = await this.supabase.client
-      .from('training_enrollments')
-      .update({ last_accessed_at: now } as any)
-      .eq('user_id', userId)
-      .eq('course_id', courseId);
-    if (error) throw error;
+    try {
+      await this.supabase.client.from('training_enrollments').upsert(
+        {
+          user_id: userId,
+          course_id: courseId,
+          status: status,
+          progress_percent: progress,
+          last_accessed_at: now,
+        } as any,
+        { onConflict: 'user_id,course_id' }
+      );
+    } catch (err) {
+      console.warn('Error al sincronizar progreso con Supabase (guardado localmente):', err);
+    }
   }
 
   public trackById(_: number, item: { id: string }): string {

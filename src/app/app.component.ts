@@ -27,7 +27,6 @@ export class AppComponent implements OnInit, OnDestroy {
     '/resources',
     '/training',
     '/requests',
-    '/tasks',
     '/vouchers',
     '/company',
     '/company-requests',
@@ -37,13 +36,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   public readonly appPages: AppPage[] = [
     { title: 'Inicio', url: '/home', icon: 'home' },
-    { title: 'Dashboard', url: '/dashboard', icon: 'dashboard' },
+    { title: 'Panel de control', url: '/dashboard', icon: 'dashboard' },
     { title: 'Asesoria personalizada', url: '/care-experts', icon: 'forum' },
     { title: 'Proveedores verificados', url: '/providers', icon: 'search' },
     { title: 'Recursos digitales', url: '/resources', icon: 'library_books' },
     { title: 'Formacion', url: '/training', icon: 'school' },
     { title: 'Mis solicitudes', url: '/requests', icon: 'content_paste' },
-    { title: 'Mis tareas', url: '/tasks', icon: 'task_alt' },
     { title: 'Vouchers', url: '/vouchers', icon: 'local_activity' },
     { title: 'Administrar empresa', url: '/company', icon: 'business' },
     { title: 'Monitoreo de casos', url: '/company-requests', icon: 'health_and_safety' },
@@ -97,7 +95,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     if (isCompany) {
       return this.appPages.filter(
-        (page) => page.url !== '/care-experts' && page.url !== '/requests' && page.url !== '/tasks'
+        (page) => page.url !== '/care-experts' && page.url !== '/requests'
       );
     }
 
@@ -106,7 +104,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     if (isEmployee) {
-      const lockedWithoutPlan = new Set(['/care-experts', '/requests', '/tasks', '/providers', '/resources', '/training', '/vouchers']);
+      const lockedWithoutPlan = new Set(['/care-experts', '/requests', '/providers', '/resources', '/training', '/vouchers']);
       return this.appPages.filter((page) => page.url !== '/company' && page.url !== '/company-requests' && (this.hasBenefitAccess || !lockedWithoutPlan.has(page.url)));
     }
 
