@@ -134,8 +134,8 @@
 
 </main>
 
-<!-- ─── RESOURCE DRAWER MODAL ────────────────────────────────────── -->
-<div class="resource-drawer-backdrop" *ngIf="activeResource" (click)="closeDrawer()">
+<!-- ─── RESOURCE DRAWER MODAL (Articles, Checklists & Videos) ───── -->
+<div class="resource-drawer-backdrop" *ngIf="activeResource && (activeResource.resource_type !== 'pdf' || !activeResource.file_url)" (click)="closeDrawer()">
   <div class="resource-drawer" (click)="$event.stopPropagation()">
     <header class="resource-drawer__header">
       <div class="drawer-header-meta">
@@ -198,4 +198,50 @@
   </div>
 </div>
 
+<!-- ─── FULL-SCREEN PDF VIEWER (Only when an actual PDF file is attached) ── -->
+<div class="pdf-fullscreen-backdrop" *ngIf="activeResource && activeResource.resource_type === 'pdf' && activeResource.file_url" (click)="closeDrawer()">
+  <div class="pdf-fullscreen" (click)="$event.stopPropagation()">
+    <!-- Top toolbar -->
+    <header class="pdf-fullscreen__toolbar">
+      <div class="pdf-toolbar__left">
+        <button type="button" class="pdf-toolbar__back" (click)="closeDrawer()">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="pdf-toolbar__info">
+          <div class="pdf-toolbar__icon-wrap">
+            <mat-icon>picture_as_pdf</mat-icon>
+          </div>
+          <div class="pdf-toolbar__meta">
+            <span class="pdf-toolbar__title">{{ activeResource.title }}</span>
+            <span class="pdf-toolbar__subtitle">{{ activeResource.category }} · {{ activeResource.read_time_min }} min lectura</span>
+          </div>
+        </div>
+      </div>
+      <div class="pdf-toolbar__actions">
+        <a [href]="activeResource.file_url" download class="pdf-toolbar__btn">
+          <mat-icon>download</mat-icon>
+          <span>Descargar</span>
+        </a>
+        <a [href]="activeResource.file_url" target="_blank" class="pdf-toolbar__btn pdf-toolbar__btn--primary">
+          <mat-icon>open_in_new</mat-icon>
+          <span>Abrir en nueva pestaña</span>
+        </a>
+        <button type="button" class="pdf-toolbar__close" (click)="closeDrawer()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <!-- PDF iframe fills all remaining space -->
+    <div class="pdf-fullscreen__body">
+      <iframe
+        [src]="activeResource.file_url | trustUrl"
+        class="pdf-fullscreen__iframe"
+        title="Visualizador de PDF"
+      ></iframe>
+    </div>
+  </div>
+</div>
+
 <app-site-footer></app-site-footer>
+

@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -13,7 +13,7 @@ type AppPage = { title: string; url: string; icon: string; queryParams?: Record<
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements OnDestroy {
+export class AppComponent implements OnInit, OnDestroy {
   public readonly appTitle = 'Company Care by Senior Advisor';
   public isMenuOpen = false;
   public profileRole: ProfileRole | null = null;
@@ -77,14 +77,23 @@ export class AppComponent implements OnDestroy {
     this.menuSub = this.ui.menuOpen$.subscribe((isOpen) => (this.isMenuOpen = isOpen));
   }
 
+  public ngOnInit(): void {
+    void this.refreshRole();
+  }
+
   public ngOnDestroy(): void {
     this.menuSub.unsubscribe();
   }
 
   public get visiblePages(): AppPage[] {
+    const isSuperAdmin = this.profileRole === 'admin';
     const isCompany = this.profileRole === 'company_admin' || this.profileRole === 'hr_admin' || this.profileRole === 'manager';
     const isCareExpert = this.profileRole === 'care_expert';
-    const isEmployeeLike = this.profileRole === 'employee' || this.profileRole === 'admin';
+    const isEmployee = this.profileRole === 'employee';
+
+    if (isSuperAdmin) {
+      return this.appPages;
+    }
 
     if (isCompany) {
       return this.appPages.filter(
@@ -96,9 +105,14 @@ export class AppComponent implements OnDestroy {
       return this.careExpertPages;
     }
 
-    if (isEmployeeLike) {
+    if (isEmployee) {
       const lockedWithoutPlan = new Set(['/care-experts', '/requests', '/tasks', '/providers', '/resources', '/training', '/vouchers']);
-      return this.appPages.filter((page) => page.url !== '/company' && (this.hasBenefitAccess || !lockedWithoutPlan.has(page.url)));
+      return this.appPages.filter((page) => page.url !== '/company' && page.url !== '/company-requests' && (this.hasBenefitAccess || !lockedWithoutPlan.has(page.url)));
+    }
+
+    // Default for logged in users whose role is not yet employee/company/etc or during transition
+    if (this.auth.user) {
+      return this.appPages.filter((page) => (this.hasBenefitAccess || page.url !== '/company' && page.url !== '/company-requests'));
     }
 
     // For public (not logged in) users, show only public pages.

@@ -66,11 +66,69 @@ export class CompanyRequestsPage implements OnInit, OnDestroy {
     this.error = null;
 
     try {
-      // 1. Fetch care requests (sin FK join)
-      const { data: requests, error: reqError } = await this.supabase.client
+      // 0. Obtener sesión del usuario actual
+      const { data: sessionData } = await this.supabase.client.auth.getSession();
+      const user = sessionData.session?.user;
+      if (!user) {
+        this.items = [];
+        this.loading = false;
+        return;
+      }
+
+      // Obtener el rol del perfil del usuario
+      const { data: userProfile } = await this.supabase.client
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const isPlatformAdmin = userProfile?.role === 'admin';
+
+      // Obtener la empresa a la que pertenece el usuario
+      const { data: userMembership } = await this.supabase.client
+        .from('company_members')
+        .select('company_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const companyId = userMembership?.company_id;
+
+      let companyUserIds: string[] | null = null;
+
+      if (companyId) {
+        // Si pertenece a una empresa, obtener todos los IDs de colaboradores de esa empresa
+        const { data: members } = await this.supabase.client
+          .from('company_members')
+          .select('user_id')
+          .eq('company_id', companyId);
+
+        if (members && members.length > 0) {
+          companyUserIds = members.map(m => m.user_id).filter(Boolean);
+        } else {
+          companyUserIds = [];
+        }
+      } else if (!isPlatformAdmin) {
+        // Si no pertenece a ninguna empresa y tampoco es Admin general, no tiene acceso
+        this.items = [];
+        this.loading = false;
+        return;
+      }
+
+      // 1. Fetch care requests (filtrado por los colaboradores de la empresa)
+      let reqQuery = this.supabase.client
         .from('care_requests')
-        .select('id, topic, channel, status, created_at, details, employee_id')
-        .order('created_at', { ascending: false });
+        .select('id, topic, channel, status, created_at, details, employee_id');
+
+      if (companyUserIds !== null) {
+        if (companyUserIds.length === 0) {
+          this.items = [];
+          this.loading = false;
+          return;
+        }
+        reqQuery = reqQuery.in('employee_id', companyUserIds);
+      }
+
+      const { data: requests, error: reqError } = await reqQuery.order('created_at', { ascending: false });
 
       if (reqError) throw reqError;
 

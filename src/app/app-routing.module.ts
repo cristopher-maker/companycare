@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
+import { companyRoleGuard } from './core/guards/company-role.guard';
 import { internalAdminGuard } from './core/guards/internal-admin.guard';
 
 const routes: Routes = [
@@ -94,12 +95,12 @@ const routes: Routes = [
   },
   {
     path: 'company',
-    canMatch: [authGuard],
+    canMatch: [authGuard, companyRoleGuard],
     loadChildren: () => import('./pages/company/company.module').then((m) => m.CompanyPageModule),
   },
   {
     path: 'company-requests',
-    canMatch: [authGuard],
+    canMatch: [authGuard, companyRoleGuard],
     loadChildren: () =>
       import('./pages/company-requests/company-requests.module').then(
         (m) => m.CompanyRequestsPageModule

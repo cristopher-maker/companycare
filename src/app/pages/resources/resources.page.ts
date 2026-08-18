@@ -53,6 +53,29 @@ const CATEGORY_ICON: Record<ResourceCategory, string> = {
 
 const FALLBACK_RESOURCES: ResourceItem[] = [
   {
+    id: 'res-guia-v4',
+    title: 'Guía Oficial CompanyCare',
+    summary: 'Manual completo de acompañamiento, orientación y recursos para colaboradores y cuidadores de adultos mayores.',
+    category: 'Guías prácticas',
+    resource_type: 'pdf',
+    read_time_min: 15,
+    is_priority: true,
+    file_url: 'assets/pdf/Guia_CompanyCare_v4.pdf',
+    video_url: null,
+    content: [
+      {
+        heading: 'Guía Integral del Cuidador CompanyCare',
+        body: 'Documento completo con recomendaciones gerontológicas, evaluación de necesidades, red de apoyo y orientación para familias.',
+        bullets: [
+          'Estrategias de cuidado diario y prevención de sobrecarga',
+          'Evaluación de autonomía y niveles de dependencia',
+          'Red de convenios SeniorClub y proveedores verificados',
+          'Protocolos de asesoría personalizada con Care Experts'
+        ]
+      }
+    ]
+  },
+  {
     id: 'res-v1',
     title: '4 Pilares del Cuidado Senior',
     summary: 'Video explicativo con los 4 pilares fundamentales para acompañar el cuidado integral de un familiar adulto mayor.',
@@ -72,8 +95,8 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
   },
   {
     id: 'res-v2',
-    title: 'Asesorías Care Experts v3',
-    summary: 'Video orientativo v3 sobre el funcionamiento de las sesiones personalizadas con especialistas en gerontología y trabajo social.',
+    title: 'Asesorías Care Experts',
+    summary: 'Video orientativo sobre el funcionamiento de las sesiones personalizadas con especialistas en gerontología y trabajo social.',
     category: 'Opciones de cuidado',
     resource_type: 'video',
     read_time_min: 2,
@@ -93,7 +116,7 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
     title: 'Guía Completa: Cómo evaluar el nivel de dependencia de un familiar',
     summary: 'Aprende a identificar los primeros signos de pérdida de autonomía física y cognitiva en adultos mayores.',
     category: 'Opciones de cuidado',
-    resource_type: 'pdf',
+    resource_type: 'article',
     read_time_min: 8,
     is_priority: true,
     file_url: null,
@@ -136,7 +159,7 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
     title: 'Checklist: Auditoría de Seguridad Domiciliaria para Adultos Mayores',
     summary: 'Lista de verificación práctica para adaptar baños, pasillos y dormitorios evitando caídas y accidentes.',
     category: 'Checklist',
-    resource_type: 'pdf',
+    resource_type: 'article',
     read_time_min: 5,
     is_priority: false,
     file_url: null,
@@ -190,7 +213,7 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
     title: 'Planificación Legal y Poderes Notariales en Etapas Tempranas',
     summary: 'Aspectos legales clave para la toma de decisiones médicas y financieras anticipadas en la familia.',
     category: 'Guías prácticas',
-    resource_type: 'pdf',
+    resource_type: 'article',
     read_time_min: 7,
     is_priority: false,
     file_url: null,
