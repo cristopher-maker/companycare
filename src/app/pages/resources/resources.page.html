@@ -115,13 +115,21 @@
             <h3 class="resource-card__title">{{ res.title }}</h3>
             <p class="resource-card__summary">{{ res.summary }}</p>
 
+            <!-- Course Progress Bar on Card -->
+            <div class="resource-card__progress" *ngIf="isCourse(res) && getCourseProgress(res.id) > 0">
+              <div class="resource-card__track">
+                <span [style.width.%]="getCourseProgress(res.id)"></span>
+              </div>
+              <small>{{ getCourseProgress(res.id) }}% completado</small>
+            </div>
+
             <div class="resource-card__footer">
               <span class="read-time">
                 <mat-icon>schedule</mat-icon>
-                {{ getDurationText(res) }} {{ res.resource_type === 'video' ? 'video' : 'lectura' }}
+                {{ getDurationText(res) }} {{ res.resource_type === 'video' ? 'video' : (isCourse(res) ? 'curso' : 'lectura') }}
               </span>
               <span class="read-more">
-                {{ res.resource_type === 'video' ? 'Ver video' : 'Ver recurso' }}
+                {{ res.resource_type === 'video' ? 'Ver video' : (isCourse(res) ? (getCourseProgress(res.id) >= 100 ? 'Repasar curso' : (getCourseProgress(res.id) > 0 ? 'Continuar curso' : 'Iniciar curso')) : 'Ver recurso') }}
                 <mat-icon>arrow_forward</mat-icon>
               </span>
             </div>
@@ -134,9 +142,131 @@
 
 </main>
 
+<!-- ─── COURSE LEARNING DRAWER MODAL (Interactive Course Player) ─── -->
+<div class="course-drawer-backdrop" *ngIf="activeCourse">
+  <div class="course-drawer">
+    
+    <header class="course-drawer__header">
+      <div class="drawer-meta">
+        <span class="level-badge"><mat-icon>school</mat-icon> Formación interactiva</span>
+        <span class="duration-badge"><mat-icon>schedule</mat-icon> {{ getDurationText(activeCourse) }}</span>
+      </div>
+      <button type="button" class="close-btn" (click)="closeCourseModal()" aria-label="Cerrar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
+
+    <div class="course-drawer__content">
+      <h2 class="course-drawer__title">{{ activeCourse.title }}</h2>
+
+      <!-- Overall Progress Bar -->
+      <div class="course-drawer__progress">
+        <div class="progress-bar">
+          <span [style.width.%]="getCourseProgress(activeCourse.id)"></span>
+        </div>
+        <div class="progress-info">
+          <span class="progress-text">{{ getCourseProgress(activeCourse.id) }}% completado</span>
+          <span class="lesson-count" *ngIf="activeCourse.lessons?.length">Módulo {{ activeLessonIndex + 1 }} de {{ activeCourse.lessons!.length }}</span>
+        </div>
+      </div>
+
+      <!-- Modules Selector Tabs -->
+      <div class="course-module-tabs" *ngIf="activeCourse.lessons && activeCourse.lessons.length > 0">
+        <button
+          *ngFor="let lesson of activeCourse.lessons; let i = index"
+          type="button"
+          class="module-tab-btn"
+          [class.is-active]="activeLessonIndex === i"
+          [class.is-done]="(i + 1) * (100 / activeCourse.lessons.length) <= getCourseProgress(activeCourse.id)"
+          (click)="selectLesson(i)"
+        >
+          <mat-icon>
+            {{ (i + 1) * (100 / activeCourse.lessons.length) <= getCourseProgress(activeCourse.id) ? 'check_circle' : (activeLessonIndex === i ? 'play_circle' : 'radio_button_unchecked') }}
+          </mat-icon>
+          <span>Módulo {{ i + 1 }}</span>
+        </button>
+      </div>
+
+      <!-- ACTIVE LESSON CONTENT VIEWER -->
+      <div class="active-lesson-viewer" *ngIf="currentCourseLesson">
+        <h3 class="lesson-title">{{ currentCourseLesson.title }}</h3>
+        <p class="lesson-summary-lead">{{ currentCourseLesson.summary }}</p>
+
+        <!-- Lesson Body Text -->
+        <div class="lesson-body-box">
+          <h4>
+            <mat-icon>import_contacts</mat-icon>
+            Contenido del Módulo
+          </h4>
+          <p>{{ currentCourseLesson.content }}</p>
+        </div>
+
+        <!-- Expert Tips Box -->
+        <div class="lesson-tips-box" *ngIf="currentCourseLesson.tips && currentCourseLesson.tips.length > 0">
+          <h4>
+            <mat-icon>lightbulb</mat-icon>
+            Consejos del Especialista Gerontológico
+          </h4>
+          <ul>
+            <li *ngFor="let tip of currentCourseLesson.tips">{{ tip }}</li>
+          </ul>
+        </div>
+
+        <!-- Interactive Checklist -->
+        <div class="lesson-checklist-box" *ngIf="currentCourseLesson.checklist && currentCourseLesson.checklist.length > 0">
+          <h4>
+            <mat-icon>task</mat-icon>
+            Lista de Verificación Práctica
+          </h4>
+          <div class="checklist-items">
+            <label
+              *ngFor="let item of currentCourseLesson.checklist"
+              class="checklist-item"
+              [class.is-checked]="checkedChecklistItems[item]"
+            >
+              <input
+                type="checkbox"
+                [checked]="checkedChecklistItems[item]"
+                (change)="toggleCheckItem(item)"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="checklist-label">{{ item }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="course-drawer__actions">
+        <button
+          type="button"
+          class="btn-advance-lesson"
+          *ngIf="getCourseProgress(activeCourse.id) < 100"
+          (click)="advanceActiveCourse()"
+        >
+          <mat-icon>check</mat-icon>
+          Completar Módulo {{ activeLessonIndex + 1 }} y Continuar
+        </button>
+
+        <button
+          type="button"
+          class="btn-completed-course"
+          *ngIf="getCourseProgress(activeCourse.id) >= 100"
+          (click)="closeCourseModal()"
+        >
+          <mat-icon>verified</mat-icon>
+          ¡Curso Completado al 100%! Cerrar
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
 <!-- ─── RESOURCE DRAWER MODAL (Articles, Checklists & Videos) ───── -->
-<div class="resource-drawer-backdrop" *ngIf="activeResource && (activeResource.resource_type !== 'pdf' || !activeResource.file_url)" (click)="closeDrawer()">
-  <div class="resource-drawer" (click)="$event.stopPropagation()">
+<div class="resource-drawer-backdrop" *ngIf="activeResource && (activeResource.resource_type !== 'pdf' || !activeResource.file_url)">
+  <div class="resource-drawer">
     <header class="resource-drawer__header">
       <div class="drawer-header-meta">
         <span class="resource-badge resource-badge--{{ categoryKey(activeResource.category) }}">
@@ -244,4 +374,5 @@
 </div>
 
 <app-site-footer></app-site-footer>
+
 

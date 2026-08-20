@@ -72,9 +72,8 @@ const routes: Routes = [
   },
   {
     path: 'training',
-    canMatch: [authGuard],
-    loadChildren: () =>
-      import('./pages/training/training.module').then((m) => m.TrainingPageModule),
+    redirectTo: 'resources',
+    pathMatch: 'full',
   },
   {
     path: 'requests',

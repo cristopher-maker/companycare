@@ -25,7 +25,6 @@ export class AppComponent implements OnInit, OnDestroy {
     '/care-experts',
     '/providers',
     '/resources',
-    '/training',
     '/requests',
     '/vouchers',
     '/company',
@@ -40,7 +39,6 @@ export class AppComponent implements OnInit, OnDestroy {
     { title: 'Asesoria personalizada', url: '/care-experts', icon: 'forum' },
     { title: 'Proveedores verificados', url: '/providers', icon: 'search' },
     { title: 'Recursos digitales', url: '/resources', icon: 'library_books' },
-    { title: 'Formacion', url: '/training', icon: 'school' },
     { title: 'Mis solicitudes', url: '/requests', icon: 'content_paste' },
     { title: 'Vouchers', url: '/vouchers', icon: 'local_activity' },
     { title: 'Administrar empresa', url: '/company', icon: 'business' },
@@ -54,7 +52,6 @@ export class AppComponent implements OnInit, OnDestroy {
   public readonly careExpertPages: AppPage[] = [
     { title: 'Inicio', url: '/home', icon: 'home' },
     { title: 'Inbox de casos', url: '/care-experts', icon: 'forum' },
-    { title: 'Formacion', url: '/training', icon: 'school' },
     { title: 'Recursos digitales', url: '/resources', icon: 'library_books' },
     { title: 'Perfil', url: '/profile', icon: 'account_circle' },
     { title: 'Contacto', url: '/contact', icon: 'mail_outline' },
@@ -104,7 +101,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     if (isEmployee) {
-      const lockedWithoutPlan = new Set(['/care-experts', '/requests', '/providers', '/resources', '/training', '/vouchers']);
+      const lockedWithoutPlan = new Set(['/care-experts', '/requests', '/providers', '/resources', '/vouchers']);
       return this.appPages.filter((page) => page.url !== '/company' && page.url !== '/company-requests' && (this.hasBenefitAccess || !lockedWithoutPlan.has(page.url)));
     }
 
