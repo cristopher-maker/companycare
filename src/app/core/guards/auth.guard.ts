@@ -7,11 +7,13 @@ export const authGuard: CanMatchFn = async (_route, segments): Promise<boolean |
   const supabase = inject(SupabaseService);
   const router = inject(Router);
 
-  const { data, error } = await supabase.client.auth.getSession();
-  if (error) return router.createUrlTree(['/login']);
-  if (data.session) return true;
+  // Use getUser() instead of getSession() to verify the token server-side,
+  // ensuring revoked/banned users cannot bypass authentication with cached sessions.
+  const { data, error } = await supabase.client.auth.getUser();
+  if (error || !data.user) {
+    const returnUrl = '/' + segments.map((s) => s.path).join('/');
+    return router.createUrlTree(['/login'], { queryParams: { returnUrl } });
+  }
 
-  const returnUrl = '/' + segments.map((s) => s.path).join('/');
-  return router.createUrlTree(['/login'], { queryParams: { returnUrl } });
+  return true;
 };
-

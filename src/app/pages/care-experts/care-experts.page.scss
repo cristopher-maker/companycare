@@ -2867,6 +2867,54 @@ ion-content.care-experts {
   color: #92400e;
 }
 
+.ce-expert-app__appointment-notes {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+
+  span {
+    display: block;
+    color: var(--ce-text-light, #64748b);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--ce-text-main, #0f172a);
+    line-height: 1.45;
+    white-space: pre-line;
+    font-weight: 600;
+  }
+}
+
+.ce-expert-app__call-action {
+  margin-top: 10px;
+
+  .ce-expert-app__appointment-link {
+    margin-top: 0;
+    background: #0088A8;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: #006f8a;
+    }
+  }
+}
+
 .ce-expert-app__appointment-link {
   width: 100%;
   margin-top: 12px;
@@ -4084,6 +4132,61 @@ ion-content.care-experts {
     color: #ffffff;
     border-color: #0088A8;
   }
+}
+
+.followup-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.followup-clear-btn {
+  background: transparent;
+  border: none;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 4px;
+  text-transform: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.followup-quick-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 4px 0 6px;
+}
+
+.preset-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #1d4ed8;
+    color: #ffffff;
+    border-color: #1d4ed8;
+  }
+}
+
+.followup-date-input {
+  width: 100%;
+  cursor: pointer;
 }
 
 .followup-form__internal {

@@ -186,10 +186,10 @@ export class AuthService {
     const fullName = input.fullName.trim();
     if (!fullName) throw new Error('Nombre inválido.');
 
-    // 1) Ensure profile role + name.
+    // 1) Ensure profile name (role is managed server-side only to prevent privilege escalation).
     const { error: profileError } = await this.supabase.client
       .from('profiles')
-      .update({ full_name: fullName, role: input.role })
+      .update({ full_name: fullName })
       .eq('id', user.id);
     if (profileError) throw profileError;
 

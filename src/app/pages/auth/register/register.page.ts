@@ -66,7 +66,9 @@ export class RegisterPage implements OnDestroy {
 
       if (!email) throw new Error('Ingresa tu email.');
       if (!password) throw new Error('Ingresa una contraseña.');
-      if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.');
+      if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.');
+      if (!/[A-Z]/.test(password)) throw new Error('La contraseña debe contener al menos una letra mayúscula.');
+      if (!/[0-9]/.test(password)) throw new Error('La contraseña debe contener al menos un número.');
 
       if (this.role === 'company_admin') {
         if (!companyRut) throw new Error('Ingresa el RUT de la empresa.');

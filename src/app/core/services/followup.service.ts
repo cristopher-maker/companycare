@@ -75,7 +75,7 @@ export class FollowupService {
   async getLatestFollowup(employeeId: string): Promise<PatientFollowup | null> {
     const { data, error } = await this.supabase.client
       .from('patient_followups')
-      .select('*')
+      .select('id, request_id, expert_id, employee_id, patient_status, note, followup_type, next_followup_date, priority, created_at, updated_at')
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -108,7 +108,7 @@ export class FollowupService {
   async getFollowupHistory(employeeId: string): Promise<PatientFollowup[]> {
     const { data, error } = await this.supabase.client
       .from('patient_followups')
-      .select('*')
+      .select('id, request_id, expert_id, employee_id, patient_status, note, followup_type, next_followup_date, priority, created_at, updated_at')
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false });
 

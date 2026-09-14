@@ -594,6 +594,12 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     return !!appointment.meeting_url && appointment.kind === 'Videollamada';
   }
 
+  public getAppointmentPhone(appointment: AppointmentRow): string | null {
+    if (!appointment?.notes) return null;
+    const match = appointment.notes.match(/Telefono de contacto:\s*([+\d\s-]+)/i);
+    return match ? match[1].trim() : null;
+  }
+
   public get nextAppointment(): AppointmentRow | null {
     const now = Date.now();
     return (
@@ -1255,7 +1261,10 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       }
       this.profileRole = role;
 
-      this.expertMode = role === 'care_expert' || role === 'admin';
+      // Solo el profesional 'care_expert' entra al panel operativo para atender a otros.
+      // El Administrador y los Colaboradores entran al flujo de usuario para solicitar asesoría personalizada.
+      this.expertMode = role === 'care_expert';
+
       if (this.expertMode) {
         this.hasBenefitAccess = true;
         try {
@@ -1275,7 +1284,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         return;
       }
 
-      this.hasBenefitAccess = await this.loadCurrentUserBenefitAccess(user?.id ?? null);
+      this.hasBenefitAccess = role === 'admin' ? true : await this.loadCurrentUserBenefitAccess(user?.id ?? null);
       if (!this.hasBenefitAccess) {
         alert('Tu empresa necesita una suscripción activa para solicitar Care Experts.');
         await this.router.navigateByUrl('/dashboard');
@@ -1695,7 +1704,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
             details: (request.details as string | null | undefined) ?? null,
             employee_id: request.employee_id as string,
             assigned_expert_id: (request.assigned_expert_id as string | null | undefined) ?? null,
-            employee_name: profile?.full_name ?? null,
+            employee_name: profile?.full_name?.trim() || profile?.email || 'Colaborador',
             employee_email: profile?.email ?? null,
           };
         });
@@ -2211,7 +2220,11 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         note: this.followupDraft.note.trim(),
         internal_note: this.followupDraft.internal_note?.trim() || null,
         followup_type: this.followupDraft.followup_type as FollowupType,
-        next_followup_date: this.followupDraft.next_followup_date || null,
+        next_followup_date: this.followupDraft.next_followup_date
+          ? (this.followupDraft.next_followup_date.includes('T')
+              ? this.followupDraft.next_followup_date
+              : `${this.followupDraft.next_followup_date}T10:00:00`)
+          : null,
         priority: this.followupDraft.priority as FollowupPriority,
       });
       this.followupDraft = this.createDefaultFollowupDraft();
@@ -2223,6 +2236,19 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       this.savingFollowup = false;
       this.cdr.markForCheck();
     }
+  }
+
+  public setFollowupPreset(days: number): void {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    this.followupDraft.next_followup_date = `${yyyy}-${mm}-${dd}`;
+  }
+
+  public clearFollowupDate(): void {
+    this.followupDraft.next_followup_date = '';
   }
 
   public applyWarmNoteTemplate(type: 'estable' | 'mejorando' | 'seguimiento'): void {
