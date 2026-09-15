@@ -49,6 +49,16 @@ type CollaboratorSummary = {
   preferredContact: string | null;
   supportNetwork: string | null;
   hasTwoFloors: string | null;
+  careReceiverName: string | null;
+  careReceiverRut: string | null;
+  careReceiverBirthDate: string | null;
+  careReceiverPhone: string | null;
+  healthCoverage: string | null;
+  budgetMonthlyMax: number | string | null;
+  funding: string | null;
+  careType: string | null;
+  urgency: string | null;
+  notes: string | null;
 };
 
 type QuickReply = {
@@ -102,6 +112,175 @@ type CareTaskRow = {
   created_at: string;
 };
 
+export type FollowupTemplateCategory = 'todas' | 'alimentacion' | 'medicacion' | 'animo' | 'movilidad' | 'rutina';
+
+export type FollowupTemplate = {
+  id: string;
+  category: FollowupTemplateCategory;
+  label: string;
+  icon: string;
+  situation: string;
+  patient_status: PatientStatus;
+  followup_type: FollowupType;
+  getNote: (name: string) => string;
+  getInternalNote: (name: string) => string;
+};
+
+export const CLINICAL_FOLLOWUP_TEMPLATES: FollowupTemplate[] = [
+  // ALIMENTACIÓN
+  {
+    id: 'comida_rechazo',
+    category: 'alimentacion',
+    label: 'Rechazo de comida / Almuerzo',
+    icon: 'no_meals',
+    situation: 'El residente no quiso comer o rechazó el almuerzo',
+    patient_status: 'requiere_atencion',
+    followup_type: 'presencial',
+    getNote: (name) => `Hoy ${name} presentó dificultades con el almuerzo. Mantenemos monitoreo cercano y se le ofreció una alternativa nutritiva y colación para asegurar su ingesta. Se encuentra tranquilo/a.`,
+    getInternalNote: (name) => `Situación: ${name} rechaza almuerzo por preferencia alimentaria / inapetencia. Se ofrece colación alternativa e hidratación. Se notifica a nutrición/cocina y se controlará en la cena.`,
+  },
+  {
+    id: 'comida_buena',
+    category: 'alimentacion',
+    label: 'Excelente ingesta y apetito',
+    icon: 'restaurant',
+    situation: 'Comió todo su plato con buen apetito',
+    patient_status: 'estable',
+    followup_type: 'nota_interna',
+    getNote: (name) => `Hoy ${name} se alimentó muy bien, completando su comida con excelente apetito y buena hidratación durante la jornada.`,
+    getInternalNote: (name) => `Ingesta completa (100%) sin complicaciones de deglución ni incidentes. Buena ingesta de líquidos.`,
+  },
+  {
+    id: 'hidratacion_control',
+    category: 'alimentacion',
+    label: 'Control de hidratación',
+    icon: 'water_drop',
+    situation: 'Monitoreo y refuerzo de ingesta de líquidos',
+    patient_status: 'estable',
+    followup_type: 'nota_interna',
+    getNote: (name) => `Se reforzó la ingesta de líquidos de ${name} durante el día, manteniéndose con muy buena hidratación y confort.`,
+    getInternalNote: (name) => `Ingesta de líquidos guiada cumplida (~1.5L). Mucosas hidratadas, sin signos de deshidratación.`,
+  },
+
+  // MEDICACIÓN Y SALUD
+  {
+    id: 'medicacion_ok',
+    category: 'medicacion',
+    label: 'Medicación administrada',
+    icon: 'medication',
+    situation: 'Pauta de fármacos tomada sin problemas',
+    patient_status: 'estable',
+    followup_type: 'nota_interna',
+    getNote: (name) => `La pauta de medicamentos de hoy para ${name} fue administrada con total normalidad según lo indicado por su médico.`,
+    getInternalNote: (name) => `Administración de fármacos según horario de receta. Sin rechazo ni efectos adversos inmediatos.`,
+  },
+  {
+    id: 'signos_vitales',
+    category: 'medicacion',
+    label: 'Control de signos vitales',
+    icon: 'health_and_safety',
+    situation: 'Control preventivo de presión, pulso y saturación',
+    patient_status: 'estable',
+    followup_type: 'nota_interna',
+    getNote: (name) => `Realizamos control de signos vitales de rutina a ${name}. Sus parámetros se mantienen estables y en rangos normales.`,
+    getInternalNote: (name) => `PA, pulso, SatO2 y temperatura dentro de rangos normales. Parámetros estables.`,
+  },
+  {
+    id: 'molestia_dolor',
+    category: 'medicacion',
+    label: 'Molestia física / Dolor leve',
+    icon: 'healing',
+    situation: 'Manifiesta dolor o molestia que requiere asistencia',
+    patient_status: 'requiere_atencion',
+    followup_type: 'presencial',
+    getNote: (name) => `Hoy ${name} presentó una molestia leve. Nuestro equipo le brindó asistencia y medidas de confort inmediatas, encontrándose ahora en reposo tranquilo/a.`,
+    getInternalNote: (name) => `Refiere molestia / dolor leve. Se aplican medidas de confort y analgesia SOS prescrita. En observación médica.`,
+  },
+
+  // ÁNIMO Y DESCANSO
+  {
+    id: 'animo_positivo',
+    category: 'animo',
+    label: 'Ánimo alegre y sociable',
+    icon: 'sentiment_very_satisfied',
+    situation: 'Muy buen estado de ánimo, sociable y comunicativo',
+    patient_status: 'mejorando',
+    followup_type: 'presencial',
+    getNote: (name) => `${name} tuvo un día muy alegre y positivo, compartiendo con entusiasmo en sus actividades cotidianas.`,
+    getInternalNote: (name) => `Excelente interacción social, colaborador/a y comunicativo/a con cuidadores y pares.`,
+  },
+  {
+    id: 'animo_decaido',
+    category: 'animo',
+    label: 'Ánimo decaído / Cansancio',
+    icon: 'sentiment_dissatisfied',
+    situation: 'Cansancio inusual o necesidad de apoyo emocional',
+    patient_status: 'requiere_atencion',
+    followup_type: 'presencial',
+    getNote: (name) => `Hoy ${name} se sintió un poco más cansado/a de lo habitual. El equipo le brindó espacios de descanso y contención afectiva personalizada.`,
+    getInternalNote: (name) => `Desánimo o cansancio mayor al habitual. Sin fiebre ni dolor agudo. Se prioriza descanso y contención.`,
+  },
+  {
+    id: 'buen_sueno',
+    category: 'animo',
+    label: 'Buen descanso nocturno',
+    icon: 'bedtime',
+    situation: 'Durmió bien sin interrupciones',
+    patient_status: 'estable',
+    followup_type: 'nota_interna',
+    getNote: (name) => `${name} tuvo una noche de descanso continuo y reparador, amaneciendo con buena energía para sus rutinas.`,
+    getInternalNote: (name) => `Sueño tranquilo de 7-8 hrs sin episodios de agitación ni despertares nocturnos frecuentes.`,
+  },
+
+  // MOVILIDAD
+  {
+    id: 'kine_movilidad',
+    category: 'movilidad',
+    label: 'Kinesiología / Caminata',
+    icon: 'directions_walk',
+    situation: 'Ejercicios de movilidad física completados',
+    patient_status: 'mejorando',
+    followup_type: 'presencial',
+    getNote: (name) => `${name} completó con éxito su rutina de movilidad y caminata del día, con muy buena disposición y esfuerzo.`,
+    getInternalNote: (name) => `Sesión de kinesiología / marcha asistida realizada. Buena tolerancia muscular y cardiovascular.`,
+  },
+  {
+    id: 'marcha_asistida',
+    category: 'movilidad',
+    label: 'Asistencia en traslados',
+    icon: 'assist_walker',
+    situation: 'Refuerzo de precaución y apoyo al caminar',
+    patient_status: 'requiere_atencion',
+    followup_type: 'presencial',
+    getNote: (name) => `Reforzamos el protocolo de asistencia en desplazamientos de ${name} para asegurar su máxima comodidad y prevenir caídas.`,
+    getInternalNote: (name) => `Marcha más lenta o inestable. Se refuerza supervisión estrecha en bipedestación y traslados cama-sillón.`,
+  },
+
+  // RUTINA Y SEGUIMIENTO
+  {
+    id: 'rutina_estable',
+    category: 'rutina',
+    label: 'Día tranquilo y estable',
+    icon: 'favorite',
+    situation: 'Jornada normal y sin novedades',
+    patient_status: 'estable',
+    followup_type: 'nota_interna',
+    getNote: (name) => `Conversamos hoy y ${name} se encuentra muy estable, tranquilo/a y con su plan de cuidado al día.`,
+    getInternalNote: (name) => `Rutina diaria cumplida sin novedades ni incidentes. Mantenemos el plan actual.`,
+  },
+  {
+    id: 'consulta_realizada',
+    category: 'rutina',
+    label: 'Llamada de seguimiento realizada',
+    icon: 'phone_in_talk',
+    situation: 'Contacto y retroalimentación con el familiar',
+    patient_status: 'estable',
+    followup_type: 'llamada',
+    getNote: (name) => `Realizamos la consulta de seguimiento programada para revisar las necesidades y cuidados de ${name}. Todo se mantiene en orden.`,
+    getInternalNote: (name) => `Consulta telefónica completada con familiar/colaborador. Se resuelven dudas y se acuerdan próximos pasos.`,
+  },
+];
+
 @Component({
   selector: 'app-care-experts',
   templateUrl: './care-experts.page.html',
@@ -139,6 +318,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public composerMode: ComposerMode = 'client';
   public selectedCollaborator: CollaboratorSummary | null = null;
   public showContextSheet = false;
+  public showChat = false;
+  public copiedMeetingId: string | null = null;
   public selectedHistory: ExpertRequest[] = [];
   public selectedTags: string[] = [];
   public employeeAppointments: AppointmentRow[] = [];
@@ -843,9 +1024,17 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     if (!appointment.meeting_url) return;
     try {
       await navigator.clipboard.writeText(appointment.meeting_url);
+      this.copiedMeetingId = appointment.id;
+      setTimeout(() => {
+        if (this.copiedMeetingId === appointment.id) this.copiedMeetingId = null;
+      }, 2500);
     } catch {
-      window.prompt('Copia el enlace de la reunion:', appointment.meeting_url);
+      window.prompt('Copia el enlace de la reunión:', appointment.meeting_url);
     }
+  }
+
+  public toggleChat(): void {
+    this.showChat = !this.showChat;
   }
 
   public openContextSheet(): void {
@@ -1149,6 +1338,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.composerMode = 'client';
     this.showQuickReplies = false;
     this.showAttachmentMenu = false;
+    this.showChat = false;
     await this.loadMessages();
     await this.setupRealtime();
     await this.loadSelectedContext();
@@ -1957,6 +2147,16 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     let preferredContact: string | null = null;
     let supportNetwork: string | null = null;
     let hasTwoFloors: string | null = null;
+    let careReceiverName: string | null = null;
+    let careReceiverRut: string | null = null;
+    let careReceiverBirthDate: string | null = null;
+    let careReceiverPhone: string | null = null;
+    let healthCoverage: string | null = null;
+    let budgetMonthlyMax: number | string | null = null;
+    let funding: string | null = null;
+    let careType: string | null = null;
+    let urgency: string | null = null;
+    let notes: string | null = null;
 
     const { data: profile } = await this.supabase.client
       .from('profiles')
@@ -1974,9 +2174,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         .eq('user_id', request.employee_id)
         .maybeSingle();
 
-      const companyRow = Array.isArray((membership as any)?.companies)
-        ? (membership as any).companies[0]
-        : (membership as any)?.companies;
+      const companyRow = ((membership as any)?.companies as { name?: string } | undefined) ?? undefined;
       company = (companyRow?.name as string | undefined) ?? company;
       memberRole = ((membership as any)?.member_role as string | undefined) ?? memberRole;
     } catch {
@@ -1986,13 +2184,14 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     try {
       const { data: intake } = await this.supabase.client
         .from('care_intakes')
-        .select('payload')
+        .select('payload, care_receiver_full_name, care_receiver_rut, care_receiver_birth_date, care_receiver_phone, care_receiver_health_coverage')
         .eq('employee_id', request.employee_id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      const payload = (intake?.payload as any) ?? null;
+      const intakeData = intake as any;
+      const payload = (intakeData?.payload as any) ?? null;
       location = this.readPayloadValue(payload, [
         ['location', 'postal_code'],
         ['location', 'comuna'],
@@ -2000,9 +2199,9 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         ['location', 'address'],
       ]);
       familyAge = this.readPayloadValue(payload, [
+        ['care_receiver', 'age'],
         ['family', 'age'],
         ['relative', 'age'],
-        ['care_receiver', 'age'],
         ['dependent', 'age'],
       ]);
       relation = this.readPayloadValue(payload, [['caregiver', 'relation'], ['family', 'relation']]);
@@ -2011,6 +2210,18 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       preferredContact = this.readPayloadValue(payload, [['preferences', 'preferred_contact']]);
       supportNetwork = this.readPayloadValue(payload, [['family_context', 'support_network']]);
       hasTwoFloors = this.readPayloadValue(payload, [['location', 'has_two_floors'], ['location', 'two_floors']]);
+      
+      careReceiverName = intakeData?.care_receiver_full_name || this.readPayloadValue(payload, [['care_receiver', 'full_name'], ['care_receiver', 'name']]);
+      careReceiverRut = intakeData?.care_receiver_rut || this.readPayloadValue(payload, [['care_receiver', 'rut']]);
+      careReceiverBirthDate = intakeData?.care_receiver_birth_date || this.readPayloadValue(payload, [['care_receiver', 'birth_date']]);
+      careReceiverPhone = intakeData?.care_receiver_phone || this.readPayloadValue(payload, [['care_receiver', 'phone']]);
+      healthCoverage = intakeData?.care_receiver_health_coverage || this.readPayloadValue(payload, [['care_receiver', 'health_coverage'], ['health_coverage'], ['prevision']]);
+      
+      budgetMonthlyMax = this.readPayloadValue(payload, [['budget', 'monthly_max'], ['budget', 'max'], ['budget']]);
+      funding = this.readPayloadValue(payload, [['budget', 'funding'], ['funding']]);
+      careType = this.readPayloadValue(payload, [['care_type'], ['type']]);
+      urgency = this.readPayloadValue(payload, [['urgency'], ['priority']]);
+      notes = this.readPayloadValue(payload, [['notes'], ['observations'], ['comments']]);
     } catch {
       // ignore
     }
@@ -2028,6 +2239,16 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       preferredContact,
       supportNetwork,
       hasTwoFloors,
+      careReceiverName,
+      careReceiverRut,
+      careReceiverBirthDate,
+      careReceiverPhone,
+      healthCoverage,
+      budgetMonthlyMax,
+      funding,
+      careType,
+      urgency,
+      notes,
     };
   }
 
@@ -2194,6 +2415,69 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     return map[value ?? ''] ?? value ?? 'No informado';
   }
 
+  public careTypeLabel(value: string | null | undefined): string {
+    const map: Record<string, string> = {
+      guidance:    'Orientación general',
+      home_care:   'Cuidados a domicilio',
+      residential: 'Residencia',
+      nursing:     'Enfermería',
+      dementia:    'Demencia / Alzheimer',
+      respite:     'Apoyo temporal al cuidador',
+    };
+    return map[value ?? ''] ?? value ?? 'No informado';
+  }
+
+  public dependencyLevelLabel(value: string | null | undefined): string {
+    const map: Record<string, string> = {
+      low:    'Baja',
+      medium: 'Media / Moderada',
+      high:   'Alta',
+      full:   'Dependencia total',
+    };
+    return map[value ?? ''] ?? value ?? 'No informado';
+  }
+
+  public urgencyLabel(value: string | null | undefined): string {
+    const map: Record<string, string> = {
+      immediate:    'Inmediata',
+      '3m':         'En 3 meses',
+      '6m':         'En 6 meses',
+      exploring:    'Explorando opciones',
+      month:        'En este mes',
+      three_months: 'En 3 meses',
+      planning:     'Planificando a futuro',
+    };
+    return map[value ?? ''] ?? value ?? 'No informada';
+  }
+
+  public fundingLabel(value: string | null | undefined): string {
+    const map: Record<string, string> = {
+      self_funder:     'Pago privado / Propio',
+      local_authority: 'Ayuda pública / Subvención',
+      family:          'Apoyo familiar',
+      insurance:       'Seguro complementario',
+    };
+    return map[value ?? ''] ?? value ?? 'No informado';
+  }
+
+  public preferredContactLabel(value: string | null | undefined): string {
+    const map: Record<string, string> = {
+      chat:  'Chat',
+      phone: 'Llamada telefónica',
+      video: 'Videollamada',
+    };
+    return map[value ?? ''] ?? value ?? 'No informado';
+  }
+
+  public formatBudgetValue(value: number | string | null | undefined): string {
+    if (value === null || value === undefined || value === '') return 'No informado';
+    const num = Number(value);
+    if (!isNaN(num) && num > 0) {
+      return `$${num.toLocaleString('es-CL')} CLP / mes`;
+    }
+    return `${value}`;
+  }
+
   public async loadRequestFollowups(): Promise<void> {
     if (!this.selectedRequest) return;
     this.loadingFollowups = true;
@@ -2251,17 +2535,61 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.followupDraft.next_followup_date = '';
   }
 
+  public selectedTemplateCategory: FollowupTemplateCategory = 'todas';
+  public activeTemplateId: string | null = null;
+  public readonly followupTemplates = CLINICAL_FOLLOWUP_TEMPLATES;
+
+  public readonly templateCategories: { id: FollowupTemplateCategory; label: string; icon: string }[] = [
+    { id: 'todas', label: 'Todas', icon: 'apps' },
+    { id: 'alimentacion', label: 'Alimentación', icon: 'restaurant' },
+    { id: 'medicacion', label: 'Medicación & Salud', icon: 'medication' },
+    { id: 'animo', label: 'Ánimo & Sueño', icon: 'sentiment_satisfied' },
+    { id: 'movilidad', label: 'Movilidad', icon: 'directions_walk' },
+    { id: 'rutina', label: 'Rutina', icon: 'favorite' },
+  ];
+
+  public get filteredFollowupTemplates(): FollowupTemplate[] {
+    if (this.selectedTemplateCategory === 'todas') {
+      return this.followupTemplates;
+    }
+    return this.followupTemplates.filter(t => t.category === this.selectedTemplateCategory);
+  }
+
+  public setTemplateCategory(cat: FollowupTemplateCategory): void {
+    this.selectedTemplateCategory = cat;
+  }
+
+  public applyClinicalTemplate(template: FollowupTemplate): void {
+    this.activeTemplateId = template.id;
+    const name = this.getReceiverDisplayName();
+    this.followupDraft.patient_status = template.patient_status;
+    if (template.followup_type) {
+      this.followupDraft.followup_type = template.followup_type;
+    }
+    this.followupDraft.note = template.getNote(name);
+    this.followupDraft.internal_note = template.getInternalNote(name);
+  }
+
+  public getReceiverDisplayName(): string {
+    const raw = this.selectedCollaborator?.careReceiverName?.trim();
+    if (raw) return raw;
+    return this.selectedCollaborator?.familyAge ? 'tu familiar' : 'tu ser querido';
+  }
+
   public applyWarmNoteTemplate(type: 'estable' | 'mejorando' | 'seguimiento'): void {
-    const receiver = this.selectedCollaborator?.familyAge ? 'tu familiar' : 'tu ser querido';
+    const receiver = this.getReceiverDisplayName();
     if (type === 'estable') {
       this.followupDraft.patient_status = 'estable';
       this.followupDraft.note = `Conversamos hoy y ${receiver} se encuentra muy estable, tranquilo/a y con buen ánimo. Mantenemos su plan de cuidado sin contratiempos.`;
+      this.followupDraft.internal_note = `Rutina cumplida sin novedades. ${receiver} estable y comunicativo/a.`;
     } else if (type === 'mejorando') {
       this.followupDraft.patient_status = 'mejorando';
       this.followupDraft.note = `Revisamos la evolución de ${receiver} y muestra una excelente mejoría y disposición positiva. Seguimos acompañándote paso a paso.`;
+      this.followupDraft.internal_note = `Evolución positiva, buena respuesta a las actividades y cuidados programados.`;
     } else if (type === 'seguimiento') {
       this.followupDraft.followup_type = 'llamada';
       this.followupDraft.note = `Realizamos la consulta de seguimiento periódico para revisar las necesidades de ${receiver}. Todo se mantiene en orden y bajo control.`;
+      this.followupDraft.internal_note = `Contacto de seguimiento con colaborador. Se aclaran dudas y se valida estado general.`;
     }
   }
 

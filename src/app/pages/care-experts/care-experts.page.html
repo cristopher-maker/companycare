@@ -564,36 +564,521 @@
       <p>Selecciona un caso para revisar mensajes, estado y contexto del colaborador.</p>
     </div>
 
-    <div *ngIf="selectedRequest" class="ce-expert-app__workspace">
-      <div class="ce-expert-app__conversation">
-        <header class="ce-expert-app__header">
-          <button type="button" class="ce-expert-app__back" (click)="selectedRequest = null">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
+    <div *ngIf="selectedRequest" class="ce-expert-app__workspace" [class.has-chat-open]="showChat">
+      <!-- HEADER PRINCIPAL DEL CASO -->
+      <header class="ce-case-header">
+        <button type="button" class="ce-expert-app__back" (click)="selectedRequest = null">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
 
-          <div class="ce-expert-app__header-copy">
-            <h2 class="ce-expert-app__header-title">{{ selectedRequest.topic }}</h2>
-            <p class="ce-expert-app__header-subtitle">
-              {{ selectedRequest.employee_name || 'Anónimo' }} · {{ selectedRequest.channel }}
-            </p>
+        <div class="ce-case-header__copy">
+          <div class="ce-case-header__topic-row">
+            <mat-icon class="ce-case-header__channel-icon">
+              {{ selectedRequest.channel === 'Videollamada' ? 'videocam' : selectedRequest.channel === 'Llamada' ? 'call' : 'chat' }}
+            </mat-icon>
+            <h2 class="ce-case-header__title">{{ selectedRequest.topic }}</h2>
+          </div>
+          <p class="ce-case-header__subtitle">
+            <strong>Colaborador:</strong> {{ selectedRequest.employee_name || 'Anónimo' }}
+            <span *ngIf="selectedCollaborator?.company"> · {{ selectedCollaborator?.company }}</span>
+            <span *ngIf="selectedCollaborator?.careReceiverName"> · <strong>Persona cuidada:</strong> {{ selectedCollaborator?.careReceiverName }}</span>
+          </p>
+        </div>
+
+        <div class="ce-case-header__actions">
+          <!-- Selector de Estado del Caso -->
+          <div class="ce-case-status-badge" [attr.data-status]="selectedRequest.status">
+            <span class="status-dot"></span>
+            <select
+              [(ngModel)]="statusDraft"
+              (change)="saveSelectedStatus()"
+              class="ce-case-status-select"
+              title="Cambiar estado del caso"
+            >
+              <option *ngFor="let s of expertStatuses" [value]="s">{{ statusLabel(s) }}</option>
+            </select>
           </div>
 
-          <span
-            class="ce-expert-app__header-badge ce-expert-app__badge"
-            [class.is-open]="selectedRequest.status === 'open'"
-            [class.is-assigned]="selectedRequest.status === 'assigned'"
+          <!-- Botón de Ficha Completa -->
+          <button type="button" class="ce-btn-header ce-btn-header--outline" (click)="openContextSheet()" title="Ver ficha completa">
+            <mat-icon>assignment</mat-icon>
+            <span>Ficha completa</span>
+          </button>
+
+          <!-- Botón Toggle Chat (Oculto por defecto) -->
+          <button type="button" class="ce-btn-header" [class.ce-btn-header--active]="showChat" (click)="toggleChat()" title="Ver u ocultar conversación">
+            <mat-icon>{{ showChat ? 'chat_bubble' : 'chat_bubble_outline' }}</mat-icon>
+            <span>{{ showChat ? 'Ocultar chat' : 'Ver chat (' + messages.length + ')' }}</span>
+          </button>
+
+          <!-- Botón Tomar caso si no está asignado -->
+          <button
+            *ngIf="selectedRequest.assigned_expert_id !== auth.user?.id"
+            type="button"
+            class="ce-btn-header ce-btn-header--claim"
+            [disabled]="loading"
+            (click)="claimSelectedRequest()"
           >
-            {{ statusLabel(selectedRequest.status) }}
-          </span>
-          <span
-            *ngIf="requestNeedsAttention(selectedRequest)"
-            class="ce-expert-app__header-badge ce-expert-app__badge ce-expert-app__badge--attention"
-          >
-            {{ requestAttentionLabel(selectedRequest) }}
-          </span>
+            <mat-icon>back_hand</mat-icon>
+            <span>Tomar caso</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- CUERPO DEL CASO: 2 COLUMNAS AMPLIAS Y ORGANIZADAS -->
+      <div class="ce-case-dashboard">
+        <!-- COLUMNA 1: CITAS AGENDADAS Y SEGUIMIENTO / EVOLUCIÓN -->
+        <div class="ce-case-dashboard__col">
+
+          <!-- TARJETA DE CITA AGENDADA -->
+          <section class="ce-card ce-card--appointment">
+            <div class="ce-card__head">
+              <div class="ce-card__title-group">
+                <mat-icon class="ce-card__icon ce-card__icon--primary">event</mat-icon>
+                <div>
+                  <h3 class="ce-card__title">Cita agendada</h3>
+                  <p class="ce-card__subtitle">Sesión con el colaborador</p>
+                </div>
+              </div>
+              <span *ngIf="selectedAppointments.length > 0" class="ce-chip ce-chip--status">
+                {{ appointmentStatusLabel(selectedAppointments[0].status) }}
+              </span>
+            </div>
+
+            <div *ngIf="selectedAppointments.length === 0" class="ce-empty-block">
+              <mat-icon>event_busy</mat-icon>
+              <p>No hay citas agendadas registradas para esta solicitud.</p>
+            </div>
+
+            <div *ngIf="selectedAppointments.length > 0" class="ce-appointment-body">
+              <article *ngFor="let app of selectedAppointments" class="ce-appointment-item" [class.is-overdue]="isAppointmentOverdue(app)">
+                <div class="ce-appointment-date-badge">
+                  <mat-icon>{{ app.kind === 'Videollamada' ? 'videocam' : 'call' }}</mat-icon>
+                  <div>
+                    <strong class="ce-appointment-date-text">{{ app.scheduled_for | date:'EEEE d MMMM, y' }}</strong>
+                    <span class="ce-appointment-time-text">Hora: {{ app.scheduled_for | date:'HH:mm' }} hrs</span>
+                  </div>
+                  <span *ngIf="isAppointmentOverdue(app)" class="ce-chip ce-chip--danger">Vencida</span>
+                </div>
+
+                <!-- Acciones de Reunión / Videollamada / Llamada -->
+                <div class="ce-appointment-actions-row">
+                  <ng-container *ngIf="app.kind === 'Videollamada'">
+                    <a
+                      *ngIf="app.meeting_url"
+                      [href]="app.meeting_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="ce-action-btn ce-action-btn--primary"
+                    >
+                      <mat-icon>videocam</mat-icon>
+                      <span>Unirse a la videollamada</span>
+                    </a>
+                    <button
+                      *ngIf="app.meeting_url"
+                      type="button"
+                      class="ce-action-btn ce-action-btn--secondary"
+                      (click)="copyMeetingLink(app)"
+                    >
+                      <mat-icon>content_copy</mat-icon>
+                      <span>{{ copiedMeetingId === app.id ? '¡Link copiado!' : 'Copiar link Meet' }}</span>
+                    </button>
+                    <div *ngIf="!app.meeting_url" class="ce-appointment-pending">
+                      <mat-icon>hourglass_empty</mat-icon>
+                      <span>Enlace pendiente de generación</span>
+                    </div>
+                  </ng-container>
+
+                  <ng-container *ngIf="app.kind === 'Llamada'">
+                    <a
+                      *ngIf="getAppointmentPhone(app)"
+                      [href]="'tel:' + getAppointmentPhone(app)"
+                      class="ce-action-btn ce-action-btn--primary"
+                    >
+                      <mat-icon>call</mat-icon>
+                      <span>Llamar a {{ getAppointmentPhone(app) }}</span>
+                    </a>
+                  </ng-container>
+                </div>
+
+                <!-- Detalles y Notas del Agendamiento -->
+                <div class="ce-appointment-info-box" *ngIf="app.notes || selectedRequest?.details">
+                  <span class="ce-info-label">Detalles y notas del agendamiento</span>
+                  <p class="ce-info-value" *ngIf="app.notes">{{ app.notes }}</p>
+                  <p class="ce-info-value ce-info-value--sub" *ngIf="selectedRequest?.details && selectedRequest?.details !== app.notes">
+                    <strong>Motivo inicial:</strong> {{ selectedRequest?.details }}
+                  </p>
+                </div>
+
+                <!-- Actualizar Estado de la Cita -->
+                <div class="ce-appointment-status-row">
+                  <span class="ce-field-label">Actualizar estado de la sesión:</span>
+                  <select
+                    [ngModel]="app.status || 'scheduled'"
+                    (ngModelChange)="updateAppointmentStatus(app, $event)"
+                    class="ce-select-custom"
+                  >
+                    <option value="scheduled">Agendada</option>
+                    <option value="confirmed">Confirmada</option>
+                    <option value="completed">Completada / Realizada</option>
+                    <option value="cancelled">Cancelada</option>
+                  </select>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <!-- TARJETA: EVOLUCIÓN DE SU FAMILIAR -->
+          <section class="ce-card ce-card--followup">
+            <div class="ce-card__head">
+              <div class="ce-card__title-group">
+                <mat-icon class="ce-card__icon ce-card__icon--teal">monitor_heart</mat-icon>
+                <div>
+                  <h3 class="ce-card__title">Evolución de su familiar</h3>
+                  <p class="ce-card__subtitle">Bitácora y estado de salud</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Banner Estado Actual -->
+            <div class="ce-followup-banner" *ngIf="latestFollowup">
+              <div class="ce-followup-badge" [style.background]="getStatusColor(latestFollowup.patient_status)">
+                <mat-icon>{{ getStatusIcon(latestFollowup.patient_status) }}</mat-icon>
+                <span>{{ getStatusLabel(latestFollowup.patient_status) }}</span>
+              </div>
+              <p class="ce-followup-meta">
+                Última actualización: {{ latestFollowup.created_at | date:'dd/MM/yyyy HH:mm' }}
+                <span *ngIf="latestFollowup.expert_name"> · por {{ latestFollowup.expert_name }}</span>
+              </p>
+            </div>
+
+            <div class="ce-followup-empty" *ngIf="!latestFollowup && !loadingFollowups">
+              <mat-icon>info_outline</mat-icon>
+              <p>Sin seguimiento clínico registrado aún.</p>
+            </div>
+
+            <!-- Botón Desplegar Formulario -->
+            <button
+              type="button"
+              class="ce-followup-toggle-btn"
+              (click)="showFollowupForm = !showFollowupForm"
+              *ngIf="selectedRequest.assigned_expert_id === auth.user?.id"
+            >
+              <mat-icon>{{ showFollowupForm ? 'close' : 'add' }}</mat-icon>
+              <span>{{ showFollowupForm ? 'Cerrar formulario' : 'Nueva nota de seguimiento' }}</span>
+            </button>
+
+            <!-- Formulario de Seguimiento Clínico -->
+            <div class="followup-form" *ngIf="showFollowupForm">
+              <div class="followup-form__row">
+                <label class="followup-form__field">
+                  <span>Estado de salud</span>
+                  <select [(ngModel)]="followupDraft.patient_status" class="ce-select-custom">
+                    <option value="estable">Estable y tranquilo/a</option>
+                    <option value="mejorando">Evolucionando muy bien</option>
+                    <option value="sin_cambios">Estable / Sin novedades</option>
+                    <option value="empeorando">Bajo monitoreo cercano</option>
+                    <option value="requiere_atencion">Requiere atención especial</option>
+                    <option value="alta">En casa / Con el alta</option>
+                    <option value="derivado">Derivado a especialista</option>
+                  </select>
+                </label>
+
+                <label class="followup-form__field">
+                  <span>Canal de contacto</span>
+                  <select [(ngModel)]="followupDraft.followup_type" class="ce-select-custom">
+                    <option value="llamada">Llamada</option>
+                    <option value="videollamada">Videollamada</option>
+                    <option value="chat">Chat</option>
+                    <option value="presencial">Presencial</option>
+                    <option value="nota_interna">Nota interna</option>
+                  </select>
+                </label>
+              </div>
+
+              <!-- SITUACIONES Y PLANTILLAS CLÍNICAS DE CUIDADO -->
+              <div class="followup-form__field ce-templates-container">
+                <div class="ce-templates-header">
+                  <div class="ce-templates-title">
+                    <mat-icon>auto_fix_high</mat-icon>
+                    <span>Situaciones frecuentes y plantillas de cuidado:</span>
+                  </div>
+                  <span class="ce-templates-hint">
+                    Haz clic en una situación para rellenar automáticamente la nota familiar y el registro interno.
+                  </span>
+                </div>
+
+                <!-- Categorías -->
+                <div class="ce-template-categories">
+                  <button
+                    *ngFor="let cat of templateCategories"
+                    type="button"
+                    class="ce-template-category-chip"
+                    [class.is-active]="selectedTemplateCategory === cat.id"
+                    (click)="setTemplateCategory(cat.id)"
+                  >
+                    <mat-icon>{{ cat.icon }}</mat-icon>
+                    <span>{{ cat.label }}</span>
+                  </button>
+                </div>
+
+                <!-- Cards de situaciones -->
+                <div class="ce-template-cards-grid">
+                  <button
+                    *ngFor="let tmpl of filteredFollowupTemplates"
+                    type="button"
+                    class="ce-template-card-btn"
+                    [class.is-selected]="activeTemplateId === tmpl.id"
+                    (click)="applyClinicalTemplate(tmpl)"
+                    [title]="tmpl.situation"
+                  >
+                    <mat-icon class="ce-template-card-icon">{{ tmpl.icon }}</mat-icon>
+                    <div class="ce-template-card-info">
+                      <strong>{{ tmpl.label }}</strong>
+                      <small>{{ tmpl.situation }}</small>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- NOTA PARA EL FAMILIAR -->
+              <label class="followup-form__field">
+                <div class="ce-field-header-info">
+                  <span class="ce-field-main-label">
+                    <mat-icon>edit_note</mat-icon> Seguimiento
+                  </span>
+                  <span class="ce-field-tag ce-field-tag--public">Visible para el colaborador</span>
+                </div>
+                <textarea
+                  [(ngModel)]="followupDraft.note"
+                  class="ce-textarea-custom"
+                  rows="3"
+                  placeholder="Actualización autorizada y empática que verá la familia en su portal..."
+                ></textarea>
+              </label>
+
+              <!-- NOTA INTERNA CLÍNICA / CUIDADOR -->
+              <label class="followup-form__field">
+                <div class="ce-field-header-info">
+                  <span class="ce-field-main-label">
+                    <mat-icon>lock</mat-icon> Registro interno del cuidador / equipo médico
+                  </span>
+                  <span class="ce-field-tag ce-field-tag--private">Confidencial (Solo equipo)</span>
+                </div>
+                <textarea
+                  [(ngModel)]="followupDraft.internal_note"
+                  class="ce-textarea-custom ce-textarea-custom--internal"
+                  rows="2"
+                  placeholder="Detalles clínicos u operacionales privados (ej: causas del rechazo alimentario, fármacos administrados, etc.)..."
+                ></textarea>
+              </label>
+
+              <div class="followup-form__field">
+                <div class="followup-field-head">
+                  <span>Próximo seguimiento</span>
+                  <button type="button" *ngIf="followupDraft.next_followup_date" class="followup-clear-btn" (click)="clearFollowupDate()">
+                    ✕ Limpiar
+                  </button>
+                </div>
+                <div class="followup-quick-presets">
+                  <button type="button" class="preset-chip" (click)="setFollowupPreset(3)">+3 días</button>
+                  <button type="button" class="preset-chip" (click)="setFollowupPreset(7)">+1 semana</button>
+                  <button type="button" class="preset-chip" (click)="setFollowupPreset(15)">+15 días</button>
+                  <button type="button" class="preset-chip" (click)="setFollowupPreset(30)">+1 mes</button>
+                </div>
+                <input
+                  type="date"
+                  [(ngModel)]="followupDraft.next_followup_date"
+                  class="ce-date-picker"
+                  [min]="minAppointmentDate"
+                />
+              </div>
+
+              <div class="followup-form__actions">
+                <button type="button" class="ce-btn-save" [disabled]="savingFollowup || !followupDraft.note.trim()" (click)="saveFollowup()">
+                  <mat-icon>{{ savingFollowup ? 'sync' : 'check' }}</mat-icon>
+                  <span>{{ savingFollowup ? 'Guardando...' : 'Guardar seguimiento' }}</span>
+                </button>
+                <button type="button" class="ce-btn-cancel" (click)="showFollowupForm = false">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+
+            <!-- Historial Timeline -->
+            <div class="followup-timeline" *ngIf="requestFollowups.length > 0">
+              <div class="followup-timeline__title">Historial de evoluciones</div>
+              <div class="followup-timeline__item" *ngFor="let f of requestFollowups">
+                <div class="followup-timeline__dot" [style.background]="getStatusColor(f.patient_status)"></div>
+                <div class="followup-timeline__content">
+                  <div class="followup-timeline__head">
+                    <span class="followup-timeline__date">{{ f.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                    <span class="followup-timeline__type">
+                      <mat-icon>{{ getFollowupTypeIcon(f.followup_type) }}</mat-icon>
+                      {{ getFollowupTypeLabel(f.followup_type) }}
+                    </span>
+                  </div>
+                  <div class="followup-timeline__status" [style.color]="getStatusColor(f.patient_status)">
+                    {{ getStatusLabel(f.patient_status) }}
+                  </div>
+                  <p class="followup-timeline__note">{{ f.note }}</p>
+                  <p class="followup-timeline__internal" *ngIf="f.internal_note">
+                    <mat-icon>lock</mat-icon> {{ f.internal_note }}
+                  </p>
+                  <p class="followup-timeline__expert">— {{ f.expert_name || 'Expert' }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- COLUMNA 2: FICHA DE LA PERSONA CUIDADA Y COLABORADOR -->
+        <div class="ce-case-dashboard__col" *ngIf="selectedCollaborator">
+          <section class="ce-card ce-card--patient-file">
+            <div class="ce-card__head">
+              <div class="ce-card__title-group">
+                <mat-icon class="ce-card__icon ce-card__icon--indigo">elderly</mat-icon>
+                <div>
+                  <h3 class="ce-card__title">Ficha del colaborador y paciente</h3>
+                  <p class="ce-card__subtitle">Datos clínicos, previsión y presupuesto</p>
+                </div>
+              </div>
+              <button type="button" class="ce-card-action-btn" (click)="openContextSheet()" title="Ver ficha en modal completo">
+                <mat-icon>open_in_new</mat-icon>
+                <span>Ficha completa</span>
+              </button>
+            </div>
+
+            <!-- GRUPO 1: PERSONA CUIDADA Y SALUD -->
+            <div class="ce-patient-group">
+              <span class="ce-group-title">
+                <mat-icon>person</mat-icon> Persona cuidada
+              </span>
+              <div class="ce-info-grid">
+                <div class="ce-info-cell">
+                  <span>Nombre completo</span>
+                  <strong>{{ selectedCollaborator.careReceiverName || 'No informado' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>RUT</span>
+                  <strong>{{ selectedCollaborator.careReceiverRut || 'No informado' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Edad / Nacimiento</span>
+                  <strong>
+                    {{ selectedCollaborator.familyAge ? (selectedCollaborator.familyAge + ' años') : '' }}
+                    {{ selectedCollaborator.careReceiverBirthDate ? '(' + selectedCollaborator.careReceiverBirthDate + ')' : '' }}
+                    {{ !selectedCollaborator.familyAge && !selectedCollaborator.careReceiverBirthDate ? 'No informada' : '' }}
+                  </strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Teléfono</span>
+                  <strong>{{ selectedCollaborator.careReceiverPhone || 'No informado' }}</strong>
+                </div>
+                <div class="ce-info-cell ce-info-cell--highlight-blue">
+                  <span>Previsión de Salud</span>
+                  <strong>{{ selectedCollaborator.healthCoverage || 'No informada' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Condición médica</span>
+                  <strong>{{ selectedCollaborator.condition || 'No informada' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Nivel dependencia</span>
+                  <strong>{{ dependencyLevelLabel(selectedCollaborator.dependencyLevel) }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Tipo de apoyo</span>
+                  <strong>{{ careTypeLabel(selectedCollaborator.careType) }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Urgencia</span>
+                  <strong>{{ urgencyLabel(selectedCollaborator.urgency) }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- GRUPO 2: PRESUPUESTO Y ENTORNO -->
+            <div class="ce-patient-group">
+              <span class="ce-group-title">
+                <mat-icon>payments</mat-icon> Presupuesto y vivienda
+              </span>
+              <div class="ce-info-grid">
+                <div class="ce-info-cell ce-info-cell--highlight-green">
+                  <span>Presupuesto mensual est.</span>
+                  <strong>{{ formatBudgetValue(selectedCollaborator.budgetMonthlyMax) }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Financiamiento</span>
+                  <strong>{{ fundingLabel(selectedCollaborator.funding) }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Ciudad o Comuna</span>
+                  <strong>{{ selectedCollaborator.location || 'No informada' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Vivienda / Accesibilidad</span>
+                  <strong>{{ housingTypeLabel(selectedCollaborator.hasTwoFloors) }}</strong>
+                </div>
+                <div class="ce-info-cell ce-info-cell--wide">
+                  <span>Red de apoyo</span>
+                  <strong>{{ selectedCollaborator.supportNetwork || 'No informada' }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- GRUPO 3: DATOS DEL COLABORADOR -->
+            <div class="ce-patient-group">
+              <span class="ce-group-title">
+                <mat-icon>badge</mat-icon> Colaborador y contacto
+              </span>
+              <div class="ce-info-grid">
+                <div class="ce-info-cell">
+                  <span>Nombre colaborador</span>
+                  <strong>{{ selectedCollaborator.fullName || 'No informado' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Email</span>
+                  <strong>{{ selectedCollaborator.email || 'No informado' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Empresa</span>
+                  <strong>{{ selectedCollaborator.company || 'No informada' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Relación</span>
+                  <strong>{{ selectedCollaborator.relation || 'No informada' }}</strong>
+                </div>
+                <div class="ce-info-cell">
+                  <span>Contacto preferido</span>
+                  <strong>{{ preferredContactLabel(selectedCollaborator.preferredContact) }}</strong>
+                </div>
+                <div class="ce-info-cell ce-info-cell--wide" *ngIf="selectedCollaborator.notes">
+                  <span>Notas del colaborador</span>
+                  <p class="ce-notes-text">{{ selectedCollaborator.notes }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- DRAWER LATERAL DE CHAT / MENSAJES (OCULTO POR DEFECTO, TOGGLE CON EL BOTÓN) -->
+      <aside class="ce-chat-drawer" *ngIf="showChat">
+        <header class="ce-chat-drawer__header">
+          <div class="ce-chat-drawer__title">
+            <mat-icon>chat</mat-icon>
+            <div>
+              <h3>Chat del caso</h3>
+              <p>{{ selectedRequest.employee_name || 'Colaborador' }}</p>
+            </div>
+          </div>
+          <button type="button" class="ce-chat-drawer__close" (click)="showChat = false" title="Cerrar chat">
+            <mat-icon>close</mat-icon>
+          </button>
         </header>
 
-        <div class="ce-expert-app__messages">
+        <div class="ce-expert-app__messages" #messagesViewport>
           <div
             *ngFor="let msg of messages"
             class="ce-expert-app__message"
@@ -665,297 +1150,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <aside class="ce-expert-app__sidebar">
-        <section class="ce-expert-app__card">
-          <div class="ce-expert-app__card-head">
-            <h3 class="ce-expert-app__card-title">Estado del caso</h3>
-          </div>
-
-          <select
-            [(ngModel)]="statusDraft"
-            (change)="saveSelectedStatus()"
-            class="ce-expert-app__select"
-          >
-            <option *ngFor="let s of expertStatuses" [value]="s">{{ statusLabel(s) }}</option>
-          </select>
-        </section>
-
-        <section *ngIf="selectedAppointments.length > 0" class="ce-expert-app__card">
-          <div class="ce-expert-app__card-head">
-            <h3 class="ce-expert-app__card-title">Citas agendadas</h3>
-            <mat-icon>event</mat-icon>
-          </div>
-
-          <div class="ce-expert-app__appointments">
-            <article
-              *ngFor="let app of selectedAppointments"
-              class="ce-expert-app__appointment"
-              [class.is-overdue]="isAppointmentOverdue(app)"
-            >
-              <div class="ce-expert-app__appointment-head">
-                <p class="ce-expert-app__appointment-kind">{{ app.kind }}</p>
-                <span *ngIf="isAppointmentOverdue(app)" class="ce-expert-app__badge ce-expert-app__badge--attention">
-                  Vencida
-                </span>
-              </div>
-              <p class="ce-expert-app__appointment-date">{{ app.scheduled_for | date:'EEEE d MMM, HH:mm' }}</p>
-
-              <div class="ce-expert-app__appointment-status">
-                <span>Estado</span>
-                <strong>{{ appointmentStatusLabel(app.status) }}</strong>
-              </div>
-
-              <div class="ce-expert-app__appointment-url" *ngIf="app.meeting_url; else pendingMeetingLink">
-                <span>Link de la videollamada</span>
-                <a [href]="app.meeting_url" target="_blank" rel="noopener noreferrer">{{ app.meeting_url }}</a>
-              </div>
-              <ng-template #pendingMeetingLink>
-                <div *ngIf="app.kind === 'Videollamada'" class="ce-expert-app__appointment-url is-pending">
-                  <span>Link de la videollamada</span>
-                  <strong>Enlace pendiente de generacion</strong>
-                </div>
-              </ng-template>
-
-              <div class="ce-expert-app__appointment-notes" *ngIf="app.notes">
-                <span>Detalles y contacto</span>
-                <p>{{ app.notes }}</p>
-              </div>
-
-              <div *ngIf="app.kind === 'Llamada' && getAppointmentPhone(app)" class="ce-expert-app__call-action">
-                <a [href]="'tel:' + getAppointmentPhone(app)" class="ce-expert-app__appointment-link">
-                  <mat-icon>call</mat-icon>
-                  Llamar a {{ getAppointmentPhone(app) }}
-                </a>
-              </div>
-
-              <label class="ce-expert-app__appointment-field">
-                <span>Cambiar estado</span>
-                <select
-                  [ngModel]="app.status || 'scheduled'"
-                  (ngModelChange)="updateAppointmentStatus(app, $event)"
-                  class="ce-expert-app__select ce-expert-app__select--compact"
-                >
-                  <option value="scheduled">Agendada</option>
-                  <option value="confirmed">Confirmada</option>
-                  <option value="completed">Completada</option>
-                  <option value="cancelled">Cancelada</option>
-                </select>
-              </label>
-
-              <button
-                *ngIf="hasMeetingLink(app)"
-                type="button"
-                class="ce-expert-app__appointment-link"
-                (click)="openMeeting(app)"
-              >
-                <mat-icon>videocam</mat-icon>
-                Unirse a la reunión
-              </button>
-
-              <button
-                *ngIf="hasMeetingLink(app)"
-                type="button"
-                class="ce-expert-app__appointment-link ce-expert-app__appointment-link--secondary"
-                (click)="copyMeetingLink(app)"
-              >
-                <mat-icon>content_copy</mat-icon>
-                Copiar link
-              </button>
-            </article>
-          </div>
-        </section>
-
-        <section class="ce-expert-app__card ce-followup-tracker" *ngIf="selectedRequest">
-          <div class="ce-expert-app__card-head">
-            <h3 class="ce-expert-app__card-title">Evolución de su familiar</h3>
-            <mat-icon>monitor_heart</mat-icon>
-          </div>
-
-          <!-- Current Status Badge -->
-          <div class="followup-current" *ngIf="latestFollowup">
-            <div class="followup-current__badge" [style.background]="getStatusColor(latestFollowup.patient_status)">
-              <mat-icon>{{ getStatusIcon(latestFollowup.patient_status) }}</mat-icon>
-              {{ getStatusLabel(latestFollowup.patient_status) }}
-            </div>
-            <p class="followup-current__date">Última actualización: {{ latestFollowup.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
-          </div>
-
-          <div class="followup-current followup-current--empty" *ngIf="!latestFollowup && !loadingFollowups">
-            <mat-icon>info_outline</mat-icon>
-            <p>Sin seguimiento registrado aún.</p>
-          </div>
-
-          <!-- Toggle Form -->
-          <button type="button" class="followup-toggle-btn" (click)="showFollowupForm = !showFollowupForm" *ngIf="selectedRequest.assigned_expert_id === auth.user?.id">
-            <mat-icon>{{ showFollowupForm ? 'close' : 'add' }}</mat-icon>
-            {{ showFollowupForm ? 'Cancelar' : 'Nueva nota de seguimiento' }}
-          </button>
-
-          <!-- New Followup Form -->
-          <div class="followup-form" *ngIf="showFollowupForm">
-            <label class="followup-form__field">
-              <span>Estado de su familiar</span>
-              <select [(ngModel)]="followupDraft.patient_status" class="ce-expert-app__select">
-                <option value="estable">Estable y tranquilo/a</option>
-                <option value="mejorando">Evolucionando muy bien</option>
-                <option value="sin_cambios">Estable / Sin novedades</option>
-                <option value="empeorando">Bajo monitoreo cercano</option>
-                <option value="requiere_atencion">Requiere atención especial</option>
-                <option value="alta">En casa / Con el alta</option>
-                <option value="derivado">Derivado a especialista</option>
-              </select>
-            </label>
-
-            <label class="followup-form__field">
-              <span>Tipo de contacto</span>
-              <select [(ngModel)]="followupDraft.followup_type" class="ce-expert-app__select">
-                <option value="llamada">Llamada</option>
-                <option value="videollamada">Videollamada</option>
-                <option value="chat">Chat</option>
-                <option value="presencial">Presencial</option>
-                <option value="nota_interna">Nota interna</option>
-              </select>
-            </label>
-
-            <div class="followup-form__field">
-              <span>Plantillas de respuesta rápida:</span>
-              <div class="followup-quick-templates">
-                <button type="button" class="followup-chip" (click)="applyWarmNoteTemplate('estable')">❤️ Estable y tranquilo/a</button>
-                <button type="button" class="followup-chip" (click)="applyWarmNoteTemplate('mejorando')">😊 Evolucionando muy bien</button>
-                <button type="button" class="followup-chip" (click)="applyWarmNoteTemplate('seguimiento')">📞 Consulta realizada</button>
-              </div>
-            </div>
-
-            <label class="followup-form__field">
-              <span>Mensaje para el colaborador</span>
-              <textarea [(ngModel)]="followupDraft.note" class="ce-expert-app__textarea" rows="3" placeholder="Ej: 'Hola, conversamos hoy con tu familiar y se encuentra muy estable, tranquilo/a y con buen ánimo. Mantenemos el plan de cuidado...'"></textarea>
-            </label>
-
-            <label class="followup-form__field">
-              <span>Nota interna (solo equipo)</span>
-              <textarea [(ngModel)]="followupDraft.internal_note" class="ce-expert-app__textarea followup-form__internal" rows="2" placeholder="Observaciones clínicas internas o confidenciales..."></textarea>
-            </label>
-
-            <div class="followup-form__field">
-              <div class="followup-field-head">
-                <span>Próximo seguimiento</span>
-                <button type="button" *ngIf="followupDraft.next_followup_date" class="followup-clear-btn" (click)="clearFollowupDate()">
-                  ✕ Limpiar
-                </button>
-              </div>
-              <div class="followup-quick-presets">
-                <button type="button" class="preset-chip" (click)="setFollowupPreset(3)">+3 días</button>
-                <button type="button" class="preset-chip" (click)="setFollowupPreset(7)">+1 semana</button>
-                <button type="button" class="preset-chip" (click)="setFollowupPreset(15)">+15 días</button>
-                <button type="button" class="preset-chip" (click)="setFollowupPreset(30)">+1 mes</button>
-              </div>
-              <input type="date" [(ngModel)]="followupDraft.next_followup_date" class="ce-input followup-date-input" />
-            </div>
-
-            <label class="followup-form__field">
-              <span>Prioridad</span>
-              <select [(ngModel)]="followupDraft.priority" class="ce-expert-app__select">
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-                <option value="urgente">Urgente</option>
-              </select>
-            </label>
-
-            <button type="button" class="followup-form__submit" [disabled]="savingFollowup || !followupDraft.note.trim()" (click)="saveFollowup()">
-              <mat-icon>save</mat-icon>
-              {{ savingFollowup ? 'Guardando...' : 'Guardar seguimiento' }}
-            </button>
-          </div>
-
-          <!-- Timeline -->
-          <div class="followup-timeline" *ngIf="requestFollowups.length > 0">
-            <div class="followup-timeline__title">Historial</div>
-            <div class="followup-timeline__item" *ngFor="let f of requestFollowups">
-              <div class="followup-timeline__dot" [style.background]="getStatusColor(f.patient_status)"></div>
-              <div class="followup-timeline__content">
-                <div class="followup-timeline__head">
-                  <span class="followup-timeline__date">{{ f.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
-                  <span class="followup-timeline__type">
-                    <mat-icon>{{ getFollowupTypeIcon(f.followup_type) }}</mat-icon>
-                    {{ getFollowupTypeLabel(f.followup_type) }}
-                  </span>
-                </div>
-                <div class="followup-timeline__status" [style.color]="getStatusColor(f.patient_status)">
-                  {{ getStatusLabel(f.patient_status) }}
-                </div>
-                <p class="followup-timeline__note">{{ f.note }}</p>
-                <p class="followup-timeline__internal" *ngIf="f.internal_note">
-                  <mat-icon>lock</mat-icon> {{ f.internal_note }}
-                </p>
-                <p class="followup-timeline__expert">— {{ f.expert_name || 'Expert' }}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section *ngIf="selectedCollaborator" class="ce-expert-app__card">
-          <div class="ce-expert-app__card-head">
-            <h3 class="ce-expert-app__card-title">Ficha de contexto</h3>
-            <button type="button" class="ce-expert-app__card-action" (click)="openContextSheet()">
-              <mat-icon>assignment</mat-icon>
-              <span>Ver ficha</span>
-            </button>
-          </div>
-
-          <div class="ce-expert-app__context">
-            <div class="ce-expert-app__context-item">
-              <span>Colaborador</span>
-              <strong>{{ selectedCollaborator.fullName || selectedCollaborator.email || 'No informado' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Email</span>
-              <strong>{{ selectedCollaborator.email || 'No informado' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Empresa</span>
-              <strong>{{ selectedCollaborator.company || 'No informada' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Rol</span>
-              <strong>{{ memberRoleLabel(selectedCollaborator.memberRole) }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Ubicación</span>
-              <strong>{{ selectedCollaborator.location || 'No informada' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Edad persona cuidada</span>
-              <strong>{{ selectedCollaborator.familyAge || 'No informada' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Relación</span>
-              <strong>{{ selectedCollaborator.relation || 'No informada' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Condición principal</span>
-              <strong>{{ selectedCollaborator.condition || 'No informada' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Nivel dependencia</span>
-              <strong>{{ selectedCollaborator.dependencyLevel || 'No informado' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Contacto preferido</span>
-              <strong>{{ selectedCollaborator.preferredContact || 'No informado' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Red de apoyo</span>
-              <strong>{{ selectedCollaborator.supportNetwork || 'No informado' }}</strong>
-            </div>
-            <div class="ce-expert-app__context-item">
-              <span>Características vivienda</span>
-              <strong>{{ housingTypeLabel(selectedCollaborator.hasTwoFloors) }}</strong>
-            </div>
-          </div>
-        </section>
       </aside>
     </div>
 
@@ -964,7 +1158,7 @@
       <section class="ce-context-sheet__panel">
         <header class="ce-context-sheet__head">
           <div>
-            <p>Ficha completa</p>
+            <p>Ficha completa del colaborador</p>
             <h3>{{ selectedCollaborator.fullName || selectedCollaborator.email || 'Colaborador' }}</h3>
           </div>
           <button type="button" class="ce-context-sheet__close" (click)="closeContextSheet()" aria-label="Cerrar ficha">
@@ -973,6 +1167,15 @@
         </header>
 
         <div class="ce-context-sheet__grid">
+          <!-- DATOS DEL COLABORADOR Y EMPRESA -->
+          <div class="ce-context-sheet__section-title">
+            <mat-icon>badge</mat-icon>
+            <span>Datos del colaborador</span>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Nombre colaborador</span>
+            <strong>{{ selectedCollaborator.fullName || 'No informado' }}</strong>
+          </div>
           <div class="ce-context-sheet__item">
             <span>Email</span>
             <strong>{{ selectedCollaborator.email || 'No informado' }}</strong>
@@ -982,40 +1185,100 @@
             <strong>{{ selectedCollaborator.company || 'No informada' }}</strong>
           </div>
           <div class="ce-context-sheet__item">
-            <span>Rol</span>
+            <span>Rol en la empresa</span>
             <strong>{{ memberRoleLabel(selectedCollaborator.memberRole) }}</strong>
           </div>
           <div class="ce-context-sheet__item">
-            <span>Ubicación</span>
-            <strong>{{ selectedCollaborator.location || 'No informada' }}</strong>
+            <span>Contacto preferido</span>
+            <strong>{{ preferredContactLabel(selectedCollaborator.preferredContact) }}</strong>
           </div>
           <div class="ce-context-sheet__item">
-            <span>Edad persona cuidada</span>
-            <strong>{{ selectedCollaborator.familyAge || 'No informada' }}</strong>
-          </div>
-          <div class="ce-context-sheet__item">
-            <span>Relación</span>
+            <span>Relación con la persona</span>
             <strong>{{ selectedCollaborator.relation || 'No informada' }}</strong>
           </div>
+
+          <!-- DATOS DE LA PERSONA CUIDADA -->
+          <div class="ce-context-sheet__section-title">
+            <mat-icon>person</mat-icon>
+            <span>Persona cuidada</span>
+          </div>
           <div class="ce-context-sheet__item">
-            <span>Condición principal</span>
+            <span>Nombre persona cuidada</span>
+            <strong>{{ selectedCollaborator.careReceiverName || 'No informado' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>RUT</span>
+            <strong>{{ selectedCollaborator.careReceiverRut || 'No informado' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Edad / F. Nacimiento</span>
+            <strong>
+              {{ selectedCollaborator.familyAge ? (selectedCollaborator.familyAge + ' años') : '' }}
+              {{ selectedCollaborator.careReceiverBirthDate ? '(' + selectedCollaborator.careReceiverBirthDate + ')' : '' }}
+              {{ !selectedCollaborator.familyAge && !selectedCollaborator.careReceiverBirthDate ? 'No informada' : '' }}
+            </strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Teléfono de contacto</span>
+            <strong>{{ selectedCollaborator.careReceiverPhone || 'No informado' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item ce-context-sheet__item--highlight">
+            <span>Previsión o Cobertura de Salud</span>
+            <strong>{{ selectedCollaborator.healthCoverage || 'No informada' }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Ciudad o Comuna</span>
+            <strong>{{ selectedCollaborator.location || 'No informada' }}</strong>
+          </div>
+
+          <!-- EVALUACIÓN Y CUIDADOS -->
+          <div class="ce-context-sheet__section-title">
+            <mat-icon>healing</mat-icon>
+            <span>Cuidados y perfil clínico</span>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Condición médica principal</span>
             <strong>{{ selectedCollaborator.condition || 'No informada' }}</strong>
           </div>
           <div class="ce-context-sheet__item">
-            <span>Nivel dependencia</span>
-            <strong>{{ selectedCollaborator.dependencyLevel || 'No informado' }}</strong>
+            <span>Nivel de dependencia</span>
+            <strong>{{ dependencyLevelLabel(selectedCollaborator.dependencyLevel) }}</strong>
           </div>
           <div class="ce-context-sheet__item">
-            <span>Contacto preferido</span>
-            <strong>{{ selectedCollaborator.preferredContact || 'No informado' }}</strong>
+            <span>Tipo de apoyo requerido</span>
+            <strong>{{ careTypeLabel(selectedCollaborator.careType) }}</strong>
           </div>
-          <div class="ce-context-sheet__item ce-context-sheet__item--wide">
-            <span>Red de apoyo</span>
-            <strong>{{ selectedCollaborator.supportNetwork || 'No informado' }}</strong>
+          <div class="ce-context-sheet__item">
+            <span>Nivel de urgencia</span>
+            <strong>{{ urgencyLabel(selectedCollaborator.urgency) }}</strong>
+          </div>
+
+          <!-- PRESUPUESTO, FINANCIAMIENTO Y HOGAR -->
+          <div class="ce-context-sheet__section-title">
+            <mat-icon>payments</mat-icon>
+            <span>Presupuesto, financiamiento y entorno</span>
+          </div>
+          <div class="ce-context-sheet__item ce-context-sheet__item--highlight">
+            <span>Presupuesto mensual estimado</span>
+            <strong>{{ formatBudgetValue(selectedCollaborator.budgetMonthlyMax) }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Tipo de financiamiento</span>
+            <strong>{{ fundingLabel(selectedCollaborator.funding) }}</strong>
           </div>
           <div class="ce-context-sheet__item">
             <span>Características vivienda</span>
             <strong>{{ housingTypeLabel(selectedCollaborator.hasTwoFloors) }}</strong>
+          </div>
+          <div class="ce-context-sheet__item">
+            <span>Red de apoyo</span>
+            <strong>{{ selectedCollaborator.supportNetwork || 'No informada' }}</strong>
+          </div>
+
+          <!-- OBSERVACIONES Y NOTAS -->
+          <div class="ce-context-sheet__item ce-context-sheet__item--wide" *ngIf="selectedCollaborator.notes">
+            <span>Notas / Observaciones del colaborador</span>
+            <strong>{{ selectedCollaborator.notes }}</strong>
           </div>
           <div class="ce-context-sheet__item ce-context-sheet__item--wide" *ngIf="selectedRequest?.details">
             <span>Contexto de la solicitud</span>
