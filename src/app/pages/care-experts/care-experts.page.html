@@ -771,9 +771,25 @@
             <!-- Formulario de Seguimiento Clínico -->
             <div class="followup-form" *ngIf="showFollowupForm">
               <div class="followup-form__row">
-                <label class="followup-form__field">
-                  <span>Estado de salud</span>
-                  <select [(ngModel)]="followupDraft.patient_status" class="ce-select-custom">
+                <div class="followup-form__field">
+                  <div class="ce-field-header-info">
+                    <span>Estado de salud</span>
+                    <button
+                      type="button"
+                      class="ce-status-toggle-link"
+                      (click)="toggleCustomStatus()"
+                    >
+                      {{ isCustomStatus ? '✕ Volver a lista' : '✎ Escribir estado libre' }}
+                    </button>
+                  </div>
+
+                  <!-- Selector desplegable estándar -->
+                  <select
+                    *ngIf="!isCustomStatus"
+                    [(ngModel)]="followupDraft.patient_status"
+                    (ngModelChange)="onStatusSelectChange($event)"
+                    class="ce-select-custom"
+                  >
                     <option value="estable">Estable y tranquilo/a</option>
                     <option value="mejorando">Evolucionando muy bien</option>
                     <option value="sin_cambios">Estable / Sin novedades</option>
@@ -781,8 +797,21 @@
                     <option value="requiere_atencion">Requiere atención especial</option>
                     <option value="alta">En casa / Con el alta</option>
                     <option value="derivado">Derivado a especialista</option>
+                    <option value="__custom__">✎ Otro / Personalizado...</option>
                   </select>
-                </label>
+
+                  <!-- Campo de texto libre cuando elige personalizado -->
+                  <div *ngIf="isCustomStatus" class="ce-custom-status-input-wrap">
+                    <input
+                      type="text"
+                      [(ngModel)]="customStatusText"
+                      class="ce-select-custom ce-custom-status-input"
+                      placeholder="Ej: En observación postoperatoria, En reposo absoluto..."
+                      maxlength="60"
+                      autofocus
+                    />
+                  </div>
+                </div>
 
                 <label class="followup-form__field">
                   <span>Canal de contacto</span>

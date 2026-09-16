@@ -442,6 +442,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public savingFollowup = false;
   public showFollowupForm = false;
   public followupDraft = this.createDefaultFollowupDraft();
+  public isCustomStatus = false;
+  public customStatusText = '';
 
   public get appointmentTimeSlots(): string[] {
     return this.appointmentKind === 'Llamada' ? this.appointmentCallSlots : this.appointmentVideoSlots;
@@ -2492,16 +2494,42 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     }
   }
 
+  public toggleCustomStatus(): void {
+    this.isCustomStatus = !this.isCustomStatus;
+    if (this.isCustomStatus && !this.customStatusText) {
+      this.customStatusText = '';
+    }
+  }
+
+  public onStatusSelectChange(value: string): void {
+    if (value === '__custom__') {
+      this.isCustomStatus = true;
+      this.customStatusText = '';
+    }
+  }
+
   public async saveFollowup(): Promise<void> {
     if (!this.selectedRequest || !this.auth.user?.id || !this.followupDraft.note.trim()) return;
     this.savingFollowup = true;
     try {
+      // Si el Care Expert escribió un estado personalizado libre, lo anteponemos como nota de estado visible
+      let effectiveNote = this.followupDraft.note.trim();
+      let effectiveStatus = this.followupDraft.patient_status as PatientStatus;
+
+      if (this.isCustomStatus && this.customStatusText.trim()) {
+        const customHeader = `[Estado: ${this.customStatusText.trim()}]\n`;
+        if (!effectiveNote.startsWith('[Estado:')) {
+          effectiveNote = `${customHeader}${effectiveNote}`;
+        }
+        effectiveStatus = 'requiere_atencion';
+      }
+
       await this.followupService.addFollowup({
         request_id: this.selectedRequest.id,
         expert_id: this.auth.user.id,
         employee_id: this.selectedRequest.employee_id,
-        patient_status: this.followupDraft.patient_status as PatientStatus,
-        note: this.followupDraft.note.trim(),
+        patient_status: effectiveStatus,
+        note: effectiveNote,
         internal_note: this.followupDraft.internal_note?.trim() || null,
         followup_type: this.followupDraft.followup_type as FollowupType,
         next_followup_date: this.followupDraft.next_followup_date
@@ -2512,6 +2540,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         priority: this.followupDraft.priority as FollowupPriority,
       });
       this.followupDraft = this.createDefaultFollowupDraft();
+      this.isCustomStatus = false;
+      this.customStatusText = '';
       this.showFollowupForm = false;
       await this.loadRequestFollowups();
     } catch (err: any) {
