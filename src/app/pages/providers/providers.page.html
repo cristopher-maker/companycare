@@ -3,252 +3,259 @@
 <main class="providers-page">
   <div class="providers-page__inner">
     
-    <!-- Hero Header -->
-    <section class="providers-hero">
-      <div class="providers-hero__left">
-        <div class="providers-hero__icon-box" aria-hidden="true">
-          <mat-icon>verified_user</mat-icon>
+    <!-- Top Search Bar (Estilo SeniorAdvisor) -->
+    <section class="sa-search-wrap">
+      <div class="sa-search-bar">
+        <div class="sa-search-bar__input-box">
+          <mat-icon class="sa-search-bar__icon">search</mat-icon>
+          <input
+            type="text"
+            class="sa-search-bar__input"
+            [(ngModel)]="q"
+            (ngModelChange)="applyFilters()"
+            placeholder="Buscar por nombre, comuna o dirección..."
+          />
+          <button 
+            *ngIf="q" 
+            type="button" 
+            class="sa-search-bar__clear" 
+            (click)="q = ''; applyFilters()"
+            title="Borrar texto"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
-        <div class="providers-hero__text">
-          <h1>Directorio de Proveedores</h1>
-          <p>Encuentra residencias, cuidadores y servicios médicos certificados y de confianza.</p>
-        </div>
+
+        <button 
+          type="button" 
+          class="sa-search-bar__btn-location" 
+          (click)="useMyLocation()"
+          title="Usar mi ubicación"
+        >
+          <mat-icon>near_me</mat-icon>
+          <span>Mi ubicación</span>
+        </button>
+
+        <button 
+          type="button" 
+          class="sa-search-bar__btn-search" 
+          (click)="applyFilters()"
+          title="Buscar"
+        >
+          <mat-icon>search</mat-icon>
+          <span>Buscar</span>
+        </button>
       </div>
-      <button (click)="refresh()" [disabled]="loading" class="providers-hero__refresh" title="Actualizar proveedores">
-        <mat-icon [class.providers-hero__refresh-icon--spinning]="loading">refresh</mat-icon>
-      </button>
     </section>
 
-    <!-- Metrics row -->
-    <section class="providers-metrics" *ngIf="!loading">
-      <article class="metric-card metric-card--total">
-        <div class="metric-card__icon-wrap">
-          <mat-icon>business</mat-icon>
-        </div>
-        <div class="metric-card__info">
-          <span class="metric-card__label">Total Proveedores</span>
-          <strong class="metric-card__value">{{ totalProviders }}</strong>
-        </div>
-      </article>
-
-      <article class="metric-card metric-card--verified">
-        <div class="metric-card__icon-wrap">
-          <mat-icon>verified</mat-icon>
-        </div>
-        <div class="metric-card__info">
-          <span class="metric-card__label">Verificados</span>
-          <strong class="metric-card__value">{{ verifiedCount }}</strong>
-        </div>
-      </article>
-
-      <article class="metric-card metric-card--rating">
-        <div class="metric-card__icon-wrap">
-          <mat-icon>star</mat-icon>
-        </div>
-        <div class="metric-card__info">
-          <span class="metric-card__label">Rating Promedio</span>
-          <strong class="metric-card__value">{{ averageRating }} <span class="text-sm font-medium">/ 5</span></strong>
-        </div>
-      </article>
-
-      <article class="metric-card metric-card--reviews">
-        <div class="metric-card__icon-wrap">
-          <mat-icon>reviews</mat-icon>
-        </div>
-        <div class="metric-card__info">
-          <span class="metric-card__label">Reseñas Totales</span>
-          <strong class="metric-card__value">{{ totalReviews | number }}</strong>
-        </div>
-      </article>
-    </section>
-
-    <!-- Main Workspace Layout -->
-    <div class="providers-layout" *ngIf="!loading && !error">
+    <!-- Main Workspace Layout (Sidebar + Results) -->
+    <div class="sa-layout" *ngIf="!loading && !error">
       
-      <!-- Left Sidebar: Filters -->
-      <aside class="providers-sidebar">
-        <div class="filter-card">
-          <div class="filter-card__header">
-            <mat-icon>tune</mat-icon>
-            <h2>Filtros de Búsqueda</h2>
-          </div>
-          
-          <div class="filter-card__body">
-            <!-- Search field -->
-            <div class="filter-group">
-              <label for="search" class="filter-label">Buscar por nombre</label>
-              <div class="filter-input-wrap">
-                <mat-icon class="filter-input-icon">search</mat-icon>
-                <input
-                  id="search"
-                  type="text"
-                  class="filter-input"
-                  [(ngModel)]="q"
-                  (ngModelChange)="applyFilters()"
-                  placeholder="Ej: Residencia Del Mar..."
-                />
-              </div>
-            </div>
-
-            <!-- Provider Type -->
-            <div class="filter-group">
-              <label for="type" class="filter-label">Tipo de proveedor</label>
-              <select
-                id="type"
-                class="filter-select"
-                [(ngModel)]="type"
-                (ngModelChange)="applyFilters()"
-              >
-                <option value="Todos">Todos los tipos</option>
-                <option *ngFor="let t of types" [value]="t">{{ t }}</option>
-              </select>
-            </div>
-
-            <!-- Sort By -->
-            <div class="filter-group">
-              <label for="sortBy" class="filter-label">Ordenar por</label>
-              <select
-                id="sortBy"
-                class="filter-select"
-                [(ngModel)]="sortBy"
-                (ngModelChange)="applyFilters()"
-              >
-                <option *ngFor="let opt of sortOptions" [value]="opt.value">{{ opt.label }}</option>
-              </select>
-            </div>
-
-            <!-- Price filter -->
-            <div class="filter-group">
-              <label for="maxPrice" class="filter-label">
-                Precio máximo: <span class="filter-price-val">{{ priceLabel(maxPrice) }}</span>
-              </label>
-              <input
-                id="maxPrice"
-                type="range"
-                class="filter-range"
-                min="500000"
-                max="5000000"
-                step="100000"
-                [ngModel]="maxPrice"
-                (ngModelChange)="maxPrice = $event; applyFilters()"
-              />
-            </div>
-
-            <!-- Verified check -->
-            <div class="filter-group filter-group--checkbox">
-              <label class="filter-checkbox-label">
-                <input
-                  type="checkbox"
-                  class="filter-checkbox"
-                  [(ngModel)]="verifiedOnly"
-                  (ngModelChange)="applyFilters()"
-                />
-                <span class="filter-checkbox-text">Mostrar solo verificados</span>
-              </label>
-            </div>
+      <!-- Left Sidebar: Filtros estilo SeniorAdvisor -->
+      <aside class="sa-sidebar">
+        
+        <!-- TIPO DE SERVICIO -->
+        <div class="sa-filter-section">
+          <h4 class="sa-filter-title">TIPO DE SERVICIO</h4>
+          <div class="sa-service-pills">
+            <button 
+              type="button" 
+              class="sa-service-pill" 
+              [class.is-active]="type === 'Todos'"
+              (click)="selectType('Todos')"
+            >
+              Todos
+            </button>
+            <button 
+              type="button" 
+              class="sa-service-pill" 
+              *ngFor="let t of types"
+              [class.is-active]="type === t"
+              (click)="selectType(t)"
+            >
+              {{ t === 'Cuidador a domicilio' ? 'Cuidado a Domicilio' : t }}
+            </button>
           </div>
         </div>
+
+        <!-- RESOLUCIÓN SANITARIA -->
+        <div class="sa-filter-section">
+          <h4 class="sa-filter-title">RESOLUCIÓN SANITARIA</h4>
+          <label class="sa-checkbox-label">
+            <input 
+              type="checkbox" 
+              class="sa-checkbox"
+              [(ngModel)]="verifiedOnly" 
+              (ngModelChange)="applyFilters()" 
+            />
+            <span>Con Resolución Sanitaria</span>
+          </label>
+        </div>
+
+        <!-- ORDENAR POR -->
+        <div class="sa-filter-section">
+          <h4 class="sa-filter-title">ORDENAR POR</h4>
+          <select
+            class="sa-select"
+            [(ngModel)]="sortBy"
+            (ngModelChange)="applyFilters()"
+          >
+            <option *ngFor="let opt of sortOptions" [value]="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
+
+        <!-- PRESUPUESTO MÁXIMO -->
+        <div class="sa-filter-section">
+          <div class="sa-filter-title-row">
+            <h4 class="sa-filter-title">PRESUPUESTO MÁXIMO</h4>
+            <span class="sa-price-val">{{ priceLabel(maxPrice) }}</span>
+          </div>
+          <input
+            type="range"
+            class="sa-range"
+            min="500000"
+            max="5000000"
+            step="100000"
+            [ngModel]="maxPrice"
+            (ngModelChange)="maxPrice = $event; applyFilters()"
+          />
+        </div>
+
+        <!-- Reset Button -->
+        <button 
+          *ngIf="hasActiveFilters" 
+          type="button" 
+          class="sa-reset-btn" 
+          (click)="resetFilters()"
+        >
+          <mat-icon>refresh</mat-icon>
+          <span>Limpiar filtros</span>
+        </button>
       </aside>
 
-      <!-- Right Main: Results List -->
-      <section class="providers-content">
-        <!-- Results Counter -->
-        <div class="providers-results-count" *ngIf="filteredProviders.length > 0">
-          Mostrando {{ visibleProviders.length }} de {{ filteredProviders.length }} proveedores encontrados.
+      <!-- Right Main: Results List (SIN IMÁGENES) -->
+      <section class="sa-main">
+        
+        <!-- Header con Contador -->
+        <div class="sa-main__header">
+          <h2 class="sa-results-count">
+            <strong>{{ filteredProviders.length }}</strong> servicios encontrados
+          </h2>
+          <div class="sa-view-actions">
+            <button 
+              type="button" 
+              class="sa-refresh-btn" 
+              (click)="refresh()" 
+              [disabled]="loading" 
+              title="Actualizar directorio"
+            >
+              <mat-icon [class.is-spinning]="loading">refresh</mat-icon>
+            </button>
+          </div>
         </div>
 
         <!-- Empty State -->
-        <div *ngIf="filteredProviders.length === 0" class="providers-empty">
-          <mat-icon class="providers-empty__icon">search_off</mat-icon>
-          <h3>No se encontraron proveedores</h3>
-          <p>Intenta ajustar los criterios de búsqueda o limpiar los filtros seleccionados.</p>
+        <div *ngIf="filteredProviders.length === 0" class="sa-empty">
+          <mat-icon class="sa-empty__icon">search_off</mat-icon>
+          <h3>No se encontraron servicios</h3>
+          <p>Intenta ajustar tus criterios de búsqueda o limpiar los filtros activos.</p>
+          <button (click)="resetFilters()" class="sa-empty__btn" type="button">
+            Limpiar filtros
+          </button>
         </div>
 
-        <!-- Cards Grid -->
-        <div class="providers-grid" *ngIf="filteredProviders.length > 0">
-          <article
+        <!-- Listado de Tarjetas Horizontales (Estilo SeniorAdvisor con Fotos Reales) -->
+        <div class="sa-cards-list" *ngIf="filteredProviders.length > 0">
+          <article 
             *ngFor="let p of visibleProviders; trackBy: trackById"
             (click)="openProvider(p)"
-            class="provider-card"
+            class="sa-card"
           >
-            <!-- Card Image -->
-            <div class="provider-card__img-wrap">
+            <!-- Portada / Foto Real -->
+            <div class="sa-card__img-wrap">
               <img 
                 *ngIf="p.imageUrl && !p.imgFailed" 
                 [src]="p.imageUrl" 
-                alt="{{ p.name }}" 
-                loading="lazy"
-                decoding="async"
-                (error)="onImgError($event, p)" 
+                [alt]="p.name" 
+                loading="lazy" 
+                decoding="async" 
+                referrerpolicy="no-referrer"
+                (error)="onImgError($event, p)"
               />
-              <div *ngIf="!p.imageUrl || p.imgFailed" class="provider-card__placeholder">
+              <div *ngIf="!p.imageUrl || p.imgFailed" class="sa-card__img-fallback">
                 <mat-icon>{{ getProviderIcon(p.type) }}</mat-icon>
               </div>
-              <span *ngIf="p.verified" class="provider-card__verified-badge">
-                <mat-icon>verified</mat-icon>
-                <span>Verificado</span>
-              </span>
             </div>
 
-            <!-- Card Info Body -->
-            <div class="provider-card__body">
-              <div class="provider-card__header-row">
-                <span class="provider-card__tag-type">{{ p.type }}</span>
-                <div class="provider-card__rating">
-                  <mat-icon>star</mat-icon>
-                  <span class="rating-val">{{ p.rating }}</span>
-                  <span class="rating-count">({{ p.reviews }})</span>
+            <div class="sa-card__content">
+              <!-- Fila 1: Título y Badges -->
+              <div class="sa-card__header">
+                <h3 class="sa-card__title">{{ p.name }}</h3>
+                <div class="sa-card__badges">
+                  <span class="sa-badge sa-badge--premium" *ngIf="p.rating >= 4.8">
+                    <mat-icon>star</mat-icon>
+                    <span>Premium+</span>
+                  </span>
+                  <span class="sa-badge sa-badge--sanitaria" *ngIf="p.verified">
+                    <mat-icon>check_circle</mat-icon>
+                    <span>Resolución Sanitaria</span>
+                  </span>
                 </div>
               </div>
 
-              <h3 class="provider-card__title" [title]="p.name">{{ p.name }}</h3>
-              <p class="provider-card__location">
+              <!-- Fila 2: Ubicación -->
+              <p class="sa-card__location">
                 <mat-icon>location_on</mat-icon>
                 <span>{{ p.area }}</span>
               </p>
 
-              <!-- Footer block -->
-              <div class="provider-card__footer">
-                <div class="provider-card__price">
-                  <span class="price-lbl">Presupuesto</span>
-                  <span class="price-val">{{ priceLabel(p.priceFrom) }}</span>
+              <!-- Fila 3: Rating y Precio -->
+              <div class="sa-card__info-row">
+                <div class="sa-card__rating">
+                  <mat-icon class="star-gold">star</mat-icon>
+                  <strong>{{ p.rating }}</strong>
+                  <span class="reviews-num">({{ p.reviews }})</span>
                 </div>
-                <span class="provider-card__action-btn">
-                  Ver detalle
-                  <mat-icon>chevron_right</mat-icon>
+                <div class="sa-card__price">
+                  <span class="price-text">{{ priceLabel(p.priceFrom) }}/mes</span>
+                </div>
+              </div>
+
+              <!-- Fila 4: Categoría y disponibilidad -->
+              <div class="sa-card__footer">
+                <span class="sa-tag-pill">{{ p.type }}</span>
+                <span class="sa-tag-pill sa-tag-pill--avail" *ngIf="p.availability">
+                  {{ p.availability }}
                 </span>
               </div>
+            </div>
+
+            <!-- Flecha derecha -->
+            <div class="sa-card__chevron" aria-hidden="true">
+              <mat-icon>chevron_right</mat-icon>
             </div>
           </article>
         </div>
 
         <!-- Pagination -->
-        <div *ngIf="totalPages > 1" class="providers-pagination">
+        <div *ngIf="totalPages > 1" class="sa-pagination">
           <button
             type="button"
             (click)="prevPage()"
             [disabled]="currentPage === 1"
-            class="providers-pagination__nav"
+            class="sa-page-btn"
           >
             <mat-icon>chevron_left</mat-icon>
             <span>Anterior</span>
           </button>
 
-          <button
-            *ngFor="let p of pages"
-            type="button"
-            (click)="goToPage(p)"
-            class="providers-pagination__page"
-            [class.is-active]="currentPage === p"
-          >
-            {{ p }}
-          </button>
+          <span class="sa-page-info">Página {{ currentPage }} de {{ totalPages }}</span>
 
           <button
             type="button"
             (click)="nextPage()"
             [disabled]="currentPage === totalPages"
-            class="providers-pagination__nav"
+            class="sa-page-btn"
           >
             <span>Siguiente</span>
             <mat-icon>chevron_right</mat-icon>
@@ -281,7 +288,9 @@
         <span>Volver a proveedores</span>
       </button>
       <h2 class="detail-modal__header-title">{{ selectedProvider.name }}</h2>
-      <div class="detail-modal__header-spacer"></div>
+      <button (click)="closeProvider()" class="detail-modal__close-btn" aria-label="Cerrar ventana" title="Cerrar ventana">
+        <mat-icon>close</mat-icon>
+      </button>
     </header>
 
     <!-- Scrollable container -->
@@ -298,6 +307,7 @@
             alt="{{ selectedProvider.name }}" 
             loading="lazy"
             decoding="async"
+            referrerpolicy="no-referrer"
             (error)="onImgError($event, selectedProvider)" 
           />
           <div *ngIf="!selectedProvider.imageUrl || selectedProvider.imgFailed" class="detail-modal__banner-placeholder">

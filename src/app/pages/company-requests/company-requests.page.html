@@ -64,15 +64,15 @@
     <!-- Table Header -->
     <div class="mon-header">
       <span class="mon-header__col mon-header__col--name">Colaborador</span>
-      <span class="mon-header__col mon-header__col--topic">Tema</span>
-      <span class="mon-header__col mon-header__col--status">Estado</span>
-      <span class="mon-header__col mon-header__col--health">Salud</span>
-      <span class="mon-header__col mon-header__col--date">Fecha</span>
+      <span class="mon-header__col mon-header__col--patient">Familiar / Paciente</span>
+      <span class="mon-header__col mon-header__col--sessions">Sesiones</span>
+      <span class="mon-header__col mon-header__col--health">Estado de Salud</span>
+      <span class="mon-header__col mon-header__col--date">Actividad</span>
     </div>
 
-    <div *ngFor="let item of filteredItems" class="mon-item" [class.mon-item--open]="expandedId === item.id">
+    <div *ngFor="let item of filteredItems" class="mon-item" [class.mon-item--open]="expandedId === item.employee_id">
       <!-- Row -->
-      <div class="mon-row" (click)="toggleExpand(item.id)">
+      <div class="mon-row" (click)="toggleExpand(item.employee_id)">
         <div class="mon-row__bar" [style.background]="getPriorityColor(item.priority)"></div>
 
         <div class="mon-row__cell mon-row__cell--name">
@@ -85,15 +85,33 @@
           </div>
         </div>
 
-        <div class="mon-row__cell mon-row__cell--topic">
-          <span class="mon-row__topic-text">{{ item.topic }}</span>
-          <span class="mon-row__note-preview">{{ item.last_note }}</span>
+        <div class="mon-row__cell mon-row__cell--patient">
+          <div class="patient-cell-wrap">
+            <div class="patient-cell-main">
+              <mat-icon class="patient-cell-icon">elderly</mat-icon>
+              <strong class="patient-cell-name">{{ item.care_receiver_name || 'Familiar registrado' }}</strong>
+            </div>
+            <div class="patient-cell-sub">
+              <span *ngIf="item.care_receiver_relation || item.care_receiver_age">
+                {{ formatRelation(item.care_receiver_relation, item.employee_name) }}<span *ngIf="item.care_receiver_age">, {{ item.care_receiver_age }} años</span>
+              </span>
+              <span *ngIf="!item.care_receiver_relation && !item.care_receiver_age && item.latest_topic" class="topic-fallback">
+                {{ item.latest_topic }}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div class="mon-row__cell mon-row__cell--status">
-          <span class="mon-badge" [ngClass]="'mon-badge--' + item.status">
-            {{ item.status === 'open' ? 'Abierto' : item.status === 'in_progress' ? 'En Curso' : item.status === 'resolved' ? 'Resuelto' : 'Cerrado' }}
-          </span>
+        <div class="mon-row__cell mon-row__cell--sessions">
+          <div class="sessions-cell-wrap">
+            <span class="sessions-badge">
+              <mat-icon>forum</mat-icon>
+              {{ item.total_sessions_count }} sesione{{ item.total_sessions_count !== 1 ? 's' : '' }}
+            </span>
+            <span class="active-badge-tag" [class.is-open]="item.has_active_request">
+              {{ item.has_active_request ? 'Activo' : 'Cerrado' }}
+            </span>
+          </div>
         </div>
 
         <div class="mon-row__cell mon-row__cell--health">
@@ -104,66 +122,217 @@
         </div>
 
         <div class="mon-row__cell mon-row__cell--date">
-          <span class="mon-row__time">{{ timeAgo(item.created_at) }}</span>
-          <mat-icon class="mon-row__chevron" [class.mon-row__chevron--open]="expandedId === item.id">expand_more</mat-icon>
+          <span class="mon-row__time">{{ timeAgo(item.last_activity_date) }}</span>
+          <mat-icon class="mon-row__chevron" [class.mon-row__chevron--open]="expandedId === item.employee_id">expand_more</mat-icon>
         </div>
       </div>
 
       <!-- Expanded Detail Panel -->
-      <div class="mon-detail" *ngIf="expandedId === item.id">
-        <div class="mon-detail__grid">
-          <!-- Notes Section -->
-          <div class="mon-detail__section mon-detail__section--note">
-            <div class="mon-detail__label">Última nota del experto</div>
-            <p class="mon-detail__note">{{ item.last_note }}</p>
-          </div>
-
-          <!-- Info Grid -->
-          <div class="mon-detail__section mon-detail__section--info">
-            <div class="mon-detail__label">Información del caso</div>
-            <div class="mon-detail__info-grid">
-              <div class="mon-detail__field">
-                <span class="mon-detail__field-label">Prioridad</span>
-                <span class="mon-detail__field-value mon-detail__priority" [style.color]="getPriorityColor(item.priority)">
-                  <mat-icon>flag</mat-icon> {{ getPriorityLabel(item.priority) }}
-                </span>
-              </div>
-              <div class="mon-detail__field">
-                <span class="mon-detail__field-label">Canal</span>
-                <span class="mon-detail__field-value">
-                  <mat-icon>{{ item.channel_icon }}</mat-icon> {{ getChannelLabel(item.channel) }}
-                </span>
-              </div>
-              <div class="mon-detail__field">
-                <span class="mon-detail__field-label">Experto asignado</span>
-                <span class="mon-detail__field-value">
-                  <mat-icon>person</mat-icon> {{ item.expert_name || 'Sin asignar' }}
-                </span>
-              </div>
-              <div class="mon-detail__field">
-                <span class="mon-detail__field-label">Próximo seguimiento</span>
-                <span class="mon-detail__field-value">
-                  <mat-icon>event</mat-icon> {{ item.next_followup ? (item.next_followup | date:'dd/MM/yyyy') : 'Sin agendar' }}
-                </span>
-              </div>
-              <div class="mon-detail__field">
-                <span class="mon-detail__field-label">Fecha de creación</span>
-                <span class="mon-detail__field-value">
-                  <mat-icon>calendar_today</mat-icon> {{ item.created_at | date:'dd/MM/yyyy HH:mm' }}
-                </span>
-              </div>
-              <div class="mon-detail__field">
-                <span class="mon-detail__field-label">Estado del paciente</span>
-                <span class="mon-detail__field-value" [style.color]="patientStatusConfig[item.patient_status].color">
-                  <mat-icon>{{ patientStatusConfig[item.patient_status].icon }}</mat-icon> {{ getPatientStatusLabel(item.patient_status) }}
-                </span>
+      <div class="mon-detail" *ngIf="expandedId === item.employee_id">
+        <!-- Patient / Care-receiver Context Banner -->
+        <div class="mon-detail__patient-banner">
+          <div class="patient-banner__main">
+            <div class="patient-banner__avatar">
+              <mat-icon>elderly</mat-icon>
+            </div>
+            <div class="patient-banner__info">
+              <div class="patient-banner__kicker">Contexto de Cuidado · Familiar a cargo</div>
+              <div class="patient-banner__title">
+                <span class="patient-relation" *ngIf="item.care_receiver_relation">{{ formatRelation(item.care_receiver_relation, item.employee_name) }}:</span>
+                <strong class="patient-name">{{ item.care_receiver_name || (item.care_receiver_relation ? 'Familiar registrado' : 'Sin ficha familiar detallada aún') }}</strong>
+                <span class="patient-age-badge" *ngIf="item.care_receiver_age">{{ item.care_receiver_age }} años</span>
               </div>
             </div>
           </div>
+
+          <div class="patient-banner__meta">
+            <!-- Dependency badge -->
+            <div class="patient-meta-pill" *ngIf="item.care_receiver_dependency" [style.border-color]="getDependencyColor(item.care_receiver_dependency)">
+              <mat-icon [style.color]="getDependencyColor(item.care_receiver_dependency)">offline_bolt</mat-icon>
+              <span>Dependencia: <strong>{{ formatDependency(item.care_receiver_dependency) }}</strong></span>
+            </div>
+
+            <!-- Location -->
+            <div class="patient-meta-pill" *ngIf="item.care_receiver_location">
+              <mat-icon>place</mat-icon>
+              <span>{{ item.care_receiver_location }}</span>
+            </div>
+
+            <!-- Primary condition -->
+            <div class="patient-meta-pill" *ngIf="item.care_receiver_condition">
+              <mat-icon>medical_services</mat-icon>
+              <span>{{ item.care_receiver_condition }}</span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+
+        <div class="mon-detail__grid">
+          <!-- Left Column: Historial Clínico de Evoluciones (Timeline) -->
+          <div class="mon-detail__section mon-detail__section--timeline">
+            <div class="mon-detail__section-head">
+              <div class="mon-detail__label">
+                <mat-icon>history_edu</mat-icon>
+                <span>Historial de Evoluciones y Notas Clínicas</span>
+              </div>
+              <span class="mon-detail__badge-count">{{ item.followups_history.length }} registro{{ item.followups_history.length !== 1 ? 's' : '' }}</span>
+            </div>
+
+            <!-- Timeline List -->
+            <div class="mon-timeline" *ngIf="item.followups_history.length > 0">
+              <div class="mon-timeline__item" *ngFor="let f of item.followups_history; let first = first">
+                <div class="mon-timeline__indicator">
+                  <div class="mon-timeline__dot" [style.background]="patientStatusConfig[f.patient_status].color"></div>
+                  <div class="mon-timeline__line"></div>
+                </div>
+
+                <div class="mon-timeline__card" [class.mon-timeline__card--latest]="first">
+                  <div class="mon-timeline__card-header">
+                    <div class="mon-timeline__tags">
+                      <!-- Health status badge -->
+                      <span class="timeline-badge-status" [style.color]="patientStatusConfig[f.patient_status].color" [style.background]="patientStatusConfig[f.patient_status].color + '15'" [style.border-color]="patientStatusConfig[f.patient_status].color + '35'">
+                        <mat-icon>{{ patientStatusConfig[f.patient_status].icon }}</mat-icon>
+                        {{ getPatientStatusLabel(f.patient_status) }}
+                      </span>
+
+                      <!-- Channel/type badge -->
+                      <span class="timeline-badge-channel">
+                        <mat-icon>{{ getFollowupTypeInfo(f.followup_type).icon }}</mat-icon>
+                        {{ getFollowupTypeInfo(f.followup_type).label }}
+                      </span>
+
+                      <span class="timeline-badge-latest" *ngIf="first">Más reciente</span>
+                    </div>
+
+                    <div class="mon-timeline__meta">
+                      <span class="timeline-expert">
+                        <mat-icon>person</mat-icon> {{ f.expert_name || 'Care Expert' }}
+                      </span>
+                      <span class="timeline-date">
+                        <mat-icon>schedule</mat-icon> {{ f.created_at | date:'dd/MM/yyyy HH:mm' }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Note content -->
+                  <div class="mon-timeline__card-body">
+                    <div class="note-status-pill" *ngIf="parseNote(f.note).tag">
+                      <mat-icon>info</mat-icon>
+                      <span>{{ parseNote(f.note).tag }}</span>
+                    </div>
+                    <p class="mon-timeline__note-text">{{ parseNote(f.note).text }}</p>
+                  </div>
+
+                  <!-- Next control if scheduled -->
+                  <div class="mon-timeline__next-control" *ngIf="f.next_followup_date">
+                    <mat-icon>event</mat-icon>
+                    <span>Próximo control agendado: <strong>{{ f.next_followup_date | date:'dd/MM/yyyy' }}</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty timeline fallback -->
+            <div class="mon-timeline-empty" *ngIf="item.followups_history.length === 0">
+              <mat-icon>notes</mat-icon>
+              <span>Sin notas de evolución registradas aún para este caso.</span>
+            </div>
+          </div>
+
+          <!-- Right Column: Ficha del Caso y Próximos Pasos -->
+          <div class="mon-detail__section mon-detail__section--info-cards">
+            <!-- Card 1: Información Operativa -->
+            <div class="mon-sidecard">
+              <div class="mon-sidecard__header">
+                <mat-icon>dashboard</mat-icon>
+                <span>Ficha Operativa del Caso</span>
+              </div>
+              <div class="mon-sidecard__grid">
+                <div class="mon-detail__field">
+                  <span class="mon-detail__field-label">Prioridad</span>
+                  <span class="mon-detail__field-value mon-detail__priority" [style.color]="getPriorityColor(item.priority)">
+                    <mat-icon>flag</mat-icon> {{ getPriorityLabel(item.priority) }}
+                  </span>
+                </div>
+                <div class="mon-detail__field">
+                  <span class="mon-detail__field-label">Canal de atención</span>
+                  <span class="mon-detail__field-value">
+                    <mat-icon>{{ item.channel_icon }}</mat-icon> {{ getChannelLabel(item.cases[0]?.channel || 'Atención') }}
+                  </span>
+                </div>
+                <div class="mon-detail__field">
+                  <span class="mon-detail__field-label">Especialista a cargo</span>
+                  <span class="mon-detail__field-value">
+                    <mat-icon>medical_services</mat-icon> {{ item.expert_name || 'Care Expert asignado' }}
+                  </span>
+                </div>
+                <div class="mon-detail__field">
+                  <span class="mon-detail__field-label">Próximo seguimiento</span>
+                  <span class="mon-detail__field-value">
+                    <mat-icon>event</mat-icon> {{ item.next_followup ? (item.next_followup | date:'dd/MM/yyyy') : 'Sin agendar' }}
+                  </span>
+                </div>
+                <div class="mon-detail__field">
+                  <span class="mon-detail__field-label">Última actividad</span>
+                  <span class="mon-detail__field-value">
+                    <mat-icon>calendar_today</mat-icon> {{ item.last_activity_date | date:'dd/MM/yyyy HH:mm' }}
+                  </span>
+                </div>
+                <div class="mon-detail__field">
+                  <span class="mon-detail__field-label">Estado de salud</span>
+                  <span class="mon-detail__field-value" [style.color]="patientStatusConfig[item.patient_status].color">
+                    <mat-icon>{{ patientStatusConfig[item.patient_status].icon }}</mat-icon> {{ getPatientStatusLabel(item.patient_status) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Perfil y Contexto Familiar -->
+            <div class="mon-sidecard mon-sidecard--patient">
+              <div class="mon-sidecard__header">
+                <mat-icon>badge</mat-icon>
+                <span>Contexto del Adulto Mayor</span>
+              </div>
+              <div class="mon-sidecard__patient-details">
+                <div class="patient-card-row">
+                  <span class="lbl">Paciente / Familiar:</span>
+                  <strong>{{ item.care_receiver_name || 'Sin nombre registrado' }}</strong>
+                </div>
+                <div class="patient-card-row" *ngIf="item.care_receiver_relation">
+                  <span class="lbl">Vínculo familiar:</span>
+                  <strong>{{ formatRelation(item.care_receiver_relation, item.employee_name) }}</strong>
+                </div>
+                <div class="patient-card-row" *ngIf="item.care_receiver_age">
+                  <span class="lbl">Edad:</span>
+                  <span>{{ item.care_receiver_age }} años</span>
+                </div>
+                <div class="patient-card-row" *ngIf="item.care_receiver_dependency">
+                  <span class="lbl">Nivel de dependencia:</span>
+                  <span class="patient-dep-badge" [style.color]="getDependencyColor(item.care_receiver_dependency)">
+                    ● {{ formatDependency(item.care_receiver_dependency) }}
+                  </span>
+                </div>
+                <div class="patient-card-row" *ngIf="item.care_receiver_location">
+                  <span class="lbl">Comuna / Ubicación:</span>
+                  <span>{{ item.care_receiver_location }}</span>
+                </div>
+                <div class="patient-card-row" *ngIf="item.care_receiver_condition">
+                  <span class="lbl">Condición clínica:</span>
+                  <span>{{ item.care_receiver_condition }}</span>
+                </div>
+
+                <div class="patient-card-action" *ngIf="item.full_intake">
+                  <button type="button" class="btn-full-intake" (click)="$event.stopPropagation(); openIntakeModal(item)">
+                    <mat-icon>assignment_ind</mat-icon>
+                    <span>Ver Ficha Integral del Paciente</span>
+                  </button>
+                </div>
+              </div>
+            </div> <!-- closes mon-sidecard--patient -->
+          </div> <!-- closes mon-detail__section--info-cards -->
+        </div> <!-- closes mon-detail__grid -->
+      </div> <!-- closes mon-detail -->
+    </div> <!-- closes mon-item -->
+  </div> <!-- closes mon-list -->
 
   <!-- Empty State -->
   <div class="mon-empty" *ngIf="!loading && filteredItems.length === 0">
@@ -177,4 +346,108 @@
     <button *ngIf="error" class="mon-btn" (click)="refresh()">Reintentar</button>
     <button *ngIf="!error && items.length > 0" class="mon-btn" (click)="activeStatusFilter = 'Todos'; activePatientStatusFilter = 'all'; searchTerm = ''">Limpiar filtros</button>
   </div>
+
+  <!-- Modal Ficha Integral del Adulto Mayor -->
+  <div class="intake-modal-backdrop" *ngIf="selectedIntakeModal" (click)="closeIntakeModal()">
+    <div class="intake-modal-card" (click)="$event.stopPropagation()">
+      <header class="intake-modal-header">
+        <div class="intake-modal-title-wrap">
+          <mat-icon class="intake-modal-icon">assignment_ind</mat-icon>
+          <div>
+            <h3>Ficha Integral del Adulto Mayor</h3>
+            <p>Antecedentes registrados para el cuidado familiar · Colaborador: {{ selectedIntakeModal.employee_name }}</p>
+          </div>
+        </div>
+        <button class="intake-modal-close" (click)="closeIntakeModal()" aria-label="Cerrar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <div class="intake-modal-body">
+        <!-- Section 1: Identificación y Vínculo -->
+        <div class="intake-section">
+          <h4 class="intake-section-title"><mat-icon>person</mat-icon> Identificación y Vínculo</h4>
+          <div class="intake-grid">
+            <div class="intake-field">
+              <span class="intake-field-label">Persona Cuidada:</span>
+              <strong class="intake-field-value">{{ selectedIntakeModal.care_receiver_name || 'No informado' }}</strong>
+            </div>
+            <div class="intake-field">
+              <span class="intake-field-label">Vínculo con el colaborador:</span>
+              <strong class="intake-field-value text-accent">{{ formatRelation(selectedIntakeModal.care_receiver_relation, selectedIntakeModal.employee_name) }}</strong>
+            </div>
+            <div class="intake-field" *ngIf="selectedIntakeModal.full_intake?.rut">
+              <span class="intake-field-label">RUT / Identificación:</span>
+              <span class="intake-field-value">{{ selectedIntakeModal.full_intake.rut }}</span>
+            </div>
+            <div class="intake-field" *ngIf="selectedIntakeModal.care_receiver_age">
+              <span class="intake-field-label">Edad:</span>
+              <span class="intake-field-value">{{ selectedIntakeModal.care_receiver_age }} años</span>
+            </div>
+            <div class="intake-field" *ngIf="selectedIntakeModal.full_intake?.birthDate">
+              <span class="intake-field-label">Fecha de nacimiento:</span>
+              <span class="intake-field-value">{{ selectedIntakeModal.full_intake.birthDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="intake-field" *ngIf="selectedIntakeModal.full_intake?.phone">
+              <span class="intake-field-label">Teléfono de contacto familiar:</span>
+              <span class="intake-field-value">{{ selectedIntakeModal.full_intake.phone }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Salud y Nivel de Dependencia -->
+        <div class="intake-section">
+          <h4 class="intake-section-title"><mat-icon>healing</mat-icon> Perfil Clínico y Autonomía</h4>
+          <div class="intake-grid">
+            <div class="intake-field">
+              <span class="intake-field-label">Diagnóstico / Condición principal:</span>
+              <strong class="intake-field-value">{{ selectedIntakeModal.care_receiver_condition || 'No informada' }}</strong>
+            </div>
+            <div class="intake-field">
+              <span class="intake-field-label">Nivel de dependencia:</span>
+              <span class="patient-dep-badge" [style.color]="getDependencyColor(selectedIntakeModal.care_receiver_dependency)">
+                ● {{ formatDependency(selectedIntakeModal.care_receiver_dependency) }}
+              </span>
+            </div>
+            <div class="intake-field" *ngIf="selectedIntakeModal.full_intake?.healthCoverage">
+              <span class="intake-field-label">Previsión o Cobertura de salud:</span>
+              <span class="intake-field-value">{{ selectedIntakeModal.full_intake.healthCoverage }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Ubicación y Accesibilidad de la Vivienda -->
+        <div class="intake-section">
+          <h4 class="intake-section-title"><mat-icon>home</mat-icon> Ubicación y Accesibilidad de la Vivienda</h4>
+          <div class="intake-grid">
+            <div class="intake-field">
+              <span class="intake-field-label">Comuna / Ciudad:</span>
+              <span class="intake-field-value">{{ selectedIntakeModal.care_receiver_location || 'No informada' }}</span>
+            </div>
+            <div class="intake-field" *ngIf="selectedIntakeModal.full_intake?.housingType">
+              <span class="intake-field-label">Características del domicilio:</span>
+              <span class="intake-field-value">{{ formatHousing(selectedIntakeModal.full_intake.housingType) }}</span>
+            </div>
+            <div class="intake-field" *ngIf="selectedIntakeModal.full_intake?.supportNetwork">
+              <span class="intake-field-label">Red de apoyo actual:</span>
+              <span class="intake-field-value">{{ selectedIntakeModal.full_intake.supportNetwork }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Observaciones Adicionales -->
+        <div class="intake-section" *ngIf="selectedIntakeModal.full_intake?.notes">
+          <h4 class="intake-section-title"><mat-icon>description</mat-icon> Observaciones Registradas</h4>
+          <div class="intake-notes-box">
+            {{ selectedIntakeModal.full_intake.notes }}
+          </div>
+        </div>
+      </div>
+
+      <footer class="intake-modal-footer">
+        <button class="intake-btn-close" (click)="closeIntakeModal()">Cerrar Ficha</button>
+      </footer>
+    </div>
+  </div>
 </main>
+

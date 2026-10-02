@@ -1,162 +1,498 @@
 <app-site-header></app-site-header>
 
 <main class="profile-page" *ngIf="!loading">
+  <!-- Toast Notification -->
+  <div class="profile-toast" *ngIf="toastMsg" [ngClass]="'profile-toast--' + toastMsg.type">
+    <mat-icon>{{ toastMsg.type === 'success' ? 'check_circle' : toastMsg.type === 'error' ? 'error' : 'info' }}</mat-icon>
+    <span>{{ toastMsg.text }}</span>
+  </div>
+
   <div class="profile-shell">
-
-    <!-- Hero -->
-    <section class="profile-hero">
-      <div class="profile-avatar">{{ (fullName || email || 'U').slice(0,1).toUpperCase() }}</div>
-      <div class="profile-hero__info">
-        <h1>{{ fullName || 'Usuario' }}</h1>
-        <p>{{ email }}</p>
-        <div class="profile-hero__badges">
-          <span class="profile-badge profile-badge--blue">
-            <mat-icon>verified_user</mat-icon>
-            {{ roleLabel(role) }}
-          </span>
-          <span class="profile-badge profile-badge--gray" *ngIf="companyTaxId">
-            <mat-icon>business</mat-icon>
-            RUT {{ companyTaxId }}
-          </span>
-          <span class="profile-badge profile-badge--gray" *ngIf="company">
-            <mat-icon>work</mat-icon>
-            {{ company }}
-          </span>
-        </div>
+    <!-- Header Banner -->
+    <header class="profile-top-banner">
+      <div>
+        <h1 class="profile-top-title">Mi Cuenta y Ajustes</h1>
+        <p class="profile-top-sub">Administra tus datos personales, seguridad de acceso y preferencias del sistema.</p>
       </div>
-    </section>
+      <div class="profile-top-badges">
+        <span class="role-pill" [style.background-color]="roleBadgeColor + '18'" [style.color]="roleBadgeColor" [style.border-color]="roleBadgeColor + '40'">
+          <mat-icon>verified_user</mat-icon>
+          {{ roleLabel(role) }}
+        </span>
+      </div>
+    </header>
 
-    <!-- Grid principal -->
-    <div class="profile-grid">
+    <!-- Main 2-Column Layout -->
+    <div class="profile-layout">
+      <!-- Left Column: User Identity Card & Tab Nav -->
+      <aside class="profile-sidebar">
+        <!-- Identity Summary Card -->
+        <div class="profile-card profile-user-card">
+          <div class="avatar-wrapper">
+            <div class="user-avatar" [style.background-color]="selectedColor">
+              {{ initials }}
+            </div>
+          </div>
 
-      <!-- Datos personales — ocupa ancho completo -->
-      <section class="profile-card profile-card--full">
-        <div class="profile-card__head">
-          <div class="profile-card__icon">
-            <mat-icon>person</mat-icon>
+          <h2 class="user-name">{{ fullName || 'Usuario' }}</h2>
+          <p class="user-email">{{ email }}</p>
+          <span class="user-job" *ngIf="jobTitle">{{ jobTitle }}</span>
+
+          <!-- Color Customizer -->
+          <div class="color-picker-section">
+            <span class="color-picker-label">Color de avatar:</span>
+            <div class="color-dots">
+              <button 
+                type="button" 
+                class="color-dot" 
+                *ngFor="let c of avatarColors"
+                [style.background-color]="c.hex"
+                [class.is-selected]="selectedColor === c.hex"
+                (click)="selectedColor = c.hex"
+                [title]="c.name"
+              ></button>
+            </div>
           </div>
-          <div>
-            <h2>Datos personales</h2>
-            <p>Actualiza tu información visible en el portal.</p>
-          </div>
+
+          <!-- Tab Navigation -->
+          <nav class="profile-nav-tabs">
+            <button 
+              type="button" 
+              class="nav-tab-btn" 
+              [class.active]="activeTab === 'personal'" 
+              (click)="activeTab = 'personal'"
+            >
+              <mat-icon>person</mat-icon>
+              <span>Datos Personales</span>
+            </button>
+
+            <button 
+              type="button" 
+              class="nav-tab-btn" 
+              [class.active]="activeTab === 'security'" 
+              (click)="activeTab = 'security'"
+            >
+              <mat-icon>lock</mat-icon>
+              <span>Seguridad & Acceso</span>
+            </button>
+
+            <button 
+              type="button" 
+              class="nav-tab-btn" 
+              [class.active]="activeTab === 'preferences'" 
+              (click)="activeTab = 'preferences'"
+            >
+              <mat-icon>notifications</mat-icon>
+              <span>Notificaciones</span>
+            </button>
+
+            <button 
+              type="button" 
+              class="nav-tab-btn" 
+              [class.active]="activeTab === 'organization'" 
+              (click)="activeTab = 'organization'"
+            >
+              <mat-icon>domain</mat-icon>
+              <span>Organización / Residencia</span>
+            </button>
+          </nav>
         </div>
 
-        <form class="profile-form" (ngSubmit)="save()">
-          <div class="profile-fields-grid">
-            <div class="profile-field">
-              <label class="profile-label">
+        <!-- Role-based Shortcuts Card -->
+        <div class="profile-card profile-shortcuts-card">
+          <div class="shortcuts-head">
+            <mat-icon>launch</mat-icon>
+            <span>Accesos rápidos</span>
+          </div>
+          <div class="shortcuts-list">
+            <a *ngIf="role === 'admin'" [routerLink]="['/admin-dashboard']" class="shortcut-item">
+              <mat-icon>dashboard</mat-icon>
+              <div>
+                <strong>Panel ELEAM / Residencias</strong>
+                <small>Gestión de camas, kardex y finanzas</small>
+              </div>
+            </a>
+
+            <a *ngIf="role === 'admin' || role === 'care_expert'" [routerLink]="['/care-experts']" class="shortcut-item">
+              <mat-icon>support_agent</mat-icon>
+              <div>
+                <strong>Consola Care Experts</strong>
+                <small>Asesorías y fichas familiares</small>
+              </div>
+            </a>
+
+            <a *ngIf="role === 'admin' || role === 'company_admin' || role === 'hr_admin'" [routerLink]="['/company-requests']" class="shortcut-item">
+              <mat-icon>monitor_heart</mat-icon>
+              <div>
+                <strong>Monitoreo de Bienestar</strong>
+                <small>Casos y seguimiento de colaboradores</small>
+              </div>
+            </a>
+
+            <a *ngIf="role === 'employee'" [routerLink]="['/dashboard']" class="shortcut-item">
+              <mat-icon>family_restroom</mat-icon>
+              <div>
+                <strong>Mi Ficha de Cuidado</strong>
+                <small>Solicitudes y perfil de tu familiar</small>
+              </div>
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Column: Active Tab Content -->
+      <section class="profile-content">
+
+        <!-- TAB 1: DATOS PERSONALES -->
+        <div class="profile-tab-panel" *ngIf="activeTab === 'personal'">
+          <div class="profile-card">
+            <div class="panel-header">
+              <div class="panel-header__icon">
                 <mat-icon>badge</mat-icon>
-                Nombre completo
-              </label>
-              <div class="profile-input-wrap">
-                <input [(ngModel)]="fullName" name="fullName" placeholder="Ej.: Ana Pérez" />
+              </div>
+              <div>
+                <h2>Datos Personales y Contacto</h2>
+                <p>Información visible para tu equipo y en las coordinaciones del sistema.</p>
               </div>
             </div>
 
-            <div class="profile-field">
-              <label class="profile-label">
-                <mat-icon>mail</mat-icon>
-                Correo electrónico
-              </label>
-              <div class="profile-input-wrap profile-input-wrap--readonly">
-                <mat-icon class="input-icon">lock</mat-icon>
-                <input [value]="email" readonly />
+            <form class="profile-form" (ngSubmit)="savePersonal()">
+              <div class="form-grid">
+                <!-- Nombre Completo -->
+                <div class="form-group">
+                  <label>
+                    <mat-icon>person</mat-icon>
+                    Nombre completo
+                  </label>
+                  <input type="text" [(ngModel)]="fullName" name="fullName" placeholder="Ej.: Cristopher Maker" class="form-input" required />
+                </div>
+
+                <!-- Correo Electrónico (Readonly) -->
+                <div class="form-group">
+                  <label>
+                    <mat-icon>mail</mat-icon>
+                    Correo electrónico
+                  </label>
+                  <div class="input-readonly-wrap">
+                    <input type="email" [value]="email" readonly class="form-input form-input--readonly" />
+                    <mat-icon class="lock-icon" title="El correo está vinculado a tu cuenta">lock</mat-icon>
+                  </div>
+                  <small class="form-help">Para cambiar tu correo de acceso, contacta a soporte.</small>
+                </div>
+
+                <!-- Teléfono / WhatsApp -->
+                <div class="form-group">
+                  <label>
+                    <mat-icon>call</mat-icon>
+                    Teléfono / WhatsApp
+                  </label>
+                  <input type="tel" [(ngModel)]="phone" name="phone" placeholder="Ej.: +56 9 8765 4321" class="form-input" />
+                  <small class="form-help">Utilizado para coordinaciones rápidas y alertas operativas.</small>
+                </div>
+
+                <!-- Cargo / Especialidad -->
+                <div class="form-group">
+                  <label>
+                    <mat-icon>work_outline</mat-icon>
+                    Cargo o Especialidad
+                  </label>
+                  <input type="text" [(ngModel)]="jobTitle" name="jobTitle" placeholder="Ej.: Director Técnico / Administrador" class="form-input" />
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary-action" [disabled]="saving">
+                  <mat-icon>{{ saving ? 'hourglass_top' : 'check' }}</mat-icon>
+                  <span>{{ saving ? 'Guardando...' : 'Guardar Cambios' }}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- TAB 2: SEGURIDAD & CONTRASEÑA -->
+        <div class="profile-tab-panel" *ngIf="activeTab === 'security'">
+          <!-- Direct Password Change Card -->
+          <div class="profile-card">
+            <div class="panel-header">
+              <div class="panel-header__icon panel-header__icon--amber">
+                <mat-icon>key</mat-icon>
+              </div>
+              <div>
+                <h2>Actualizar Contraseña</h2>
+                <p>Establece una nueva clave de acceso de forma inmediata.</p>
               </div>
             </div>
 
-            <div class="profile-field">
-              <label class="profile-label">
-                <mat-icon>work</mat-icon>
-                Empresa
-                <span class="profile-label__opt">— opcional</span>
-              </label>
-              <div class="profile-input-wrap">
-                <mat-icon class="input-icon">corporate_fare</mat-icon>
-                <input [(ngModel)]="company" name="company" placeholder="Ej.: Advisor" />
+            <form class="profile-form" (ngSubmit)="updatePasswordDirect()">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>
+                    <mat-icon>lock</mat-icon>
+                    Nueva contraseña
+                  </label>
+                  <div class="input-password-wrap">
+                    <input [type]="showPasswords ? 'text' : 'password'" [(ngModel)]="newPassword" name="newPassword" placeholder="Mínimo 6 caracteres" class="form-input" />
+                    <button type="button" class="btn-toggle-pwd" (click)="showPasswords = !showPasswords">
+                      <mat-icon>{{ showPasswords ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>
+                    <mat-icon>lock_reset</mat-icon>
+                    Confirmar nueva contraseña
+                  </label>
+                  <div class="input-password-wrap">
+                    <input [type]="showPasswords ? 'text' : 'password'" [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Repite tu contraseña" class="form-input" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary-action" [disabled]="savingPassword || !newPassword">
+                  <mat-icon>save</mat-icon>
+                  <span>{{ savingPassword ? 'Actualizando...' : 'Actualizar Contraseña Ahora' }}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Email Reset Alternative Card -->
+          <div class="profile-card" style="margin-top: 1.25rem;">
+            <div class="panel-header">
+              <div class="panel-header__icon panel-header__icon--blue">
+                <mat-icon>forward_to_inbox</mat-icon>
+              </div>
+              <div>
+                <h2>Restablecimiento por Correo</h2>
+                <p>Si prefieres, te enviamos un enlace de recuperación seguro a tu email.</p>
               </div>
             </div>
 
-            <div class="profile-field">
-              <label class="profile-label">
-                <mat-icon>description</mat-icon>
-                RUT empresa
-              </label>
-              <div class="profile-input-wrap profile-input-wrap--readonly">
-                <mat-icon class="input-icon">lock</mat-icon>
-                <input [value]="companyTaxId || 'No disponible'" readonly />
-              </div>
+            <div class="recovery-box">
+              <p>Se enviará un correo con el enlace de restablecimiento a <strong>{{ email }}</strong>.</p>
+              <button type="button" class="btn-secondary-action" (click)="sendResetPassword()">
+                <mat-icon>send</mat-icon>
+                <span>Enviar correo de restablecimiento</span>
+              </button>
             </div>
           </div>
 
-          <button type="submit" class="profile-btn-primary" [disabled]="saving">
-            <mat-icon>check</mat-icon>
-            {{ saving ? 'Guardando...' : 'Guardar cambios' }}
-          </button>
-        </form>
+          <!-- Active Sessions Card -->
+          <div class="profile-card" style="margin-top: 1.25rem;">
+            <div class="panel-header">
+              <div class="panel-header__icon">
+                <mat-icon>devices</mat-icon>
+              </div>
+              <div>
+                <h2>Sesiones Activas</h2>
+                <p>Dispositivos que han iniciado sesión recientemente en tu cuenta.</p>
+              </div>
+            </div>
+
+            <div class="sessions-list">
+              <div class="session-item" *ngFor="let s of activeSessions">
+                <div class="session-icon">
+                  <mat-icon>{{ s.icon }}</mat-icon>
+                </div>
+                <div class="session-info">
+                  <strong>{{ s.device }}</strong>
+                  <span>{{ s.detail }}</span>
+                </div>
+                <span class="session-badge-current" *ngIf="s.current">Activa ahora</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: NOTIFICACIONES -->
+        <div class="profile-tab-panel" *ngIf="activeTab === 'preferences'">
+          <div class="profile-card">
+            <div class="panel-header">
+              <div class="panel-header__icon panel-header__icon--green">
+                <mat-icon>notifications_active</mat-icon>
+              </div>
+              <div>
+                <h2>Preferencias de Notificaciones</h2>
+                <p>Elige por qué canales deseas recibir alertas operativas y avisos importantes.</p>
+              </div>
+            </div>
+
+            <div class="preferences-list">
+              <!-- Email Notification Toggle -->
+              <div class="preference-item">
+                <div class="preference-info">
+                  <div class="preference-title">
+                    <mat-icon>mail</mat-icon>
+                    <strong>Notificaciones por Correo</strong>
+                  </div>
+                  <p>Recibir resúmenes de citas, confirmaciones de ingreso y reportes de estado.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="notificationEmail" (change)="savePreferences()">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- WhatsApp Notification Toggle with n8n Connection Box -->
+              <div class="preference-item" [class.preference-item--with-sub]="role === 'admin' && notificationWhatsapp">
+                <div class="preference-row">
+                  <div class="preference-info">
+                    <div class="preference-title">
+                      <mat-icon style="color: #25D366;">chat</mat-icon>
+                      <strong>Alertas por WhatsApp</strong>
+                    </div>
+                    <p>Avisos de citas de Care Experts, evoluciones de salud y recordatorios directos al celular.</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" [(ngModel)]="notificationWhatsapp" (change)="savePreferences()">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <!-- Webhook Configuration Sub-Panel (Exclusivo para Administrador de Plataforma) -->
+                <div class="n8n-config-box" *ngIf="role === 'admin' && notificationWhatsapp">
+                  <div class="n8n-config-header">
+                    <div class="n8n-badge">
+                      <mat-icon>security</mat-icon>
+                      <span>CONEXIÓN CON N8N (SOLO ADMINISTRADOR)</span>
+                    </div>
+                    <span class="n8n-status-tag" [class.is-connected]="n8nWebhookUrl">
+                      {{ n8nWebhookUrl ? '● Webhook Configurado' : '○ Webhook Predeterminado Activo' }}
+                    </span>
+                  </div>
+
+                  <p class="n8n-help-text">
+                    Configuración técnica de infraestructura para el despacho automático de notificaciones a través de n8n.
+                  </p>
+
+                  <div class="n8n-form-row">
+                    <label>URL del Webhook de n8n:</label>
+                    <div class="n8n-input-wrap">
+                      <mat-icon>link</mat-icon>
+                      <input 
+                        type="url" 
+                        [(ngModel)]="n8nWebhookUrl" 
+                        (blur)="saveWebhookUrl()"
+                        placeholder="https://tu-n8n.com/webhook/companycare-whatsapp"
+                        class="form-input form-input--code"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Test Connection Box -->
+                  <div class="n8n-test-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div class="test-input-wrap">
+                      <label>Correo Gmail de prueba:</label>
+                      <input 
+                        type="email" 
+                        [(ngModel)]="testEmail" 
+                        placeholder="tu-correo@gmail.com" 
+                        class="form-input form-input--sm"
+                      />
+                    </div>
+                    <div class="test-input-wrap">
+                      <label>Celular / WhatsApp (opcional):</label>
+                      <input 
+                        type="tel" 
+                        [(ngModel)]="testPhone" 
+                        placeholder="+56 9 8765 4321" 
+                        class="form-input form-input--sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="n8n-test-row">
+                    <button 
+                      type="button" 
+                      class="btn-test-webhook" 
+                      [disabled]="testingWebhook || !n8nWebhookUrl"
+                      (click)="testN8nConnection()"
+                    >
+                      <mat-icon>{{ testingWebhook ? 'sync' : 'send' }}</mat-icon>
+                      <span>{{ testingWebhook ? 'Enviando a n8n...' : 'Probar Envío de Notificación' }}</span>
+                    </button>
+                  </div>
+
+                  <!-- Test Result Alert -->
+                  <div class="test-result-banner" *ngIf="testResult" [class.is-success]="testResult.success" [class.is-error]="!testResult.success">
+                    <mat-icon>{{ testResult.success ? 'check_circle' : 'error_outline' }}</mat-icon>
+                    <span>{{ testResult.message }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sound Alerts Toggle -->
+              <div class="preference-item">
+                <div class="preference-info">
+                  <div class="preference-title">
+                    <mat-icon>volume_up</mat-icon>
+                    <strong>Sonidos del Sistema</strong>
+                  </div>
+                  <p>Reproducir un sonido suave cuando llegue un nuevo mensaje o alerta clínica.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="notificationSound" (change)="savePreferences()">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: ORGANIZACIÓN -->
+        <div class="profile-tab-panel" *ngIf="activeTab === 'organization'">
+          <div class="profile-card">
+            <div class="panel-header">
+              <div class="panel-header__icon panel-header__icon--purple">
+                <mat-icon>domain</mat-icon>
+              </div>
+              <div>
+                <h2>Organización y Residencia</h2>
+                <p>Detalles de la empresa o institución vinculada a tu cuenta.</p>
+              </div>
+            </div>
+
+            <div class="organization-details-grid">
+              <div class="org-detail-card">
+                <div class="org-label">Nombre de la Residencia / Empresa</div>
+                <div class="org-value">{{ company || 'Sin empresa asociada' }}</div>
+              </div>
+
+              <div class="org-detail-card">
+                <div class="org-label">RUT Corporativo</div>
+                <div class="org-value">{{ companyTaxId || 'No informado' }}</div>
+              </div>
+
+              <div class="org-detail-card">
+                <div class="org-label">Rol en la Organización</div>
+                <div class="org-value">
+                  <span class="role-pill" [style.background-color]="roleBadgeColor + '18'" [style.color]="roleBadgeColor">
+                    {{ roleLabel(role) }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="org-detail-card">
+                <div class="org-label">Estado de la Cuenta</div>
+                <div class="org-value text-success font-semibold">
+                  <mat-icon style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;">check_circle</mat-icon>
+                  Cuenta Activa y Habilitada
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </section>
-
-      <!-- Seguridad -->
-      <section class="profile-card">
-        <div class="profile-card__head">
-          <div class="profile-card__icon profile-card__icon--red">
-            <mat-icon>shield</mat-icon>
-          </div>
-          <div>
-            <h2>Seguridad</h2>
-            <p>Gestiona el acceso y contraseña.</p>
-          </div>
-        </div>
-
-        <div class="profile-notice profile-notice--warn">
-          <mat-icon>info</mat-icon>
-          <p>Te enviaremos un correo con un enlace para restablecer tu contraseña de forma segura.</p>
-        </div>
-
-        <button type="button" class="profile-btn-secondary" (click)="sendResetPassword()">
-          <mat-icon>mail</mat-icon>
-          Enviar correo para cambiar contraseña
-        </button>
-      </section>
-
-      <!-- Sesiones activas -->
-      <section class="profile-card">
-        <div class="profile-card__head">
-          <div class="profile-card__icon">
-            <mat-icon>devices</mat-icon>
-          </div>
-          <div>
-            <h2>Sesiones activas</h2>
-            <p>Dispositivos con acceso actual.</p>
-          </div>
-        </div>
-
-        <div class="profile-session" *ngFor="let session of activeSessions">
-          <mat-icon>{{ session.icon }}</mat-icon>
-          <div class="profile-session__info">
-            <strong>{{ session.device }}</strong>
-            <span>{{ session.detail }}</span>
-          </div>
-          <span class="profile-session__tag" *ngIf="session.current">Activa ahora</span>
-        </div>
-
-        <div class="profile-session profile-session--empty" *ngIf="!activeSessions.length">
-          <mat-icon>devices</mat-icon>
-          <div class="profile-session__info">
-            <strong>Sin datos de sesion</strong>
-            <span>No se pudo leer la sesion actual.</span>
-          </div>
-        </div>
-      </section>
-
     </div>
   </div>
 </main>
 
-<!-- Loading -->
+<!-- Loading State -->
 <div class="profile-loading" *ngIf="loading">
-  <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-  </svg>
-  <span>Cargando perfil...</span>
+  <div class="loading-spinner"></div>
+  <span>Cargando tu perfil...</span>
 </div>

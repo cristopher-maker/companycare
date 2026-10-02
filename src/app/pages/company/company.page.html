@@ -93,10 +93,10 @@
     <section vouchers-content class="company-panel">
       <div class="company-panel__header">
         <div>
-          <h2>Vouchers</h2>
+          <h2>Cupones de descuento</h2>
           <p>{{ activeVoucherCount }} activos de {{ vouchers.length }} creados.</p>
         </div>
-        <button type="button" class="company-primary" (click)="newVoucher()">Nuevo voucher</button>
+        <button type="button" class="company-primary" (click)="newVoucher()">Nuevo cupón</button>
       </div>
 
       <div class="company-table-wrap">
@@ -128,7 +128,7 @@
               </td>
             </tr>
             <tr *ngIf="vouchers.length === 0">
-              <td colspan="4" class="company-empty">No hay vouchers creados.</td>
+              <td colspan="4" class="company-empty">No hay cupones creados.</td>
             </tr>
           </tbody>
         </table>
@@ -589,7 +589,7 @@
     <div class="company-modal company-modal--wide" (click)="$event.stopPropagation()">
       <form (ngSubmit)="saveVoucher()">
         <header>
-          <h2>{{ voucherDraft.id ? 'Editar' : 'Nuevo' }} voucher</h2>
+          <h2>{{ voucherDraft.id ? 'Editar' : 'Nuevo' }} cupón</h2>
           <button type="button" (click)="showVoucherModal = false">
             <mat-icon>close</mat-icon>
           </button>
@@ -623,7 +623,7 @@
         </div>
         <footer>
           <button type="submit" class="company-primary" [disabled]="saving">
-            {{ saving ? 'Guardando...' : 'Guardar voucher' }}
+            {{ saving ? 'Guardando...' : 'Guardar cupón' }}
           </button>
         </footer>
       </form>

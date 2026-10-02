@@ -12,6 +12,7 @@ import { MetricasComponent } from './metricas/metricas.component';
 import { SedesComponent } from './sedes/sedes.component';
 import { CamasComponent } from './camas/camas.component';
 import { PacientesComponent } from './pacientes/pacientes.component';
+import { KardexComponent } from './kardex/kardex.component';
 import { AdmisionesComponent } from './admisiones/admisiones.component';
 import { TareasComponent } from './tareas/tareas.component';
 import { FacturacionComponent } from './facturacion/facturacion.component';
@@ -28,6 +29,7 @@ import { RecursosComponent } from './recursos/recursos.component';
     SedesComponent,
     CamasComponent,
     PacientesComponent,
+    KardexComponent,
     AdmisionesComponent,
     TareasComponent,
     FacturacionComponent,
@@ -52,6 +54,7 @@ import { RecursosComponent } from './recursos/recursos.component';
     SedesComponent,
     CamasComponent,
     PacientesComponent,
+    KardexComponent,
     AdmisionesComponent,
     TareasComponent,
     FacturacionComponent,

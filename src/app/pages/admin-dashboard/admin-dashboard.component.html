@@ -14,58 +14,50 @@
     </div>
  
     <div class="nav-section" *ngIf="!companyConfigMode">
-      <div class="nav-label">Gestión</div>
+      <div class="nav-label">Operación Clínica & Residencial</div>
       <a class="nav-item" routerLink="metricas" routerLinkActive="active">
         <mat-icon class="nav-icon">monitoring</mat-icon>
-        Métricas
+        Resumen
+      </a>
+      <a class="nav-item" routerLink="pacientes" routerLinkActive="active" [class.is-locked]="isPlanLockedView('pacientes')">
+        <mat-icon class="nav-icon">people</mat-icon>
+        Residentes / Fichas
+      </a>
+      <a class="nav-item" routerLink="kardex" routerLinkActive="active" [class.is-locked]="isPlanLockedView('kardex')">
+        <mat-icon class="nav-icon">medication</mat-icon>
+        Kardex / Medicamentos
+      </a>
+      <a class="nav-item" routerLink="camas" routerLinkActive="active" [class.is-locked]="isPlanLockedView('camas')">
+        <mat-icon class="nav-icon">bed</mat-icon>
+        Camas y Vacantes
+      </a>
+      <a class="nav-item" routerLink="sedes" routerLinkActive="active" [class.is-locked]="isPlanLockedView('sedes')">
+        <mat-icon class="nav-icon">business</mat-icon>
+        Mis Sedes
       </a>
       <a class="nav-item" routerLink="admisiones" routerLinkActive="active" [class.is-locked]="isPlanLockedView('admisiones')">
         <mat-icon class="nav-icon">view_kanban</mat-icon>
         Admisiones
       </a>
-      <a class="nav-item" routerLink="tareas" routerLinkActive="active" [class.is-locked]="isPlanLockedView('tareas')">
-        <mat-icon class="nav-icon">checklist</mat-icon>
-        Tareas
-      </a>
-      <a class="nav-item" routerLink="sedes" routerLinkActive="active" [class.is-locked]="isPlanLockedView('sedes')">
-        <mat-icon class="nav-icon">business</mat-icon>
-        Mis sedes
-      </a>
-      <a class="nav-item" routerLink="camas" routerLinkActive="active" [class.is-locked]="isPlanLockedView('camas')">
-        <mat-icon class="nav-icon">bed</mat-icon>
-        Camas y vacantes
-      </a>
-      <a class="nav-item" routerLink="pacientes" routerLinkActive="active" [class.is-locked]="isPlanLockedView('pacientes')">
-        <mat-icon class="nav-icon">people</mat-icon>
-        Pacientes
+    </div>
+
+    <div class="nav-section" *ngIf="!companyConfigMode">
+      <div class="nav-label">Administración & Finanzas</div>
+      <a class="nav-item" routerLink="gastos" routerLinkActive="active" [class.is-locked]="isPlanLockedView('gastos')">
+        <mat-icon class="nav-icon">account_balance_wallet</mat-icon>
+        Gastos y Finanzas
       </a>
       <a class="nav-item" routerLink="facturacion" routerLinkActive="active" [class.is-locked]="isPlanLockedView('facturacion')">
         <mat-icon class="nav-icon">receipt_long</mat-icon>
         Facturación
       </a>
-      <a class="nav-item" routerLink="gastos" routerLinkActive="active" [class.is-locked]="isPlanLockedView('gastos')">
-        <mat-icon class="nav-icon">account_balance_wallet</mat-icon>
-        Gastos y Finanzas
-      </a>
-    </div>
-
-    <div class="nav-section" *ngIf="!companyConfigMode">
-      <div class="nav-label">Configuración</div>
       <a class="nav-item" routerLink="empleados" routerLinkActive="active" [class.is-locked]="isPlanLockedView('empleados')">
         <mat-icon class="nav-icon">badge</mat-icon>
-        Empleados
-      </a>
-      <a class="nav-item" routerLink="vouchers" routerLinkActive="active" [class.is-locked]="isPlanLockedView('vouchers')">
-        <mat-icon class="nav-icon">local_activity</mat-icon>
-        Vouchers
-      </a>
-      <a class="nav-item" routerLink="recursos" routerLinkActive="active">
-        <mat-icon class="nav-icon">library_books</mat-icon>
-        Recursos
+        Personal / Equipo
       </a>
       <a class="nav-item" routerLink="config" routerLinkActive="active">
         <mat-icon class="nav-icon">settings</mat-icon>
-        Configuración
+        Mi Residencia
       </a>
       <a routerLink="/home" class="nav-item">
         <mat-icon class="nav-icon">arrow_back</mat-icon>
@@ -74,54 +66,50 @@
     </div>
 
     <div class="nav-section" *ngIf="companyConfigMode">
-      <div class="nav-label">Gestión</div>
+      <div class="nav-label">Operación Clínica & Residencial</div>
       <button class="nav-item" [class.active]="currentView === 'metricas'" (click)="setView('metricas')">
         <mat-icon class="nav-icon">monitoring</mat-icon>
         Resumen
+      </button>
+      <button class="nav-item" [class.active]="currentView === 'pacientes'" (click)="setView('pacientes')">
+        <mat-icon class="nav-icon">people</mat-icon>
+        Residentes / Fichas
+      </button>
+      <button class="nav-item" [class.active]="currentView === 'kardex'" (click)="setView('kardex')">
+        <mat-icon class="nav-icon">medication</mat-icon>
+        Kardex / Medicamentos
+      </button>
+      <button class="nav-item" [class.active]="currentView === 'camas'" (click)="setView('camas')">
+        <mat-icon class="nav-icon">bed</mat-icon>
+        Camas y Vacantes
+      </button>
+      <button class="nav-item" [class.active]="currentView === 'sedes'" (click)="setView('sedes')">
+        <mat-icon class="nav-icon">business</mat-icon>
+        Mis Sedes
       </button>
       <button class="nav-item" [class.active]="currentView === 'admisiones'" (click)="setView('admisiones')">
         <mat-icon class="nav-icon">view_kanban</mat-icon>
         Admisiones
       </button>
-      <button class="nav-item" [class.active]="currentView === 'tareas'" (click)="setView('tareas')">
-        <mat-icon class="nav-icon">checklist</mat-icon>
-        Tareas
-      </button>
-      <button class="nav-item" [class.active]="currentView === 'sedes'" (click)="setView('sedes')">
-        <mat-icon class="nav-icon">business</mat-icon>
-        Mis sedes
-      </button>
-      <button class="nav-item" [class.active]="currentView === 'camas'" (click)="setView('camas')">
-        <mat-icon class="nav-icon">bed</mat-icon>
-        Camas y vacantes
-      </button>
-      <button class="nav-item" [class.active]="currentView === 'pacientes'" (click)="setView('pacientes')">
-        <mat-icon class="nav-icon">people</mat-icon>
-        Pacientes
-      </button>
-      <button class="nav-item" [class.active]="currentView === 'gastos'" (click)="setView('gastos')">
-        <mat-icon class="nav-icon">account_balance_wallet</mat-icon>
-        Gastos y Finanzas
-      </button>
     </div>
 
     <div class="nav-section" *ngIf="companyConfigMode">
-      <div class="nav-label">Configuración</div>
-      <button class="nav-item" [class.active]="currentView === 'empleados'" (click)="setView('empleados')">
-        <mat-icon class="nav-icon">badge</mat-icon>
-        Colaboradores
-      </button>
-      <button class="nav-item" [class.active]="currentView === 'vouchers'" (click)="setView('vouchers')">
-        <mat-icon class="nav-icon">local_activity</mat-icon>
-        Vouchers
+      <div class="nav-label">Administración & Finanzas</div>
+      <button class="nav-item" [class.active]="currentView === 'gastos'" (click)="setView('gastos')">
+        <mat-icon class="nav-icon">account_balance_wallet</mat-icon>
+        Gastos y Finanzas
       </button>
       <button class="nav-item" [class.active]="currentView === 'facturacion'" (click)="setView('facturacion')">
         <mat-icon class="nav-icon">receipt_long</mat-icon>
         Facturación
       </button>
+      <button class="nav-item" [class.active]="currentView === 'empleados'" (click)="setView('empleados')">
+        <mat-icon class="nav-icon">badge</mat-icon>
+        Personal / Equipo
+      </button>
       <button class="nav-item" [class.active]="currentView === 'config'" (click)="setView('config')">
         <mat-icon class="nav-icon">settings</mat-icon>
-        Mi empresa
+        Mi Residencia
       </button>
       <a routerLink="/home" class="nav-item">
         <mat-icon class="nav-icon">arrow_back</mat-icon>
@@ -222,17 +210,14 @@
       <ng-container *ngIf="companyConfigMode">
         <app-metricas *ngIf="currentView === 'metricas'"></app-metricas>
         <app-admisiones *ngIf="currentView === 'admisiones'"></app-admisiones>
-        <app-tareas *ngIf="currentView === 'tareas'"></app-tareas>
         <app-sedes *ngIf="currentView === 'sedes'"></app-sedes>
         <app-camas *ngIf="currentView === 'camas'"></app-camas>
         <app-pacientes *ngIf="currentView === 'pacientes'"></app-pacientes>
+        <app-kardex *ngIf="currentView === 'kardex'"></app-kardex>
         <app-gastos *ngIf="currentView === 'gastos'"></app-gastos>
 
         <div [hidden]="currentView !== 'empleados'">
           <ng-content select="[empleados-content]"></ng-content>
-        </div>
-        <div [hidden]="currentView !== 'vouchers'">
-          <ng-content select="[vouchers-content]"></ng-content>
         </div>
         <div *ngIf="currentView === 'facturacion'">
           <section class="table-card">
@@ -949,4 +934,148 @@
     </div>
   </div>
 </div>
+
+<!-- Modal: Prescripción Médica / Kardex -->
+<div class="modal-backdrop" *ngIf="showMedicationModal" (click)="showMedicationModal = false">
+  <div class="modal-box" style="max-width: 600px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">{{ medicationDraft.id ? 'Editar Prescripción Médica' : 'Nueva Prescripción Médica (Kardex)' }}</span>
+      <button class="modal-close" (click)="showMedicationModal = false">
+        <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <!-- Resident Selector -->
+      <div class="field-group">
+        <label class="field-label">Residente / Paciente <span class="text-danger">*</span></label>
+        <select class="field-input" [(ngModel)]="medicationDraft.patient_id">
+          <option [ngValue]="null" disabled>Seleccionar residente...</option>
+          <option *ngFor="let p of pacientesActivos" [value]="p.id">
+            {{ p.nombreCompleto }} ({{ p.camaAsignada }})
+          </option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="field-group">
+          <label class="field-label">Nombre del Fármaco <span class="text-danger">*</span></label>
+          <input class="field-input" type="text" [(ngModel)]="medicationDraft.name" placeholder="Ej: Enalapril, Quetiapina">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Dosis Prescrita <span class="text-danger">*</span></label>
+          <input class="field-input" type="text" [(ngModel)]="medicationDraft.dosage" placeholder="Ej: 10 mg, 1 comp, 14 UI">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="field-group">
+          <label class="field-label">Vía de Administración</label>
+          <select class="field-input" [(ngModel)]="medicationDraft.route">
+            <option value="oral">Oral</option>
+            <option value="sublingual">Sublingual</option>
+            <option value="subcutanea">Subcutánea</option>
+            <option value="intramuscular">Intramuscular</option>
+            <option value="dermica">Dérmica / Tópica</option>
+            <option value="oftalmica">Oftálmica</option>
+            <option value="inhalatoria">Inhalatoria</option>
+            <option value="rectal">Rectal</option>
+            <option value="otra">Otra</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Prioridad Clínica</label>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+            <input type="checkbox" id="is_crit" [(ngModel)]="medicationDraft.is_critical" style="width: 16px; height: 16px; cursor: pointer;">
+            <label for="is_crit" style="font-size: 13px; font-weight: 600; color: var(--danger); cursor: pointer;">
+              Fármaco Crítico (Prioritario)
+            </label>
+          </div>
+          <small style="color: var(--text3); font-size: 11px;">Antihipertensivo, insulina o psicofármaco.</small>
+        </div>
+      </div>
+
+      <!-- Schedule Times Selection -->
+      <div class="field-group">
+        <label class="field-label">Horarios de Administración (Bloques TENS) <span class="text-danger">*</span></label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+          <button 
+            type="button" 
+            *ngFor="let slot of kardexTimeSlots"
+            class="kardex-time-chip"
+            [class.is-active]="medicationDraft.schedule_times?.includes(slot)"
+            (click)="toggleMedScheduleTime(slot)"
+          >
+            <mat-icon style="font-size: 14px; width: 14px; height: 14px;">schedule</mat-icon>
+            <span>{{ slot }}</span>
+          </button>
+        </div>
+        <small style="color: var(--text3); font-size: 11px; margin-top: 4px; display: block;">Haz clic para marcar o desmarcar los horarios de toma diaria.</small>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Instrucciones Especiales para TENS</label>
+        <input class="field-input" type="text" [(ngModel)]="medicationDraft.instructions" placeholder="Ej: Con alimentos, en ayunas, diluido en 100ml de agua">
+      </div>
+
+      <div class="grid grid-cols-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="field-group">
+          <label class="field-label">Diagnóstico / Patología Asociada</label>
+          <input class="field-input" type="text" [(ngModel)]="medicationDraft.diagnosis" placeholder="Ej: Hipertensión Arterial">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Médico Tratante</label>
+          <input class="field-input" type="text" [(ngModel)]="medicationDraft.prescribed_by" placeholder="Ej: Dr. Roberto Silva">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showMedicationModal = false">Cancelar</button>
+      <button class="btn-primary" (click)="saveMedication()" [disabled]="savingMedication">
+        {{ savingMedication ? 'Guardando...' : 'Guardar en Kardex' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Justificación de Rechazo o Suspensión -->
+<div class="modal-backdrop" *ngIf="showJustificationModal" (click)="showJustificationModal = false">
+  <div class="modal-box" style="max-width: 480px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">
+        {{ pendingJustification?.status === 'rejected' ? 'Registrar Rechazo de Dosis' : 'Suspender Dosis Temporalmente' }}
+      </span>
+      <button class="modal-close" (click)="showJustificationModal = false">
+        <mat-icon style="font-size:18px;width:18px;height:18px">close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body" *ngIf="pendingJustification">
+      <div style="background: var(--bg3); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+        <strong style="display: block; color: var(--text);">{{ pendingJustification.med.name }} {{ pendingJustification.med.dosage }}</strong>
+        <small style="color: var(--text2);">Residente: {{ pendingJustification.patient.nombreCompleto }} &middot; Bloque {{ pendingJustification.slot }}</small>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Motivo u Observación Clínica <span class="text-danger">*</span></label>
+        <textarea 
+          class="field-input" 
+          rows="3" 
+          [(ngModel)]="pendingJustification.notes"
+          placeholder="Describe la razón (ej. Residente manifiesta náuseas, no desea tomarlo, en ayunas por examen de laboratorio)"
+        ></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showJustificationModal = false">Cancelar</button>
+      <button 
+        type="button" 
+        class="btn-primary" 
+        [style.background]="pendingJustification?.status === 'rejected' ? 'var(--warn)' : 'var(--danger)'"
+        (click)="saveJustification()"
+      >
+        Confirmar Registro
+      </button>
+    </div>
+  </div>
+</div>
+
  

@@ -5,6 +5,7 @@ import { AuthService, ProfileRole } from '../../core/services/auth.service';
 import { UiService } from '../../core/services/ui.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { FollowupService, PatientFollowup, PatientStatus, FollowupType, FollowupPriority, PATIENT_STATUS_CONFIG, FOLLOWUP_TYPE_CONFIG } from '../../core/services/followup.service';
+import { WhatsAppBotService } from '../../core/services/whatsapp-bot.service';
 
 type SupportChannel = 'Chat' | 'Videollamada' | 'Llamada';
 
@@ -60,6 +61,39 @@ type CollaboratorSummary = {
   urgency: string | null;
   notes: string | null;
 };
+
+export interface CollaboratorIntakeSummary {
+  id: string;
+  name: string;
+  relation: string;
+  condition: string;
+  coverage: string;
+  createdAt: string;
+  raw: any;
+}
+
+export interface NewIntakeDraft {
+  careReceiverFullName: string;
+  careReceiverRut: string;
+  careReceiverBirthDate: string;
+  careReceiverAge: number | null;
+  careReceiverPhone: string;
+  careReceiverHealthCoverage: string;
+  primaryCondition: string;
+  dependencyLevel: string;
+  careType: string;
+  city: string;
+  postalCode: string;
+  hasTwoFloors: string;
+  supportNetwork: string;
+  budgetMonthlyMax: number | null;
+  funding: string;
+  preferredContact: string;
+  urgency: string;
+  caregiverName: string;
+  caregiverRelation: string;
+  notes: string;
+}
 
 type QuickReply = {
   label: string;
@@ -317,6 +351,15 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   public showAttachmentMenu = false;
   public composerMode: ComposerMode = 'client';
   public selectedCollaborator: CollaboratorSummary | null = null;
+  public collaboratorIntakes: CollaboratorIntakeSummary[] = [];
+  public selectedIntakeId: string | null = null;
+  public selectedCollaboratorCompanyId: string | null = null;
+  public showNewIntakeModal = false;
+  public savingIntake = false;
+  public newIntakeDraft: NewIntakeDraft = this.createDefaultIntakeDraft();
+  private cachedProfile: any = null;
+  private cachedCompany: string | null = null;
+  private cachedMemberRole: string | null = null;
   public showContextSheet = false;
   public showChat = false;
   public copiedMeetingId: string | null = null;
@@ -549,6 +592,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   }
 
   private realtimeChannel: any | null = null;
+  public notifyByEmail: boolean = true;
   private typingTimeout: ReturnType<typeof setTimeout> | null = null;
   private stopTypingTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly allowedRoles: ProfileRole[] = ['employee', 'company_admin', 'care_expert', 'admin'];
@@ -562,6 +606,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     private readonly cdr: ChangeDetectorRef,
     private readonly zone: NgZone,
     private readonly followupService: FollowupService,
+    public readonly whatsappBot: WhatsAppBotService,
   ) {}
 
   public ngOnInit(): void {
@@ -1341,6 +1386,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     this.showQuickReplies = false;
     this.showAttachmentMenu = false;
     this.showChat = false;
+    this.selectedIntakeId = null;
     await this.loadMessages();
     await this.setupRealtime();
     await this.loadSelectedContext();
@@ -1929,12 +1975,14 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     } else {
       this.messages = [];
       this.selectedCollaborator = null;
+      this.collaboratorIntakes = [];
+      this.selectedIntakeId = null;
       this.showContextSheet = false;
+      this.showNewIntakeModal = false;
       this.selectedHistory = [];
       this.selectedTags = [];
       this.selectedAppointments = [];
       this.activeRequestChannel = null;
-      this.showContextSheet = false;
       await this.teardownRealtime();
     }
   }
@@ -2139,8 +2187,96 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       .order('created_at', { ascending: true });
     this.selectedTags = (tags ?? []).map((item: any) => item.tag as string);
 
-    let company: string | null = null;
-    let memberRole: string | null = null;
+    const { data: profile } = await this.supabase.client
+      .from('profiles')
+      .select('full_name, email, company, role')
+      .eq('id', request.employee_id)
+      .maybeSingle();
+
+    this.cachedProfile = profile;
+    this.cachedCompany = (profile?.company as string | undefined) ?? null;
+    this.cachedMemberRole = (profile?.role as string | undefined) ?? null;
+    this.selectedCollaboratorCompanyId = null;
+
+    try {
+      const { data: membership } = await this.supabase.client
+        .from('company_members')
+        .select('company_id, member_role, companies:companies(name)')
+        .eq('user_id', request.employee_id)
+        .maybeSingle();
+
+      const companyRow = ((membership as any)?.companies as { name?: string } | undefined) ?? undefined;
+      this.cachedCompany = (companyRow?.name as string | undefined) ?? this.cachedCompany;
+      this.cachedMemberRole = ((membership as any)?.member_role as string | undefined) ?? this.cachedMemberRole;
+      this.selectedCollaboratorCompanyId = ((membership as any)?.company_id as string | undefined) ?? null;
+    } catch {
+      // ignore
+    }
+
+    try {
+      const { data: intakes } = await this.supabase.client
+        .from('care_intakes')
+        .select('*')
+        .eq('employee_id', request.employee_id)
+        .order('created_at', { ascending: false });
+
+      const list = (intakes || []) as any[];
+      this.collaboratorIntakes = list.map((intakeData) => {
+        const payload = (intakeData?.payload as any) ?? null;
+        const name =
+          intakeData?.care_receiver_full_name ||
+          this.readPayloadValue(payload, [['care_receiver', 'full_name'], ['care_receiver', 'name']]) ||
+          'Familiar';
+        const relation =
+          this.readPayloadValue(payload, [['caregiver', 'relation'], ['family', 'relation']]) || 'Familiar';
+        const condition =
+          this.readPayloadValue(payload, [['care_receiver', 'primary_condition'], ['clinical_profile']]) || '';
+        const coverage =
+          intakeData?.care_receiver_health_coverage ||
+          this.readPayloadValue(payload, [['care_receiver', 'health_coverage'], ['health_coverage']]) ||
+          '';
+        return {
+          id: intakeData.id,
+          name,
+          relation,
+          condition,
+          coverage,
+          createdAt: intakeData.created_at,
+          raw: intakeData,
+        };
+      });
+
+      const selected =
+        this.collaboratorIntakes.find((i) => i.id === this.selectedIntakeId) ||
+        this.collaboratorIntakes[0] ||
+        null;
+      if (selected) {
+        this.selectedIntakeId = selected.id;
+        this.applyIntake(selected.raw);
+      } else {
+        this.selectedIntakeId = null;
+        this.applyIntake(null);
+      }
+    } catch {
+      this.collaboratorIntakes = [];
+      this.selectedIntakeId = null;
+      this.applyIntake(null);
+    }
+  }
+
+  public selectIntake(intakeId: string): void {
+    this.selectedIntakeId = intakeId;
+    const found = this.collaboratorIntakes.find((i) => i.id === intakeId);
+    if (found) {
+      this.applyIntake(found.raw);
+    }
+    this.cdr.markForCheck();
+  }
+
+  private applyIntake(intakeData: any): void {
+    const request = this.selectedRequest;
+    if (!request) return;
+
     let location: string | null = null;
     let familyAge: string | null = null;
     let relation: string | null = null;
@@ -2160,46 +2296,27 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     let urgency: string | null = null;
     let notes: string | null = null;
 
-    const { data: profile } = await this.supabase.client
-      .from('profiles')
-      .select('full_name, email, company, role')
-      .eq('id', request.employee_id)
-      .maybeSingle();
-
-    company = (profile?.company as string | undefined) ?? null;
-    memberRole = (profile?.role as string | undefined) ?? null;
-
-    try {
-      const { data: membership } = await this.supabase.client
-        .from('company_members')
-        .select('member_role, companies:companies(name)')
-        .eq('user_id', request.employee_id)
-        .maybeSingle();
-
-      const companyRow = ((membership as any)?.companies as { name?: string } | undefined) ?? undefined;
-      company = (companyRow?.name as string | undefined) ?? company;
-      memberRole = ((membership as any)?.member_role as string | undefined) ?? memberRole;
-    } catch {
-      // ignore
-    }
-
-    try {
-      const { data: intake } = await this.supabase.client
-        .from('care_intakes')
-        .select('payload, care_receiver_full_name, care_receiver_rut, care_receiver_birth_date, care_receiver_phone, care_receiver_health_coverage')
-        .eq('employee_id', request.employee_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const intakeData = intake as any;
+    if (intakeData) {
       const payload = (intakeData?.payload as any) ?? null;
-      location = this.readPayloadValue(payload, [
-        ['location', 'postal_code'],
-        ['location', 'comuna'],
-        ['location', 'city'],
-        ['location', 'address'],
-      ]);
+      const comunaVal =
+        (intakeData as any)?.care_receiver_comuna ||
+        this.readPayloadValue(payload, [['location', 'comuna'], ['comuna']]);
+      const cityVal =
+        (intakeData as any)?.care_receiver_city ||
+        this.readPayloadValue(payload, [['location', 'city'], ['city']]);
+      if (comunaVal && cityVal && comunaVal.toLowerCase() !== cityVal.toLowerCase()) {
+        location = `${comunaVal}, ${cityVal}`;
+      } else {
+        location =
+          comunaVal ||
+          cityVal ||
+          (intakeData as any)?.care_receiver_address ||
+          this.readPayloadValue(payload, [
+            ['location', 'address'],
+            ['location', 'region'],
+            ['location', 'postal_code'],
+          ]);
+      }
       familyAge = this.readPayloadValue(payload, [
         ['care_receiver', 'age'],
         ['family', 'age'],
@@ -2212,27 +2329,32 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       preferredContact = this.readPayloadValue(payload, [['preferences', 'preferred_contact']]);
       supportNetwork = this.readPayloadValue(payload, [['family_context', 'support_network']]);
       hasTwoFloors = this.readPayloadValue(payload, [['location', 'has_two_floors'], ['location', 'two_floors']]);
-      
-      careReceiverName = intakeData?.care_receiver_full_name || this.readPayloadValue(payload, [['care_receiver', 'full_name'], ['care_receiver', 'name']]);
-      careReceiverRut = intakeData?.care_receiver_rut || this.readPayloadValue(payload, [['care_receiver', 'rut']]);
-      careReceiverBirthDate = intakeData?.care_receiver_birth_date || this.readPayloadValue(payload, [['care_receiver', 'birth_date']]);
-      careReceiverPhone = intakeData?.care_receiver_phone || this.readPayloadValue(payload, [['care_receiver', 'phone']]);
-      healthCoverage = intakeData?.care_receiver_health_coverage || this.readPayloadValue(payload, [['care_receiver', 'health_coverage'], ['health_coverage'], ['prevision']]);
-      
+
+      careReceiverName =
+        intakeData?.care_receiver_full_name ||
+        this.readPayloadValue(payload, [['care_receiver', 'full_name'], ['care_receiver', 'name']]);
+      careReceiverRut =
+        intakeData?.care_receiver_rut || this.readPayloadValue(payload, [['care_receiver', 'rut']]);
+      careReceiverBirthDate =
+        intakeData?.care_receiver_birth_date || this.readPayloadValue(payload, [['care_receiver', 'birth_date']]);
+      careReceiverPhone =
+        intakeData?.care_receiver_phone || this.readPayloadValue(payload, [['care_receiver', 'phone']]);
+      healthCoverage =
+        intakeData?.care_receiver_health_coverage ||
+        this.readPayloadValue(payload, [['care_receiver', 'health_coverage'], ['health_coverage'], ['prevision']]);
+
       budgetMonthlyMax = this.readPayloadValue(payload, [['budget', 'monthly_max'], ['budget', 'max'], ['budget']]);
       funding = this.readPayloadValue(payload, [['budget', 'funding'], ['funding']]);
       careType = this.readPayloadValue(payload, [['care_type'], ['type']]);
       urgency = this.readPayloadValue(payload, [['urgency'], ['priority']]);
       notes = this.readPayloadValue(payload, [['notes'], ['observations'], ['comments']]);
-    } catch {
-      // ignore
     }
 
     this.selectedCollaborator = {
-      fullName: request.employee_name ?? (profile?.full_name as string | undefined) ?? null,
-      email: request.employee_email ?? (profile?.email as string | undefined) ?? null,
-      company,
-      memberRole,
+      fullName: request.employee_name ?? (this.cachedProfile?.full_name as string | undefined) ?? null,
+      email: request.employee_email ?? (this.cachedProfile?.email as string | undefined) ?? null,
+      company: this.cachedCompany,
+      memberRole: this.cachedMemberRole,
       location,
       familyAge,
       relation,
@@ -2471,6 +2593,28 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     return map[value ?? ''] ?? value ?? 'No informado';
   }
 
+  public relationLabel(val: string | null | undefined, collaboratorName?: string | null): string {
+    if (!val) return 'Familiar';
+    const v = val.trim().toLowerCase();
+    const colName = collaboratorName?.trim() || 'el colaborador';
+    if (v === 'padre' || v === 'padres' || v === 'father') return `Padre / Madre (${colName} es su hijo/a)`;
+    if (v === 'madre' || v === 'mother') return `Madre (${colName} es su hijo/a)`;
+    if (v === 'hijo' || v === 'hija' || v === 'son' || v === 'daughter') return `Hijo/a (a cargo de ${colName})`;
+    if (v === 'abuelo' || v === 'abuela' || v === 'grandparent') return `Abuelo/a (${colName} es su nieto/a)`;
+    if (v === 'pareja' || v === 'conyuge' || v === 'esposo' || v === 'esposa' || v === 'spouse') return `Pareja / Cónyuge de ${colName}`;
+    if (v === 'tio' || v === 'tia' || v === 'uncle' || v === 'aunt') return `Tío/a (${colName} es su sobrino/a)`;
+    if (v === 'hermano' || v === 'hermana' || v === 'sibling') return `Hermano/a de ${colName}`;
+    if (v === 'yo' || v === 'mismo' || v === 'self') return `El propio colaborador (${colName})`;
+    return val;
+  }
+
+  public getDependencyBadgeClass(level: string | null | undefined): string {
+    const l = (level || '').toLowerCase();
+    if (l === 'high' || l === 'full' || l.includes('sever') || l.includes('total') || l.includes('alta')) return 'ce-chip--danger';
+    if (l === 'medium' || l.includes('moder') || l.includes('media')) return 'ce-chip--warning';
+    return 'ce-chip--success';
+  }
+
   public formatBudgetValue(value: number | string | null | undefined): string {
     if (value === null || value === undefined || value === '') return 'No informado';
     const num = Number(value);
@@ -2524,7 +2668,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         effectiveStatus = 'requiere_atencion';
       }
 
-      await this.followupService.addFollowup({
+      const savedFollowup = await this.followupService.addFollowup({
         request_id: this.selectedRequest.id,
         expert_id: this.auth.user.id,
         employee_id: this.selectedRequest.employee_id,
@@ -2539,6 +2683,36 @@ export class CareExpertsPage implements OnInit, OnDestroy {
           : null,
         priority: this.followupDraft.priority as FollowupPriority,
       });
+
+      // Si la casilla de notificar por correo está activa, enviamos alerta automática a n8n -> Gmail
+      if (this.notifyByEmail) {
+        const targetEmail = this.selectedCollaborator?.email || this.selectedRequest.employee_email || '';
+        const targetName = this.selectedCollaborator?.fullName || this.selectedRequest.employee_name || 'Colaborador';
+        const patientName = this.selectedCollaborator?.careReceiverName || (this.selectedCollaborator?.relation ? `Familiar (${this.selectedCollaborator.relation})` : 'Paciente');
+        const nextDate = this.followupDraft.next_followup_date || null;
+        const priorityStr = this.followupDraft.priority || 'media';
+
+        const emailResult = await this.dispatchFollowupAlertEmail({
+          targetEmail,
+          targetName,
+          patientName,
+          status: effectiveStatus,
+          note: effectiveNote,
+          priority: priorityStr,
+          nextFollowup: nextDate
+        });
+
+        if (emailResult.sent) {
+          alert(`Seguimiento guardado y notificación por correo enviada con éxito a ${targetEmail}.`);
+        } else if (emailResult.message) {
+          alert(`Seguimiento guardado con éxito.\n(Aviso de correo: ${emailResult.message})`);
+        } else {
+          alert('Seguimiento guardado con éxito.');
+        }
+      } else {
+        alert('Seguimiento guardado con éxito.');
+      }
+
       this.followupDraft = this.createDefaultFollowupDraft();
       this.isCustomStatus = false;
       this.customStatusText = '';
@@ -2549,6 +2723,116 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     } finally {
       this.savingFollowup = false;
       this.cdr.markForCheck();
+    }
+  }
+
+  private async dispatchFollowupAlertEmail(params: {
+    targetEmail: string;
+    targetName: string;
+    patientName: string;
+    status: PatientStatus;
+    note: string;
+    priority: string;
+    nextFollowup: string | null;
+  }): Promise<{ sent: boolean; message?: string }> {
+    if (!params.targetEmail) {
+      return { sent: false, message: 'El colaborador no tiene correo electrónico registrado.' };
+    }
+    if (!this.whatsappBot.getWebhookUrl()) {
+      return { 
+        sent: false, 
+        message: 'No hay URL de Webhook de n8n configurada en tu Perfil (Notificaciones).' 
+      };
+    }
+
+    const statusInfo = PATIENT_STATUS_CONFIG[params.status] || { label: params.status, color: '#0284c7' };
+    const expertName = this.auth.user?.user_metadata?.['full_name'] || this.auth.user?.email || 'Care Expert';
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 620px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 24px; text-align: center; color: white;">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 700;">Company Care</h1>
+          <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;">Monitoreo de Bienestar & Acompañamiento Clínico</p>
+        </div>
+
+        <div style="padding: 28px 24px;">
+          <p style="font-size: 16px; margin: 0 0 14px 0; color: #1e293b;">
+            Estimado/a <strong>${params.targetName}</strong>,
+          </p>
+          <p style="font-size: 14px; line-height: 1.5; color: #475569; margin: 0 0 20px 0;">
+            El especialista <strong>${expertName}</strong> ha registrado una nueva actualización y seguimiento clínico para <strong>${params.patientName}</strong> en el sistema de bienestar de Company Care.
+          </p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; width: 140px;"><strong>Paciente / Familiar:</strong></td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${params.patientName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Estado de salud:</strong></td>
+                <td style="padding: 6px 0;">
+                  <span style="background-color: ${statusInfo.color}18; color: ${statusInfo.color}; border: 1px solid ${statusInfo.color}40; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 13px; display: inline-block;">
+                    ● ${statusInfo.label}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Prioridad:</strong></td>
+                <td style="padding: 6px 0; color: #0f172a; text-transform: capitalize;">${params.priority}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Especialista:</strong></td>
+                <td style="padding: 6px 0; color: #0f172a;">${expertName}</td>
+              </tr>
+              ${params.nextFollowup ? `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Próximo control:</strong></td>
+                <td style="padding: 6px 0; color: #0284c7; font-weight: 600;">${params.nextFollowup}</td>
+              </tr>` : ''}
+            </table>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 8px;">
+              Reporte y Evolución Clínica
+            </div>
+            <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 16px; border-radius: 6px; font-size: 14px; line-height: 1.6; color: #1e293b;">
+              ${params.note.replace(/\n/g, '<br/>')}
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0 10px 0;">
+            <a href="https://companycare.cl/#/requests" style="background-color: #0284c7; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 2px 4px rgba(2,132,199,0.3);">
+              Ver Mi Caso en Company Care →
+            </a>
+          </div>
+        </div>
+
+        <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+          Company Care · SeniorAdvisor Chile. Sistema confidencial de acompañamiento y cuidados.
+        </div>
+      </div>
+    `;
+
+    try {
+      const res = await this.whatsappBot.sendNotification({
+        email: params.targetEmail,
+        recipientName: params.targetName,
+        subject: `🩺 Actualización de Monitoreo: ${params.patientName} (${statusInfo.label})`,
+        message: `Hola ${params.targetName},\n\nEl especialista ${expertName} ha registrado una nueva actualización de salud para ${params.patientName}: ${statusInfo.label}.\n\nReporte: "${params.note}"`,
+        html: html,
+        event: 'clinical_followup_created',
+        metadata: {
+          patient_name: params.patientName,
+          status: params.status,
+          priority: params.priority
+        }
+      });
+      return { sent: res.success, message: res.message };
+    } catch (e: any) {
+      console.warn('Error al despachar notificación de seguimiento por correo:', e);
+      return { sent: false, message: e?.message || 'Error inesperado al conectar con webhook' };
     }
   }
 
@@ -2621,6 +2905,129 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       this.followupDraft.note = `Realizamos la consulta de seguimiento periódico para revisar las necesidades de ${receiver}. Todo se mantiene en orden y bajo control.`;
       this.followupDraft.internal_note = `Contacto de seguimiento con colaborador. Se aclaran dudas y se valida estado general.`;
     }
+  }
+
+  public openNewIntakeModal(): void {
+    this.newIntakeDraft = this.createDefaultIntakeDraft();
+    if (this.selectedRequest?.employee_name) {
+      this.newIntakeDraft.caregiverName = this.selectedRequest.employee_name;
+    }
+    this.showNewIntakeModal = true;
+  }
+
+  public closeNewIntakeModal(): void {
+    if (this.savingIntake) return;
+    this.showNewIntakeModal = false;
+  }
+
+  public async saveNewIntake(): Promise<void> {
+    if (!this.selectedRequest) return;
+    const name = this.newIntakeDraft.careReceiverFullName.trim();
+    if (!name) {
+      alert('Por favor, ingresa el nombre de la persona cuidada.');
+      return;
+    }
+
+    this.savingIntake = true;
+    try {
+      const payload = {
+        care_type: this.newIntakeDraft.careType,
+        care_receiver: {
+          full_name: name,
+          rut: this.newIntakeDraft.careReceiverRut.trim() || null,
+          birth_date: this.newIntakeDraft.careReceiverBirthDate || null,
+          age: this.newIntakeDraft.careReceiverAge,
+          phone: this.newIntakeDraft.careReceiverPhone.trim() || null,
+          health_coverage: this.newIntakeDraft.careReceiverHealthCoverage || null,
+          primary_condition: this.newIntakeDraft.primaryCondition.trim() || null,
+          dependency_level: this.newIntakeDraft.dependencyLevel,
+        },
+        location: {
+          city: this.newIntakeDraft.city.trim() || null,
+          postal_code: this.newIntakeDraft.postalCode.trim() || null,
+          has_two_floors: this.newIntakeDraft.hasTwoFloors || 'house_1f',
+        },
+        family_context: {
+          support_network: this.newIntakeDraft.supportNetwork.trim() || null,
+        },
+        budget: {
+          monthly_max: this.newIntakeDraft.budgetMonthlyMax,
+          funding: this.newIntakeDraft.funding,
+        },
+        preferences: {
+          preferred_contact: this.newIntakeDraft.preferredContact,
+        },
+        urgency: this.newIntakeDraft.urgency,
+        caregiver: {
+          name: this.newIntakeDraft.caregiverName.trim() || null,
+          relation: this.newIntakeDraft.caregiverRelation.trim() || null,
+          company: this.cachedCompany || null,
+        },
+        notes: this.newIntakeDraft.notes.trim() || null,
+      };
+
+      const receiverColumns = {
+        care_receiver_full_name: name,
+        care_receiver_rut: this.newIntakeDraft.careReceiverRut.trim() || null,
+        care_receiver_birth_date: this.newIntakeDraft.careReceiverBirthDate || null,
+        care_receiver_phone: this.newIntakeDraft.careReceiverPhone.trim() || null,
+        care_receiver_health_coverage: this.newIntakeDraft.careReceiverHealthCoverage || null,
+      };
+
+      const insertData = {
+        company_id: this.selectedCollaboratorCompanyId,
+        employee_id: this.selectedRequest.employee_id,
+        created_by: this.auth.user?.id || this.selectedRequest.employee_id,
+        payload,
+        ...receiverColumns,
+      };
+
+      const { data: inserted, error } = await this.supabase.client
+        .from('care_intakes')
+        .insert(insertData as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await this.loadSelectedContext();
+      if (inserted?.id) {
+        this.selectIntake(inserted.id);
+      }
+
+      this.showNewIntakeModal = false;
+      alert(`Ficha registrada con éxito para ${name}.`);
+    } catch (err: any) {
+      alert('Error al guardar la nueva ficha: ' + (err?.message ?? String(err)));
+    } finally {
+      this.savingIntake = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private createDefaultIntakeDraft(): NewIntakeDraft {
+    return {
+      careReceiverFullName: '',
+      careReceiverRut: '',
+      careReceiverBirthDate: '',
+      careReceiverAge: null,
+      careReceiverPhone: '',
+      careReceiverHealthCoverage: 'FONASA',
+      primaryCondition: '',
+      dependencyLevel: 'medium',
+      careType: 'home_care',
+      city: '',
+      postalCode: '',
+      hasTwoFloors: 'house_1f',
+      supportNetwork: '',
+      budgetMonthlyMax: 500000,
+      funding: 'self_funder',
+      preferredContact: 'phone',
+      urgency: 'immediate',
+      caregiverName: '',
+      caregiverRelation: 'Hijo/a',
+      notes: '',
+    };
   }
 
   private createDefaultFollowupDraft(): { patient_status: string; followup_type: string; note: string; internal_note: string; next_followup_date: string; priority: string } {

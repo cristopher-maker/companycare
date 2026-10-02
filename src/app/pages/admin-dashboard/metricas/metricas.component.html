@@ -1,137 +1,404 @@
-<div class="metrics-view">
-  <section class="dashboard-hero">
-    <div>
-      <span class="dashboard-hero__eyebrow">Panel de control</span>
-      <h1>{{ parent.dashboardGreeting }}, {{ parent.profileName || 'Administrador' }}</h1>
-      <p>Resumen operativo de admisiones, tareas, disponibilidad y alertas.</p>
+<div class="metrics-view quimun-dashboard">
+  <!-- Header: Hero & Quick Actions -->
+  <header class="qm-header">
+    <div class="qm-header__info">
+      <div class="qm-header__badge">
+        <mat-icon>domain</mat-icon>
+        <span>SISTEMA DE GESTIÓN RESIDENCIAL & CLÍNICA (ELEAM)</span>
+      </div>
+      <h1 class="qm-header__title">{{ parent.dashboardGreeting }}, {{ parent.profileName || 'Administrador' }}</h1>
+      <p class="qm-header__subtitle">Control integral en tiempo real: ocupación hotelera, fichas de residentes y flujo de admisiones.</p>
     </div>
-  </section>
-
-  <div class="dashboard-summary-grid">
-    <button type="button" class="dashboard-summary-card" *ngFor="let card of parent.dashboardSummaryCards" [ngClass]="'dashboard-summary-card--' + card.tone">
-      <span class="dashboard-summary-card__icon">
-        <mat-icon>{{ card.icon }}</mat-icon>
-      </span>
-      <span class="dashboard-summary-card__label">{{ card.label }}</span>
-      <strong>{{ card.value }}</strong>
-      <small>{{ card.detail }}</small>
-    </button>
-  </div>
-
-  <div class="dashboard-workbench">
-    <section class="table-card dashboard-panel dashboard-panel--actions">
-      <div class="dashboard-panel__header">
-        <div>
-          <h3>Próximas acciones</h3>
-          <p>Prioridades sugeridas con los datos actuales.</p>
-        </div>
-      </div>
-      <div class="dashboard-action-list" *ngIf="parent.dashboardActionItems.length">
-        <button type="button" class="dashboard-action" *ngFor="let item of parent.dashboardActionItems" [ngClass]="'dashboard-action--' + item.tone" (click)="parent.setView(item.view)">
-          <span><mat-icon>{{ item.icon }}</mat-icon></span>
-          <strong>{{ item.title }}</strong>
-          <small>{{ item.detail }}</small>
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-      </div>
-      <div class="dashboard-empty" *ngIf="!parent.dashboardActionItems.length">
-        No hay acciones urgentes pendientes.
-      </div>
-    </section>
-  </div>
-
-  <div class="metrics-charts">
-    <section class="table-card chart-card">
-      <div class="chart-card__header">
-        <h3 class="chart-card__title">Distribución de Camas</h3>
-      </div>
-      <div class="chart-card__body">
-        <div *ngIf="parent.camasTotales > 0" class="chart-canvas chart-canvas--square">
-          <canvas
-            baseChart
-            [labels]="parent.doughnutChartLabels"
-            [datasets]="parent.doughnutChartDatasets"
-            [options]="parent.doughnutChartOptions"
-            [legend]="true"
-            type="doughnut">
-          </canvas>
-        </div>
-        <div *ngIf="parent.camasTotales === 0" class="chart-empty-state">Sin datos</div>
-      </div>
-    </section>
     
-    <section class="table-card chart-card">
-      <div class="chart-card__header">
-        <h3 class="chart-card__title">Estado de Admisiones</h3>
+    <div class="qm-header__actions">
+      <button type="button" class="btn-qm btn-qm--primary" (click)="parent.openNewPacienteModal()">
+        <mat-icon>person_add</mat-icon>
+        <span>+ Nuevo Residente</span>
+      </button>
+      <button type="button" class="btn-qm btn-qm--secondary" (click)="parent.openLeadModal()">
+        <mat-icon>add_circle</mat-icon>
+        <span>+ Nueva Admisión</span>
+      </button>
+      <button type="button" class="btn-qm btn-qm--outline" (click)="parent.setView('camas')">
+        <mat-icon>bed</mat-icon>
+        <span>Asignar Cama</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- High-Impact KPI Cards -->
+  <div class="qm-kpi-grid">
+    <!-- Card 1: Ocupación Hotelera -->
+    <div class="qm-kpi-card qm-kpi-card--primary" (click)="parent.setView('camas')">
+      <div class="qm-kpi-card__top">
+        <span class="qm-kpi-card__label">Ocupación Hotelera</span>
+        <span class="qm-kpi-card__icon"><mat-icon>bed</mat-icon></span>
       </div>
-      <div class="chart-card__body">
-        <div *ngIf="parent.totalLeads > 0" class="chart-canvas chart-canvas--bar">
-          <canvas
-            baseChart
-            [labels]="parent.barChartLabels"
-            [datasets]="parent.barChartDatasets"
-            [options]="parent.barChartOptions"
-            [legend]="false"
-            type="bar">
-          </canvas>
+      <div class="qm-kpi-card__main">
+        <strong class="qm-kpi-card__value">{{ parent.camasTotales > 0 ? parent.porcentajeOcupacion + '%' : '0%' }}</strong>
+        <span class="qm-kpi-card__status" [ngClass]="parent.camasDisponibles === 0 && parent.camasTotales > 0 ? 'status--critical' : 'status--good'">
+          {{ parent.camasTotales > 0 ? parent.camasDisponibles + ' camas libres' : 'Sin camas' }}
+        </span>
+      </div>
+      <div class="qm-kpi-progress">
+        <div class="qm-kpi-progress__bar" [style.width.%]="parent.porcentajeOcupacion"
+             [ngClass]="{'is-high': parent.porcentajeOcupacion >= 90, 'is-mid': parent.porcentajeOcupacion >= 70 && parent.porcentajeOcupacion < 90}">
         </div>
-        <div *ngIf="parent.totalLeads === 0" class="chart-empty-state">Sin datos</div>
       </div>
-    </section>
-    
-    <section class="table-card chart-card">
-      <div class="chart-card__header">
-        <h3 class="chart-card__title">Estado de Tareas</h3>
+      <div class="qm-kpi-card__footer">
+        <span>{{ parent.camasOcupadas }} ocupadas de {{ parent.camasTotales }} totales</span>
+        <mat-icon class="qm-kpi-card__arrow">arrow_forward</mat-icon>
       </div>
-      <div class="chart-card__body">
-        <div *ngIf="parent.totalTareas > 0" class="chart-canvas chart-canvas--square">
-          <canvas
-            baseChart
-            [labels]="parent.tasksChartLabels"
-            [datasets]="parent.tasksChartDatasets"
-            [options]="parent.tasksChartOptions"
-            [legend]="true"
-            type="doughnut">
-          </canvas>
-        </div>
-        <div *ngIf="parent.totalTareas === 0" class="chart-empty-state">Sin datos</div>
+    </div>
+
+    <!-- Card 2: Residentes Activos -->
+    <div class="qm-kpi-card qm-kpi-card--green" (click)="parent.setView('pacientes')">
+      <div class="qm-kpi-card__top">
+        <span class="qm-kpi-card__label">Residentes Activos</span>
+        <span class="qm-kpi-card__icon"><mat-icon>people</mat-icon></span>
       </div>
-    </section>
+      <div class="qm-kpi-card__main">
+        <strong class="qm-kpi-card__value">{{ parent.pacientes.length }}</strong>
+        <span class="qm-kpi-card__status status--good">En residencia</span>
+      </div>
+      <div class="qm-kpi-card__desc">
+        {{ parent.pacientesActivos.length }} residentes con habitación asignada
+      </div>
+      <div class="qm-kpi-card__footer">
+        <span>Ver fichas clínicas</span>
+        <mat-icon class="qm-kpi-card__arrow">arrow_forward</mat-icon>
+      </div>
+    </div>
+
+    <!-- Card 3: Admisiones en Curso -->
+    <div class="qm-kpi-card qm-kpi-card--blue" (click)="parent.setView('admisiones')">
+      <div class="qm-kpi-card__top">
+        <span class="qm-kpi-card__label">Admisiones en Curso</span>
+        <span class="qm-kpi-card__icon"><mat-icon>view_kanban</mat-icon></span>
+      </div>
+      <div class="qm-kpi-card__main">
+        <strong class="qm-kpi-card__value">{{ parent.leads.length }}</strong>
+        <span class="qm-kpi-card__status status--neutral">Pipeline activo</span>
+      </div>
+      <div class="qm-kpi-card__desc">
+        {{ parent.kanbanData['nuevo']?.length || 0 }} consultas nuevas por contactar
+      </div>
+      <div class="qm-kpi-card__footer">
+        <span>Gestionar ingresos</span>
+        <mat-icon class="qm-kpi-card__arrow">arrow_forward</mat-icon>
+      </div>
+    </div>
+
+    <!-- Card 4: Alertas de Capacidad -->
+    <div class="qm-kpi-card qm-kpi-card--warn" (click)="parent.setView('camas')">
+      <div class="qm-kpi-card__top">
+        <span class="qm-kpi-card__label">Alertas de Operación</span>
+        <span class="qm-kpi-card__icon"><mat-icon>notification_important</mat-icon></span>
+      </div>
+      <div class="qm-kpi-card__main">
+        <strong class="qm-kpi-card__value">{{ parent.operationalAlerts.length }}</strong>
+        <span class="qm-kpi-card__status" [ngClass]="parent.operationalAlerts[0]?.level === 'high' ? 'status--critical' : 'status--good'">
+          {{ parent.operationalAlerts[0]?.level === 'high' ? 'Atención urgente' : 'Operación normal' }}
+        </span>
+      </div>
+      <div class="qm-kpi-card__desc">
+        {{ parent.operationalAlerts[0]?.title || 'Capacidad en orden' }}
+      </div>
+      <div class="qm-kpi-card__footer">
+        <span>Revisar alertas</span>
+        <mat-icon class="qm-kpi-card__arrow">arrow_forward</mat-icon>
+      </div>
+    </div>
   </div>
 
-  <section class="table-card ops-panel metrics-alerts-panel">
-    <div class="ops-panel__header">
-      <h3 class="ops-panel__title">Alertas operativas</h3>
-    </div>
-    <div class="ops-alerts-grid">
-      <article class="ops-alert" *ngFor="let alert of parent.operationalAlerts" [ngClass]="'ops-alert--' + alert.level">
-        <div class="ops-alert__dot"></div>
-        <div class="ops-alert__body">
-          <strong>{{ alert.title }}</strong>
-          <p>{{ alert.detail }}</p>
+  <!-- 2-Column Main Layout -->
+  <div class="qm-dashboard-body">
+    <!-- Left Column (Primary Hotel & Clinical Data) -->
+    <div class="qm-dashboard-main">
+      
+      <!-- Card: Hotelería & Distribución de Camas -->
+      <section class="qm-card">
+        <div class="qm-card__header">
+          <div>
+            <h3 class="qm-card__title">Hotelería & Distribución de Camas</h3>
+            <p class="qm-card__subtitle">Disponibilidad habitacional en tiempo real según estándar ELEAM</p>
+          </div>
+          <button type="button" class="btn-qm-link" (click)="parent.setView('camas')">
+            <span>Ver mapa de camas</span>
+            <mat-icon>chevron_right</mat-icon>
+          </button>
         </div>
-      </article>
-    </div>
-  </section>
+        <div class="qm-card__body qm-hotel-body">
+          <div class="qm-hotel-chart-wrap" *ngIf="parent.camasTotales > 0">
+            <div class="qm-chart-donut">
+              <canvas
+                baseChart
+                [labels]="parent.doughnutChartLabels"
+                [datasets]="parent.doughnutChartDatasets"
+                [options]="parent.doughnutChartOptions"
+                [legend]="false"
+                type="doughnut">
+              </canvas>
+            </div>
+            <div class="qm-donut-center">
+              <span class="qm-donut-center__pct">{{ parent.porcentajeOcupacion }}%</span>
+              <span class="qm-donut-center__lbl">Ocupación</span>
+            </div>
+          </div>
+          <div *ngIf="parent.camasTotales === 0" class="qm-empty-block">
+            <mat-icon>bed</mat-icon>
+            <p>No hay camas registradas aún.</p>
+            <button type="button" class="btn-qm btn-qm--secondary" (click)="parent.openCamaModal()">
+              + Registrar Cama
+            </button>
+          </div>
 
-  <section class="table-card dashboard-panel">
-    <div class="dashboard-panel__header">
-      <div>
-        <h3>Actividad reciente</h3>
-        <p>Últimos movimientos de tareas, admisiones y cobros.</p>
-      </div>
-    </div>
-    <div class="dashboard-event-list" *ngIf="parent.latestOperationalEvents.length">
-      <article class="dashboard-event" *ngFor="let event of parent.latestOperationalEvents">
-        <span><mat-icon>{{ event.icon }}</mat-icon></span>
-        <div>
-          <strong>{{ event.title }}</strong>
-          <small>{{ event.detail }} &middot; {{ parent.getTimeAgo(event.created_at) }}</small>
+          <!-- Bed Stats Breakdown -->
+          <div class="qm-hotel-stats">
+            <div class="qm-hotel-stat-row">
+              <div class="qm-hotel-stat-pill qm-hotel-stat-pill--total">
+                <span class="qm-hotel-stat-pill__dot"></span>
+                <span class="qm-hotel-stat-pill__label">Capacidad Total</span>
+                <strong class="qm-hotel-stat-pill__val">{{ parent.camasTotales }}</strong>
+              </div>
+              <div class="qm-hotel-stat-pill qm-hotel-stat-pill--occupied">
+                <span class="qm-hotel-stat-pill__dot"></span>
+                <span class="qm-hotel-stat-pill__label">Ocupadas</span>
+                <strong class="qm-hotel-stat-pill__val">{{ parent.camasOcupadas }}</strong>
+              </div>
+            </div>
+            <div class="qm-hotel-stat-row">
+              <div class="qm-hotel-stat-pill qm-hotel-stat-pill--free">
+                <span class="qm-hotel-stat-pill__dot"></span>
+                <span class="qm-hotel-stat-pill__label">Disponibles / Vacantes</span>
+                <strong class="qm-hotel-stat-pill__val">{{ parent.camasDisponibles }}</strong>
+              </div>
+              <div class="qm-hotel-stat-pill qm-hotel-stat-pill--maint">
+                <span class="qm-hotel-stat-pill__dot"></span>
+                <span class="qm-hotel-stat-pill__label">En Limpieza / Mantención</span>
+                <strong class="qm-hotel-stat-pill__val">{{ parent.camasEnMantenimiento }}</strong>
+              </div>
+            </div>
+          </div>
         </div>
-      </article>
+      </section>
+
+      <!-- Card: Pipeline de Admisiones e Ingresos -->
+      <section class="qm-card">
+        <div class="qm-card__header">
+          <div>
+            <h3 class="qm-card__title">Pipeline de Admisiones e Ingresos</h3>
+            <p class="qm-card__subtitle">Gestión de familias interesadas y proceso de evaluación geriátrica</p>
+          </div>
+          <button type="button" class="btn-qm-link" (click)="parent.setView('admisiones')">
+            <span>Ver tablero Kanban</span>
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+        <div class="qm-card__body">
+          <!-- Pipeline stage pills -->
+          <div class="qm-pipeline-stages">
+            <div class="qm-pipeline-stage">
+              <span class="qm-pipeline-stage__badge qm-pipeline-stage__badge--new">{{ parent.kanbanData['nuevo']?.length || 0 }}</span>
+              <span class="qm-pipeline-stage__label">Nuevas</span>
+            </div>
+            <div class="qm-pipeline-stage">
+              <span class="qm-pipeline-stage__badge qm-pipeline-stage__badge--contact">{{ parent.kanbanData['contactado']?.length || 0 }}</span>
+              <span class="qm-pipeline-stage__label">Contactadas</span>
+            </div>
+            <div class="qm-pipeline-stage">
+              <span class="qm-pipeline-stage__badge qm-pipeline-stage__badge--eval">{{ parent.kanbanData['evaluacion']?.length || 0 }}</span>
+              <span class="qm-pipeline-stage__label">En Evaluación</span>
+            </div>
+            <div class="qm-pipeline-stage">
+              <span class="qm-pipeline-stage__badge qm-pipeline-stage__badge--match">{{ parent.kanbanData['match']?.length || 0 }}</span>
+              <span class="qm-pipeline-stage__label">Propuesta</span>
+            </div>
+            <div class="qm-pipeline-stage">
+              <span class="qm-pipeline-stage__badge qm-pipeline-stage__badge--closed">{{ parent.kanbanData['cerrado']?.length || 0 }}</span>
+              <span class="qm-pipeline-stage__label">Ingresados</span>
+            </div>
+          </div>
+
+          <div *ngIf="parent.totalLeads > 0" class="qm-chart-bar-wrap">
+            <canvas
+              baseChart
+              [labels]="parent.barChartLabels"
+              [datasets]="parent.barChartDatasets"
+              [options]="parent.barChartOptions"
+              [legend]="false"
+              type="bar">
+            </canvas>
+          </div>
+          <div *ngIf="parent.totalLeads === 0" class="qm-empty-block">
+            <mat-icon>view_kanban</mat-icon>
+            <p>No hay solicitudes de admisión en curso.</p>
+            <button type="button" class="btn-qm btn-qm--secondary" (click)="parent.openLeadModal()">
+              + Registrar Nueva Admisión
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card: Residentes Recientes en Residencia -->
+      <section class="qm-card">
+        <div class="qm-card__header">
+          <div>
+            <h3 class="qm-card__title">Residentes en Residencia</h3>
+            <p class="qm-card__subtitle">Últimas fichas clínicas y asignación habitacional activa</p>
+          </div>
+          <button type="button" class="btn-qm-link" (click)="parent.setView('pacientes')">
+            <span>Ver los {{ parent.pacientes.length }} residentes</span>
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+        <div class="qm-card__body qm-card__body--table">
+          <table class="qm-table" *ngIf="parent.pacientesActivos.length > 0">
+            <thead>
+              <tr>
+                <th>Residente</th>
+                <th>Habitación / Cama</th>
+                <th>Tutor / Apoderado</th>
+                <th>Cuota Mensual</th>
+                <th style="text-align: right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of parent.pacientesActivos.slice(0, 5)">
+                <td>
+                  <div class="qm-table-patient">
+                    <span class="qm-avatar-initials">{{ p.nombreCompleto.substring(0, 2).toUpperCase() }}</span>
+                    <div>
+                      <strong>{{ p.nombreCompleto }}</strong>
+                      <small>RUT/Doc: {{ p.documento }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="qm-bed-badge" [ngClass]="p.cama_id ? 'qm-bed-badge--assigned' : 'qm-bed-badge--unassigned'">
+                    <mat-icon>{{ p.cama_id ? 'single_bed' : 'warning' }}</mat-icon>
+                    {{ p.camaAsignada }}
+                  </span>
+                </td>
+                <td>
+                  <div class="qm-guardian-info">
+                    <span>{{ p.guarantor_name }}</span>
+                    <small>{{ p.contacto }}</small>
+                  </div>
+                </td>
+                <td>
+                  <strong class="qm-fee-text">{{ p.monthly_fee ? ('$' + (p.monthly_fee | number:'1.0-0')) : 'A convenir' }}</strong>
+                </td>
+                <td style="text-align: right;">
+                  <button type="button" class="btn-table-action" (click)="parent.openPacienteModal(p)" title="Ver o editar ficha clínica">
+                    <mat-icon>edit_note</mat-icon>
+                    <span>Ficha</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div *ngIf="parent.pacientesActivos.length === 0" class="qm-empty-block">
+            <mat-icon>people</mat-icon>
+            <p>Aún no hay residentes activos registrados en el sistema.</p>
+            <button type="button" class="btn-qm btn-qm--primary" (click)="parent.openNewPacienteModal()">
+              + Registrar Primer Residente
+            </button>
+          </div>
+        </div>
+      </section>
+
     </div>
-    <div class="dashboard-empty" *ngIf="!parent.latestOperationalEvents.length">
-      Aún no hay actividad para mostrar.
+
+    <!-- Right Column (Alerts, Sedes & Activity) -->
+    <div class="qm-dashboard-sidebar">
+      
+      <!-- Card: Alertas de Capacidad y Operación -->
+      <section class="qm-card qm-card--alerts">
+        <div class="qm-card__header">
+          <div class="qm-card__header-with-badge">
+            <h3 class="qm-card__title">Alertas Operativas</h3>
+            <span class="qm-badge-count" [ngClass]="parent.operationalAlerts[0]?.level === 'high' ? 'qm-badge-count--high' : 'qm-badge-count--normal'">
+              {{ parent.operationalAlerts.length }}
+            </span>
+          </div>
+        </div>
+        <div class="qm-card__body qm-alerts-list">
+          <article class="qm-alert-item" *ngFor="let alert of parent.operationalAlerts" [ngClass]="'qm-alert-item--' + alert.level">
+            <div class="qm-alert-item__indicator"></div>
+            <div class="qm-alert-item__content">
+              <strong>{{ alert.title }}</strong>
+              <p>{{ alert.detail }}</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Card: Ocupación por Sede -->
+      <section class="qm-card">
+        <div class="qm-card__header">
+          <div>
+            <h3 class="qm-card__title">Sedes & Residencias</h3>
+            <p class="qm-card__subtitle">{{ parent.sedes.length }} sedes operativas</p>
+          </div>
+          <button type="button" class="btn-qm-link" (click)="parent.openSedeModal()">
+            <mat-icon>add</mat-icon>
+            <span>Sede</span>
+          </button>
+        </div>
+        <div class="qm-card__body qm-sedes-list">
+          <div class="qm-sede-item" *ngFor="let sede of parent.sedes" (click)="parent.openSedeDetail(sede)">
+            <div class="qm-sede-item__header">
+              <div>
+                <strong>{{ sede.nombre }}</strong>
+                <small>{{ sede.ubicacion || sede.tipo }}</small>
+              </div>
+              <span class="qm-sede-pill" [ngClass]="'qm-sede-pill--' + sede.estado.toLowerCase()">
+                {{ sede.estado }}
+              </span>
+            </div>
+            <div class="qm-sede-item__bar">
+              <div class="qm-sede-item__progress" [style.width.%]="sede.camasTotales > 0 ? (sede.camasOcupadas / sede.camasTotales) * 100 : 0"></div>
+            </div>
+            <div class="qm-sede-item__footer">
+              <span>{{ sede.camasOcupadas }} / {{ sede.camasTotales }} camas ocupadas</span>
+              <span>{{ sede.pacientesCount }} residentes</span>
+            </div>
+          </div>
+
+          <div *ngIf="parent.sedes.length === 0" class="qm-empty-block">
+            <mat-icon>business</mat-icon>
+            <p>No tienes sedes configuradas.</p>
+            <button type="button" class="btn-qm btn-qm--secondary" (click)="parent.openSedeModal()">
+              + Añadir Sede
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card: Bitácora de Actividad Reciente -->
+      <section class="qm-card">
+        <div class="qm-card__header">
+          <div>
+            <h3 class="qm-card__title">Actividad Reciente</h3>
+            <p class="qm-card__subtitle">Movimientos clínicos y de admisiones</p>
+          </div>
+        </div>
+        <div class="qm-card__body qm-events-list" *ngIf="parent.latestOperationalEvents.length > 0">
+          <div class="qm-event-item" *ngFor="let ev of parent.latestOperationalEvents">
+            <span class="qm-event-icon"><mat-icon>{{ ev.icon }}</mat-icon></span>
+            <div class="qm-event-details">
+              <strong>{{ ev.title }}</strong>
+              <small>{{ ev.detail }} &middot; {{ parent.getTimeAgo(ev.created_at) }}</small>
+            </div>
+          </div>
+        </div>
+        <div class="qm-card__body" *ngIf="parent.latestOperationalEvents.length === 0">
+          <p class="text-muted" style="font-size: 12px; margin: 8px 0;">No hay actividad reciente registrada.</p>
+        </div>
+      </section>
+
     </div>
-  </section>
+  </div>
 </div>

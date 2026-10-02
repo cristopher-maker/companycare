@@ -1,0 +1,315 @@
+﻿<div class="kardex-view">
+  <!-- Header de Kardex -->
+  <header class="kardex-header">
+    <div class="kardex-header__info">
+      <div class="kardex-badge">
+        <mat-icon>medication</mat-icon>
+        <span>CONTROL FARMACOLÓGICO ELEAM (e-MAR)</span>
+      </div>
+      <h2 class="kardex-title">Kardex Digital & Registro TENS</h2>
+      <p class="kardex-subtitle">Registro diario de administración de medicamentos según horarios y prescripciones médicas.</p>
+    </div>
+
+    <div class="kardex-header__actions">
+      <!-- Date Picker Bar -->
+      <div class="kardex-date-nav">
+        <button type="button" class="btn-date-nav" (click)="parent.changeKardexDate(-1)" title="Día anterior">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <div class="kardex-date-display">
+          <mat-icon>calendar_today</mat-icon>
+          <input type="date" [ngModel]="parent.selectedKardexDate" (ngModelChange)="parent.setKardexDate($event)" class="kardex-date-input">
+        </div>
+        <button type="button" class="btn-date-nav" (click)="parent.changeKardexDate(1)" title="Día siguiente">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="kardex-mode-switch">
+        <button type="button" class="btn-mode" [class.is-active]="parent.kardexViewMode === 'ronda'" (click)="parent.kardexViewMode = 'ronda'">
+          <mat-icon>access_time</mat-icon>
+          <span>Ronda por Horario</span>
+        </button>
+        <button type="button" class="btn-mode" [class.is-active]="parent.kardexViewMode === 'residente'" (click)="parent.kardexViewMode = 'residente'">
+          <mat-icon>person</mat-icon>
+          <span>Fichas por Residente</span>
+        </button>
+      </div>
+
+      <!-- Add Medication Prescription Button -->
+      <button type="button" class="btn-qm btn-qm--primary" (click)="parent.openAddMedicationModal()">
+        <mat-icon>add</mat-icon>
+        <span>+ Nueva Prescripción</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MODO 1: RONDA TENS POR HORARIO -->
+  <div *ngIf="parent.kardexViewMode === 'ronda'" class="kardex-round-mode">
+    
+    <!-- Time Slots Navigation Bar -->
+    <div class="kardex-slots-bar">
+      <div 
+        class="kardex-slot-card" 
+        *ngFor="let slot of parent.kardexTimeSlots"
+        [class.is-selected]="parent.selectedKardexSlot === slot"
+        [class.is-overdue]="parent.getSlotStats(slot).isOverdue"
+        (click)="parent.changeKardexSlot(slot)"
+      >
+        <div class="kardex-slot-card__time">
+          <mat-icon>schedule</mat-icon>
+          <strong>{{ slot }}</strong>
+        </div>
+        <div class="kardex-slot-card__meta">
+          <span class="slot-name" *ngIf="slot === '08:00'">Desayuno</span>
+          <span class="slot-name" *ngIf="slot === '12:00'">Almuerzo</span>
+          <span class="slot-name" *ngIf="slot === '16:00'">Once / Tarde</span>
+          <span class="slot-name" *ngIf="slot === '20:00'">Cena</span>
+          <span class="slot-name" *ngIf="slot === '23:00'">Noche</span>
+          <div class="slot-badge" [class.is-complete]="parent.getSlotStats(slot).total > 0 && parent.getSlotStats(slot).pending === 0">
+            {{ parent.getSlotStats(slot).administered }}/{{ parent.getSlotStats(slot).total }}
+          </div>
+        </div>
+        <div class="kardex-slot-progress">
+          <div class="kardex-slot-progress__bar" [style.width.%]="parent.getSlotStats(slot).percent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overview Bar for Selected Slot -->
+    <div class="kardex-slot-overview">
+      <div class="kardex-slot-overview__title">
+        <mat-icon>checklist</mat-icon>
+        <div>
+          <h3>Ronda de Medicamentos: Bloque {{ parent.selectedKardexSlot }}</h3>
+          <p>
+            {{ parent.getSlotStats(parent.selectedKardexSlot).administered }} de {{ parent.getSlotStats(parent.selectedKardexSlot).total }} dosis registradas &middot;
+            <span *ngIf="parent.getSlotStats(parent.selectedKardexSlot).pending > 0" class="text-warn font-semibold">{{ parent.getSlotStats(parent.selectedKardexSlot).pending }} pendientes</span>
+            <span *ngIf="parent.getSlotStats(parent.selectedKardexSlot).pending === 0 && parent.getSlotStats(parent.selectedKardexSlot).total > 0" class="text-success font-semibold">Bloque completado al 100%</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="kardex-slot-overview__filter">
+        <label>Filtrar por residente:</label>
+        <select [(ngModel)]="parent.selectedKardexPatientId" class="kardex-select">
+          <option value="all">Todos los residentes ({{ parent.pacientesActivos.length }})</option>
+          <option *ngFor="let p of parent.pacientesActivos" [value]="p.id">{{ p.nombreCompleto }} ({{ p.camaAsignada }})</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Lista de Residentes en la Ronda -->
+    <div class="kardex-patients-list" *ngIf="parent.kardexRoundPatients.length > 0">
+      <div class="kardex-patient-card" *ngFor="let item of parent.kardexRoundPatients" [class.is-complete]="item.isComplete">
+        
+        <!-- Patient Header -->
+        <div class="kardex-patient-card__header">
+          <div class="kardex-patient-profile">
+            <span class="kardex-avatar">{{ item.patient.nombreCompleto.substring(0, 2).toUpperCase() }}</span>
+            <div>
+              <h4 class="kardex-patient-name">{{ item.patient.nombreCompleto }}</h4>
+              <div class="kardex-patient-sub">
+                <span class="bed-pill"><mat-icon>single_bed</mat-icon> {{ item.patient.camaAsignada }}</span>
+                <span class="doc-text">RUT: {{ item.patient.documento }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kardex-patient-status">
+            <span class="kardex-count-badge" [class.badge-complete]="item.isComplete" [class.badge-pending]="!item.isComplete">
+              {{ item.administeredCount }}/{{ item.totalMeds }} administrados
+            </span>
+
+            <button 
+              type="button" 
+              class="btn-batch-admin"
+              *ngIf="!item.isComplete"
+              (click)="parent.recordBatchPatientSlot(item.patient, parent.selectedKardexSlot)"
+              title="Marcar todos los medicamentos de las {{ parent.selectedKardexSlot }} como administrados"
+            >
+              <mat-icon>done_all</mat-icon>
+              <span>Administrar Todo</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Medications List for this Patient in this Slot -->
+        <div class="kardex-meds-grid">
+          <div 
+            class="kardex-med-row" 
+            *ngFor="let med of item.medications"
+            [class.row-administered]="med.status === 'administered'"
+            [class.row-rejected]="med.status === 'rejected'"
+            [class.row-suspended]="med.status === 'suspended'"
+          >
+            <div class="kardex-med-info">
+              <div class="kardex-med-title-group">
+                <strong class="kardex-med-name">{{ med.name }}</strong>
+                <span class="kardex-med-dosage">{{ med.dosage }}</span>
+                <span class="kardex-route-tag">{{ med.route }}</span>
+                <span class="kardex-critical-tag" *ngIf="med.is_critical" title="Fármaco crítico (antihipertensivo, insulina o psicofármaco)">
+                  <mat-icon>warning</mat-icon> CRÍTICO
+                </span>
+              </div>
+
+              <div class="kardex-med-instructions" *ngIf="med.instructions">
+                <mat-icon>info</mat-icon>
+                <span>{{ med.instructions }}</span>
+              </div>
+              <div class="kardex-med-diagnosis" *ngIf="med.diagnosis">
+                <small>Indicación: {{ med.diagnosis }}</small>
+              </div>
+
+              <!-- Details of administration if already performed -->
+              <div class="kardex-admin-audit" *ngIf="med.administration">
+                <small *ngIf="med.status === 'administered'">
+                  ✓ Administrado por {{ med.administration.administered_by_name || 'TENS' }} &middot; {{ parent.getTimeAgo(med.administration.administered_at) }}
+                </small>
+                <small *ngIf="med.status === 'rejected'" class="audit-rejected">
+                  ✕ Rechazado: {{ med.administration.notes || 'Sin justificación' }} &middot; {{ parent.getTimeAgo(med.administration.administered_at) }}
+                </small>
+                <small *ngIf="med.status === 'suspended'" class="audit-suspended">
+                  ⏸ Suspendido: {{ med.administration.notes || 'Indicación médica' }} &middot; {{ parent.getTimeAgo(med.administration.administered_at) }}
+                </small>
+              </div>
+            </div>
+
+            <!-- Administration Action Buttons -->
+            <div class="kardex-med-actions">
+              <!-- If already administered -->
+              <div class="status-indicator status-indicator--administered" *ngIf="med.status === 'administered'">
+                <mat-icon>check_circle</mat-icon>
+                <span>Administrado</span>
+              </div>
+
+              <!-- If already rejected -->
+              <div class="status-indicator status-indicator--rejected" *ngIf="med.status === 'rejected'">
+                <mat-icon>cancel</mat-icon>
+                <span>Rechazado</span>
+              </div>
+
+              <!-- If already suspended -->
+              <div class="status-indicator status-indicator--suspended" *ngIf="med.status === 'suspended'">
+                <mat-icon>pause_circle</mat-icon>
+                <span>Suspendido</span>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="action-buttons-group">
+                <button 
+                  type="button" 
+                  class="btn-act btn-act--admin"
+                  [class.is-active]="med.status === 'administered'"
+                  (click)="parent.recordAdministration(med, item.patient.id, parent.selectedKardexSlot, 'administered')"
+                  title="Marcar como administrado"
+                >
+                  <mat-icon>check</mat-icon>
+                  <span>{{ med.status === 'administered' ? 'Administrado' : 'Administrar' }}</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  class="btn-act btn-act--reject"
+                  (click)="parent.openJustificationModal(med, item.patient, parent.selectedKardexSlot, 'rejected')"
+                  title="Marcar como rechazado (el residente no quiso tomarlo)"
+                >
+                  <mat-icon>close</mat-icon>
+                  <span>Rechazó</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  class="btn-act btn-act--suspend"
+                  (click)="parent.openJustificationModal(med, item.patient, parent.selectedKardexSlot, 'suspended')"
+                  title="Marcar como suspendido por indicación médica"
+                >
+                  <mat-icon>pause</mat-icon>
+                  <span>Suspender</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Empty state for Round -->
+    <div class="kardex-empty" *ngIf="parent.kardexRoundPatients.length === 0">
+      <mat-icon>medical_information</mat-icon>
+      <h3>No hay medicamentos programados para el bloque {{ parent.selectedKardexSlot }}</h3>
+      <p>No se encontraron residentes con fármacos asignados en este horario o para el filtro seleccionado.</p>
+      <button type="button" class="btn-qm btn-qm--secondary" (click)="parent.openAddMedicationModal()">
+        + Agregar Nueva Prescripción
+      </button>
+    </div>
+  </div>
+
+  <!-- MODO 2: FICHAS FARMACOLÓGICAS POR RESIDENTE -->
+  <div *ngIf="parent.kardexViewMode === 'residente'" class="kardex-resident-mode">
+    <div class="kardex-resident-grid">
+      <div class="kardex-patient-card" *ngFor="let p of parent.pacientesActivos">
+        <div class="kardex-patient-card__header">
+          <div class="kardex-patient-profile">
+            <span class="kardex-avatar">{{ p.nombreCompleto.substring(0, 2).toUpperCase() }}</span>
+            <div>
+              <h4 class="kardex-patient-name">{{ p.nombreCompleto }}</h4>
+              <div class="kardex-patient-sub">
+                <span class="bed-pill"><mat-icon>single_bed</mat-icon> {{ p.camaAsignada }}</span>
+                <span class="doc-text">RUT: {{ p.documento }}</span>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn-qm btn-qm--secondary btn-qm--sm" (click)="parent.openAddMedicationModal(p.id)">
+            <mat-icon>add</mat-icon>
+            <span>+ Prescribir Fármaco</span>
+          </button>
+        </div>
+
+        <div class="kardex-treatment-list">
+          <div class="kardex-treatment-item" *ngFor="let med of parent.getPatientAllMedications(p.id)">
+            <div class="treatment-main">
+              <div class="treatment-name-row">
+                <strong>{{ med.name }}</strong>
+                <span class="dosage-tag">{{ med.dosage }}</span>
+                <span class="route-tag">{{ med.route }}</span>
+                <span class="kardex-critical-tag" *ngIf="med.is_critical"><mat-icon>warning</mat-icon> Crítico</span>
+              </div>
+              <p class="treatment-inst" *ngIf="med.instructions">{{ med.instructions }}</p>
+              <div class="treatment-meta">
+                <small *ngIf="med.diagnosis">Patología: {{ med.diagnosis }}</small>
+                <small *ngIf="med.prescribed_by">&middot; Dr(a): {{ med.prescribed_by }}</small>
+              </div>
+            </div>
+
+            <div class="treatment-schedule">
+              <span class="schedule-label">Horarios:</span>
+              <div class="schedule-chips">
+                <span class="schedule-chip" *ngFor="let time of med.schedule_times">{{ time }}</span>
+              </div>
+            </div>
+
+            <div class="treatment-actions">
+              <button type="button" class="btn-ghost" (click)="parent.openAddMedicationModal(p.id, med)" title="Editar dosis u horarios">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button type="button" class="btn-ghost text-danger" (click)="parent.deleteMedication(med.id)" title="Eliminar prescripción">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="treatment-empty" *ngIf="parent.getPatientAllMedications(p.id).length === 0">
+            <p>Sin fármacos prescritos registrados.</p>
+            <button type="button" class="btn-qm-link" (click)="parent.openAddMedicationModal(p.id)">
+              + Prescribir primer fármaco
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

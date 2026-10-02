@@ -319,7 +319,7 @@
       </div>
 
       <div class="drawer-actions" *ngIf="activeResource.file_url">
-        <a [href]="activeResource.file_url" target="_blank" class="btn-download">
+        <a [href]="getSafePdfUrl(activeResource.file_url)" target="_blank" class="btn-download">
           <mat-icon>download</mat-icon>
           Descargar documento PDF
         </a>
@@ -348,11 +348,11 @@
         </div>
       </div>
       <div class="pdf-toolbar__actions">
-        <a [href]="activeResource.file_url" download class="pdf-toolbar__btn">
+        <a [href]="getSafePdfUrl(activeResource.file_url)" download class="pdf-toolbar__btn">
           <mat-icon>download</mat-icon>
           <span>Descargar</span>
         </a>
-        <a [href]="activeResource.file_url" target="_blank" class="pdf-toolbar__btn pdf-toolbar__btn--primary">
+        <a [href]="getSafePdfUrl(activeResource.file_url)" target="_blank" class="pdf-toolbar__btn pdf-toolbar__btn--primary">
           <mat-icon>open_in_new</mat-icon>
           <span>Abrir en nueva pestaña</span>
         </a>
@@ -365,7 +365,7 @@
     <!-- PDF iframe fills all remaining space -->
     <div class="pdf-fullscreen__body">
       <iframe
-        [src]="activeResource.file_url | trustUrl"
+        [src]="getSafePdfUrl(activeResource.file_url) | trustUrl"
         class="pdf-fullscreen__iframe"
         title="Visualizador de PDF"
       ></iframe>

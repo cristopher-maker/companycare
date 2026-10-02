@@ -67,6 +67,37 @@ export class ProvidersPage implements OnInit, OnDestroy {
     { value: 'price_high', label: 'Mayor precio' },
   ];
 
+  public get hasActiveFilters(): boolean {
+    return !!this.q.trim() || this.type !== 'Todos' || !this.verifiedOnly || this.sortBy !== 'rating';
+  }
+
+  public selectType(type: ProviderType | 'Todos'): void {
+    this.type = type;
+    this.applyFilters();
+  }
+
+  public useMyLocation(): void {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          this.q = 'Metropolitana';
+          this.applyFilters();
+        },
+        () => {
+          // Manejo si el usuario declina permisos
+        }
+      );
+    }
+  }
+
+  public resetFilters(): void {
+    this.q = '';
+    this.type = 'Todos';
+    this.verifiedOnly = true;
+    this.sortBy = 'rating';
+    this.applyFilters();
+  }
+
   private allProviders: ProviderCard[] = [];
   public filteredProviders: ProviderCard[] = [];
   public visibleProviders: ProviderCard[] = [];
@@ -101,7 +132,13 @@ export class ProvidersPage implements OnInit, OnDestroy {
 
   public openProvider(provider: ProviderCard): void {
     this.selectedProvider = provider;
-    this.selectedProviderImages = provider.images;
+    if (provider.images && provider.images.length > 1) {
+      this.selectedProviderImages = [...provider.images];
+    } else {
+      const fallbacks = this.FALLBACK_IMAGES[provider.type] || this.FALLBACK_IMAGES['Residencia'];
+      const extra = fallbacks.filter((img) => img !== provider.imageUrl).slice(0, 3);
+      this.selectedProviderImages = [provider.imageUrl || fallbacks[0], ...extra];
+    }
     document.body.style.overflow = 'hidden';
     
     const total = Math.max(provider.reviews, 1);
@@ -137,14 +174,51 @@ export class ProvidersPage implements OnInit, OnDestroy {
     this.loading = true;
     this.error = '';
     try {
-      const { data, error } = await this.supabase.client
-        .from('providers')
-        .select('id, name, type, area, verified, rating, metadata, provider_listings(price_from, availability)')
-        .eq('active', true)
-        .order('rating', { ascending: false });
+      const [sbRes, saRes] = await Promise.all([
+        this.supabase.client
+          .from('providers')
+          .select('id, name, type, area, verified, rating, metadata, provider_listings(price_from, availability)')
+          .eq('active', true)
+          .order('rating', { ascending: false }),
+        fetch('https://www.senioradvisor.cl/api/providers?limit=300')
+          .then((r) => r.json())
+          .catch(() => null),
+      ]);
 
-      if (error) throw error;
-      this.allProviders = ((data ?? []) as ProviderRow[]).map((row) => this.toProviderCard(row));
+      if (sbRes.error) throw sbRes.error;
+
+      // Mapear fotos reales desde la API de SeniorAdvisor
+      const normalize = (str: string) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const photoMap = new Map<string, { profile: string; gallery: string[] }>();
+
+      if (saRes && Array.isArray(saRes.results)) {
+        for (const item of saRes.results) {
+          const galleryUrls: string[] = [];
+          if (Array.isArray(item.gallery)) {
+            for (const g of item.gallery) {
+              let u = g.url || g.thumbnail_url;
+              if (u && typeof u === 'string' && u.trim().length > 0) {
+                if (u.startsWith('/')) u = 'https://senioradvisor.cl' + u;
+                galleryUrls.push(u);
+              }
+            }
+          }
+          let mainPhoto = item.profile_photo;
+          if (mainPhoto && typeof mainPhoto === 'string' && mainPhoto.trim().length > 0) {
+            if (mainPhoto.startsWith('/')) mainPhoto = 'https://senioradvisor.cl' + mainPhoto;
+          } else if (galleryUrls.length > 0) {
+            mainPhoto = galleryUrls[0];
+          }
+
+          if (mainPhoto) {
+            const dataObj = { profile: mainPhoto, gallery: galleryUrls };
+            if (item.provider_id) photoMap.set(item.provider_id, dataObj);
+            if (item.business_name) photoMap.set(normalize(item.business_name), dataObj);
+          }
+        }
+      }
+
+      this.allProviders = ((sbRes.data ?? []) as ProviderRow[]).map((row) => this.toProviderCard(row, photoMap));
 
       const maxDetected = this.allProviders
         .map((provider) => provider.priceFrom ?? 0)
@@ -308,8 +382,86 @@ export class ProvidersPage implements OnInit, OnDestroy {
     return provider.id;
   }
 
+  private readonly FALLBACK_IMAGES: Record<ProviderType, string[]> = {
+    'Residencia': [
+      'assets/img/home-1.jpg',
+      'assets/img/carousel-1.webp',
+      'assets/img/carousel-3.webp',
+      'assets/img/carousel-4.webp',
+    ],
+    'Cuidador a domicilio': [
+      'assets/img/carousel-2.webp',
+      'assets/img/carousel-3.webp',
+      'assets/img/carousel-4.webp',
+      'assets/img/about-us.webp',
+    ],
+    'Servicio médico': [
+      'assets/img/about-us.webp',
+      'assets/img/carousel-4.webp',
+      'assets/img/carousel-1.webp',
+      'assets/img/carousel-2.webp',
+    ],
+  };
+
+  public getFallbackImage(seed: string, type: ProviderType): string {
+    const list = this.FALLBACK_IMAGES[type] || this.FALLBACK_IMAGES['Residencia'];
+    let hash = 0;
+    for (let i = 0; i < (seed || '').length; i++) {
+      hash = (hash << 5) - hash + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    const idx = Math.abs(hash) % list.length;
+    return list[idx];
+  }
+
+  private extractImages(metadata: Record<string, any>): string[] {
+    const keys = [
+      'imagenes', 'images', 'photos', 'fotos', 'gallery',
+      'image', 'imagen', 'photo', 'foto', 'imageUrl', 'image_url', 'photo_url', 'cover_image', 'avatar'
+    ];
+    const list: string[] = [];
+
+    for (const key of keys) {
+      const val = metadata[key];
+      if (!val) continue;
+
+      if (Array.isArray(val)) {
+        for (const item of val) {
+          if (typeof item === 'string' && item.trim().length > 0) {
+            list.push(item.trim());
+          } else if (item && typeof item === 'object') {
+            const u = item.url || item.src || item.imageUrl || item.image_url;
+            if (typeof u === 'string' && u.trim().length > 0) {
+              list.push(u.trim());
+            }
+          }
+        }
+      } else if (typeof val === 'string' && val.trim().length > 0) {
+        list.push(val.trim());
+      } else if (val && typeof val === 'object') {
+        const u = val.url || val.src || val.imageUrl || val.image_url;
+        if (typeof u === 'string' && u.trim().length > 0) {
+          list.push(u.trim());
+        }
+      }
+    }
+
+    return Array.from(new Set(list));
+  }
+
   public onImgError(event: Event, provider: ProviderCard): void {
-    provider.imgFailed = true;
+    const localDefaults: Record<ProviderType, string> = {
+      'Residencia': 'assets/img/home-1.jpg',
+      'Cuidador a domicilio': 'assets/img/carousel-2.webp',
+      'Servicio médico': 'assets/img/about-us.webp',
+    };
+    const defaultLocal = localDefaults[provider.type] || 'assets/img/carousel-1.webp';
+    if (provider.imageUrl !== defaultLocal) {
+      provider.imageUrl = defaultLocal;
+      provider.imgFailed = false;
+    } else {
+      provider.imgFailed = true;
+    }
   }
 
   public getProviderIcon(type: ProviderType): string {
@@ -325,7 +477,7 @@ export class ProvidersPage implements OnInit, OnDestroy {
     }
   }
 
-  private toProviderCard(row: ProviderRow): ProviderCard {
+  private toProviderCard(row: ProviderRow, photoMap?: Map<string, { profile: string; gallery: string[] }>): ProviderCard {
     const metadata = row.metadata ?? {};
     const listings = (row.provider_listings ?? []).filter((item) => !!item);
     const listingPrices = listings
@@ -337,11 +489,20 @@ export class ProvidersPage implements OnInit, OnDestroy {
     const availability =
       availabilityOrder.find((status) => listings.some((item) => item.availability === status)) ?? 'Esta semana';
 
-    const images = Array.isArray(metadata['imagenes']) ? metadata['imagenes'] : [];
-    const cleanImages = images
-      .filter((url: unknown): url is string => typeof url === 'string' && !!url.trim())
-      .map((url) => url.trim());
-    const imageUrl = cleanImages[0] ?? null;
+    let cleanImages = this.extractImages(metadata);
+
+    if (cleanImages.length === 0 && photoMap) {
+      const normalize = (str: string) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const saPhoto = photoMap.get(row.id) || photoMap.get(normalize(row.name));
+      if (saPhoto) {
+        cleanImages = [saPhoto.profile, ...saPhoto.gallery.filter((u) => u !== saPhoto.profile)];
+      }
+    }
+
+    const fallbackImg = this.getFallbackImage(row.id || row.name, row.type);
+    const images = cleanImages.length > 0 ? cleanImages : [fallbackImg];
+    const imageUrl = images[0];
+
     const reviewsRaw = metadata['cant_resenas'];
     const parsedReviews =
       typeof reviewsRaw === 'number' ? reviewsRaw : Number.parseInt(String(reviewsRaw ?? '0'), 10);
@@ -368,8 +529,8 @@ export class ProvidersPage implements OnInit, OnDestroy {
       priceFrom,
       description,
       website: typeof metadata['website'] === 'string' ? metadata['website'] : null,
-      imageUrl: typeof imageUrl === 'string' ? imageUrl : null,
-      images: cleanImages,
+      imageUrl,
+      images,
       phone,
       email,
       address,

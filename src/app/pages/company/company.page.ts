@@ -186,7 +186,7 @@ export class CompanyPage implements OnInit, OnDestroy {
   public readonly tabs: { id: CompanyTab; label: string }[] = [
     { id: 'admin', label: 'Resumen' },
     { id: 'employees', label: 'Empleados' },
-    { id: 'vouchers', label: 'Vouchers' },
+    { id: 'vouchers', label: 'Cupones de descuento' },
     { id: 'general', label: 'Configuración' },
   ];
 
@@ -309,7 +309,7 @@ export class CompanyPage implements OnInit, OnDestroy {
   public get connectedModules(): { label: string; value: string; detail: string }[] {
     return [
       { label: 'Empleados', value: String(this.members.length), detail: `${this.adminCount} admins RR.HH.` },
-      { label: 'Vouchers', value: String(this.activeVoucherCount), detail: `${this.vouchers.length} creados` },
+      { label: 'Cupones', value: String(this.activeVoucherCount), detail: `${this.vouchers.length} creados` },
       { label: 'Documentos', value: String(this.documents.length), detail: `${this.documents.filter((doc) => doc.status === 'approved').length} aprobados` },
       { label: 'Fichas', value: String(this.careIntakes.length), detail: `${this.careIntakesWithIdentityCount} con paciente` },
       { label: 'Onboarding', value: String(this.onboardingProjects.filter((project) => project.status === 'active').length), detail: `${this.onboardingProjects.length} proyectos` },

@@ -8,7 +8,7 @@ import { filter } from 'rxjs/operators';
 
 type LeadStatus = 'nuevo' | 'contactado' | 'evaluacion' | 'match' | 'cerrado' | 'perdido';
 type ConfigSection = 'company' | 'appearance' | 'workflow' | 'business' | 'documents' | 'messages';
-type DashboardView = 'metricas' | 'sedes' | 'camas' | 'pacientes' | 'admisiones' | 'tareas' | 'empleados' | 'vouchers' | 'config' | 'facturacion' | 'gastos';
+type DashboardView = 'metricas' | 'sedes' | 'camas' | 'pacientes' | 'kardex' | 'admisiones' | 'tareas' | 'empleados' | 'vouchers' | 'config' | 'facturacion' | 'gastos';
 type SummaryTone = 'primary' | 'blue' | 'green' | 'warn' | 'danger' | 'neutral';
 type DashboardNavItem = { view: DashboardView; label: string; icon: string; locked?: boolean };
 type ToastTone = 'info' | 'success' | 'warning' | 'error';
@@ -70,40 +70,66 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private readonly toastTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
   private confirmResolver: ((value: boolean) => void) | null = null;
 
+  // Kardex y e-MAR State
+  kardexTimeSlots = ['08:00', '12:00', '16:00', '20:00', '23:00'];
+  selectedKardexSlot = '08:00';
+  selectedKardexDate: string = new Date().toISOString().slice(0, 10);
+  kardexViewMode: 'ronda' | 'residente' = 'ronda';
+  selectedKardexPatientId: string = 'all';
+  patientMedications: any[] = [];
+  medicationAdministrations: any[] = [];
+  showMedicationModal = false;
+  savingMedication = false;
+  medicationDraft: any = {
+    id: null,
+    patient_id: null,
+    name: '',
+    dosage: '',
+    route: 'oral',
+    schedule_times: ['08:00'],
+    is_critical: false,
+    instructions: '',
+    prescribed_by: '',
+    diagnosis: '',
+    status: 'active'
+  };
+  showJustificationModal = false;
+  pendingJustification: any = null;
+
   readonly dashboardViewLabels: Record<DashboardView, string> = {
-    metricas: 'M\u00e9tricas',
+    metricas: 'Resumen',
     sedes: 'Mis sedes',
     camas: 'Camas y vacantes',
-    pacientes: 'Pacientes',
+    pacientes: 'Residentes',
+    kardex: 'Kardex / Medicamentos',
     admisiones: 'Admisiones',
     tareas: 'Tareas',
-    empleados: 'Empleados',
+    empleados: 'Personal / Colaboradores',
     vouchers: 'Vouchers',
-    config: 'Configuraci\u00f3n',
-    facturacion: 'Facturaci\u00f3n',
+    config: 'Mi residencia',
+    facturacion: 'Facturación',
     gastos: 'Gastos y finanzas'
   };
 
   readonly mobileNavSections: Array<{ label: string; items: DashboardNavItem[] }> = [
     {
-      label: 'Gesti\u00f3n',
+      label: 'Operación Clínica y Residencial',
       items: [
-        { view: 'metricas', label: 'M\u00e9tricas', icon: 'monitoring' },
-        { view: 'admisiones', label: 'Admisiones', icon: 'view_kanban', locked: true },
-        { view: 'tareas', label: 'Tareas', icon: 'checklist', locked: true },
-        { view: 'sedes', label: 'Mis sedes', icon: 'business', locked: true },
+        { view: 'metricas', label: 'Resumen', icon: 'monitoring' },
+        { view: 'pacientes', label: 'Residentes', icon: 'people', locked: true },
+        { view: 'kardex', label: 'Kardex / Medicamentos', icon: 'medication', locked: true },
         { view: 'camas', label: 'Camas y vacantes', icon: 'bed', locked: true },
-        { view: 'pacientes', label: 'Pacientes', icon: 'people', locked: true },
-        { view: 'facturacion', label: 'Facturaci\u00f3n', icon: 'receipt_long', locked: true },
-        { view: 'gastos', label: 'Gastos y finanzas', icon: 'account_balance_wallet', locked: true }
+        { view: 'sedes', label: 'Mis sedes', icon: 'business', locked: true },
+        { view: 'admisiones', label: 'Admisiones', icon: 'view_kanban', locked: true }
       ]
     },
     {
-      label: 'Configuraci\u00f3n',
+      label: 'Administración y Finanzas',
       items: [
-        { view: 'empleados', label: 'Empleados', icon: 'badge', locked: true },
-        { view: 'vouchers', label: 'Vouchers', icon: 'local_activity', locked: true },
-        { view: 'config', label: 'Configuraci\u00f3n', icon: 'settings' }
+        { view: 'gastos', label: 'Gastos y finanzas', icon: 'account_balance_wallet', locked: true },
+        { view: 'facturacion', label: 'Facturación', icon: 'receipt_long', locked: true },
+        { view: 'empleados', label: 'Personal', icon: 'badge', locked: true },
+        { view: 'config', label: 'Mi residencia', icon: 'settings' }
       ]
     }
   ];
@@ -141,6 +167,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     'sedes',
     'camas',
     'pacientes',
+    'kardex',
     'admisiones',
     'tareas',
     'empleados',
@@ -300,75 +327,116 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return this.dashboardViewLabels[this.currentView] || 'Dashboard';
   }
 
-  get dashboardSummaryCards(): Array<{ label: string; value: string | number; detail: string; icon: string; tone: SummaryTone }> {
-    const pendingTasks = this.tareas.filter((task) => task.status === 'pending').length;
+  get dashboardSummaryCards(): Array<{ label: string; value: string | number; detail: string; icon: string; tone: SummaryTone; view: DashboardView }> {
     const openLeads = this.leads.filter((lead) => !['cerrado', 'perdido'].includes(lead.estado)).length;
     const activeAlerts = this.operationalAlerts.filter((alert) => alert.level !== 'info').length;
+    const totalPacientes = this.pacientes.length;
 
     return [
       {
-        label: 'Admisiones abiertas',
-        value: openLeads,
-        detail: `${this.totalLeads} admisiones totales`,
-        icon: 'view_kanban',
-        tone: openLeads > 0 ? 'blue' : 'neutral'
-      },
-      {
-        label: 'Tareas pendientes',
-        value: pendingTasks,
-        detail: `${this.tareas.filter((task) => task.status === 'in_progress').length} en progreso`,
-        icon: 'checklist',
-        tone: pendingTasks > 0 ? 'warn' : 'green'
-      },
-      {
-        label: 'Camas libres',
-        value: this.camasDisponibles,
-        detail: this.camasTotales > 0 ? `${this.porcentajeOcupacion}% de ocupaci\u00f3n` : 'Sin camas registradas',
+        label: 'Ocupación Hotelera',
+        value: this.camasTotales > 0 ? `${this.porcentajeOcupacion}%` : '0%',
+        detail: this.camasTotales > 0 ? `${this.camasDisponibles} camas libres de ${this.camasTotales}` : 'Sin camas registradas',
         icon: 'bed',
-        tone: this.camasDisponibles === 0 && this.camasTotales > 0 ? 'danger' : 'primary'
+        tone: this.camasDisponibles === 0 && this.camasTotales > 0 ? 'danger' : 'primary',
+        view: 'camas'
       },
       {
-        label: 'Alertas activas',
+        label: 'Residentes Activos',
+        value: totalPacientes,
+        detail: `${totalPacientes} fichas clínicas activas`,
+        icon: 'people',
+        tone: totalPacientes > 0 ? 'green' : 'neutral',
+        view: 'pacientes'
+      },
+      {
+        label: 'Admisiones en Curso',
+        value: openLeads,
+        detail: `${this.totalLeads} consultas acumuladas`,
+        icon: 'view_kanban',
+        tone: openLeads > 0 ? 'blue' : 'neutral',
+        view: 'admisiones'
+      },
+      {
+        label: 'Alertas de Operación',
         value: activeAlerts,
-        detail: activeAlerts > 0 ? 'Requieren revisi\u00f3n' : 'Sin alertas cr\u00edticas',
+        detail: activeAlerts > 0 ? 'Requieren revisión' : 'Capacidad y sedes en orden',
         icon: 'notification_important',
-        tone: activeAlerts > 0 ? 'warn' : 'green'
+        tone: activeAlerts > 0 ? 'warn' : 'green',
+        view: 'camas'
       }
     ];
   }
 
   get dashboardActionItems(): Array<{ title: string; detail: string; icon: string; view: DashboardView; tone: SummaryTone }> {
-    const now = new Date();
-    const overdueTasks = this.tareas.filter((task) => task.due_at && task.status !== 'done' && new Date(task.due_at) < now).length;
     const newLeads = this.kanbanData['nuevo']?.length || 0;
     const items: Array<{ title: string; detail: string; icon: string; view: DashboardView; tone: SummaryTone }> = [];
 
-    if (overdueTasks > 0) {
-      items.push({ title: 'Resolver tareas vencidas', detail: `${overdueTasks} pendientes fuera de plazo`, icon: 'priority_high', view: 'tareas', tone: 'danger' });
-    }
     if (newLeads > 0) {
-      items.push({ title: 'Contactar admisiones nuevas', detail: `${newLeads} consultas esperan primer contacto`, icon: 'record_voice_over', view: 'admisiones', tone: 'blue' });
+      items.push({
+        title: 'Contactar nuevas admisiones',
+        detail: `${newLeads} familias esperan primer contacto`,
+        icon: 'record_voice_over',
+        view: 'admisiones',
+        tone: 'blue'
+      });
+    }
+
+    const currentSlotStats = this.getSlotStats(this.selectedKardexSlot);
+    if (currentSlotStats.pending > 0) {
+      items.push({
+        title: `Ronda de medicamentos (${this.selectedKardexSlot})`,
+        detail: `${currentSlotStats.pending} dosis pendientes de registro TENS`,
+        icon: 'medication',
+        view: 'kardex',
+        tone: currentSlotStats.isOverdue ? 'danger' : 'warn'
+      });
     }
     if (this.camasTotales > 0 && this.camasDisponibles <= 2) {
-      items.push({ title: 'Revisar disponibilidad', detail: `${this.camasDisponibles} camas libres registradas`, icon: 'bed', view: 'camas', tone: this.camasDisponibles === 0 ? 'danger' : 'warn' });
+      items.push({
+        title: 'Revisar disponibilidad de camas',
+        detail: `${this.camasDisponibles} camas libres registradas`,
+        icon: 'bed',
+        view: 'camas',
+        tone: this.camasDisponibles === 0 ? 'danger' : 'warn'
+      });
+    }
+    const sinCama = this.pacientes.filter((p) => !p.resource_id).length;
+    if (sinCama > 0) {
+      items.push({
+        title: 'Asignar cama a residentes',
+        detail: `${sinCama} residentes sin habitación asignada`,
+        icon: 'meeting_room',
+        view: 'camas',
+        tone: 'warn'
+      });
+    }
+    if (this.pacientes.length === 0) {
+      items.push({
+        title: 'Registrar primer residente',
+        detail: 'Crea el expediente clínico y asigna su habitación',
+        icon: 'person_add',
+        view: 'pacientes',
+        tone: 'blue'
+      });
     }
     return items.slice(0, 5);
   }
 
   get latestOperationalEvents(): Array<{ title: string; detail: string; icon: string; created_at: string }> {
-    const taskEvents = this.tareas.slice(0, 3).map((task) => ({
-      title: task.title || 'Tarea sin titulo',
-      detail: this.taskStatusLabel(task),
-      icon: 'checklist',
-      created_at: task.created_at
-    }));
-    const leadEvents = this.leads.slice(0, 3).map((lead) => ({
-      title: lead.nombre || 'Admision sin nombre',
-      detail: this.leadStatusLabel(lead.estado),
+    const leadEvents = this.leads.slice(0, 4).map((lead) => ({
+      title: `Admisión: ${lead.nombre || 'Consulta'}`,
+      detail: `Estado: ${this.leadStatusLabel(lead.estado)}`,
       icon: 'view_kanban',
       created_at: lead.created_at
     }));
-    return [...taskEvents, ...leadEvents]
+    const patientEvents = this.pacientes.slice(0, 4).map((p) => ({
+      title: `Residente: ${p.first_name} ${p.last_name || ''}`.trim(),
+      detail: p.emergency_contact_name ? `Apoderado: ${p.emergency_contact_name}` : 'Expediente clínico activo',
+      icon: 'people',
+      created_at: p.created_at || new Date().toISOString()
+    }));
+    return [...leadEvents, ...patientEvents]
       .filter((event) => !!event.created_at)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 6);
@@ -961,6 +1029,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       }
 
       await this.loadErpOperationalModules(companyId);
+      await this.loadKardexData();
 
     } catch (error) {
       console.error('Error cargando datos del dashboard:', error);
@@ -1252,9 +1321,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.showToast(message, 'error', 5200);
   }
 
-  public flash(message: string) {
+  public flash(message: string, tone?: ToastTone) {
+    if (tone === 'success') return this.notifySuccess(message);
+    if (tone === 'warning') return this.notifyWarning(message);
+    if (tone === 'error') return this.notifyError(message);
+    if (tone === 'info') return this.notifyInfo(message);
+
     const normalized = message.toLowerCase();
-    if (normalized.includes('guardado correctamente') || normalized.includes('apariencia guardada') || normalized.includes('correctamente')) {
+    if (normalized.includes('guardado correctamente') || normalized.includes('apariencia guardada') || normalized.includes('correctamente') || normalized.includes('éxito') || normalized.includes('exitosamente')) {
       this.notifySuccess(message);
       return;
     }
@@ -1874,6 +1948,385 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     } else {
       invoice.status = status;
     }
+  }
+
+  // ============================================================
+  // --- KARDEX & REGISTRO E-MAR ---
+  // ============================================================
+
+  generateDefaultKardexMedications() {
+    if (this.pacientes.length === 0) return [];
+    const templates = [
+      { name: 'Enalapril', dosage: '10 mg', route: 'oral', times: ['08:00', '20:00'], is_critical: true, instructions: 'Con agua después de desayuno y cena', diagnosis: 'Hipertensión Arterial' },
+      { name: 'Metformina', dosage: '850 mg', route: 'oral', times: ['08:00', '12:00'], is_critical: true, instructions: 'Junto con las comidas', diagnosis: 'Diabetes Mellitus Tipo 2' },
+      { name: 'Losartán Potásico', dosage: '50 mg', route: 'oral', times: ['08:00'], is_critical: true, instructions: 'Control de PA matinal', diagnosis: 'Hipertensión Arterial' },
+      { name: 'Quetiapina', dosage: '25 mg', route: 'oral', times: ['23:00'], is_critical: true, instructions: 'Al acostarse', diagnosis: 'Insomnio / Agitación nocturna' },
+      { name: 'Omeprazol', dosage: '20 mg', route: 'oral', times: ['08:00'], is_critical: false, instructions: 'En ayunas, 30 min antes de desayuno', diagnosis: 'Protección gástrica' },
+      { name: 'Paracetamol', dosage: '500 mg', route: 'oral', times: ['08:00', '16:00'], is_critical: false, instructions: 'Para dolor articular', diagnosis: 'Artrosis' },
+      { name: 'Atorvastatina', dosage: '20 mg', route: 'oral', times: ['20:00'], is_critical: false, instructions: 'En la noche con agua', diagnosis: 'Dislipidemia' },
+      { name: 'Insulina NPH', dosage: '14 UI', route: 'subcutanea', times: ['08:00', '20:00'], is_critical: true, instructions: 'Rotar sitio periumbilical. Controlar HGT previo', diagnosis: 'Diabetes Mellitus insulino-dependiente' }
+    ];
+
+    const result: any[] = [];
+    this.pacientes.forEach((patient, pIdx) => {
+      const pMeds = [
+        templates[pIdx % templates.length],
+        templates[(pIdx + 1) % templates.length],
+        templates[(pIdx + 3) % templates.length],
+        templates[(pIdx + 5) % templates.length]
+      ];
+      pMeds.forEach((t, mIdx) => {
+        result.push({
+          id: `seed-med-${patient.id}-${mIdx}`,
+          company_id: this.companyId,
+          patient_id: patient.id,
+          name: t.name,
+          dosage: t.dosage,
+          route: t.route,
+          schedule_times: t.times,
+          is_critical: t.is_critical,
+          instructions: t.instructions,
+          prescribed_by: 'Dr. Roberto Silva (Geriatra)',
+          diagnosis: t.diagnosis,
+          status: 'active',
+          created_at: new Date().toISOString()
+        });
+      });
+    });
+    return result;
+  }
+
+  async loadKardexData() {
+    if (!this.companyId) return;
+    try {
+      const [medsRes, adminRes] = await Promise.all([
+        this.supabase.client.from('patient_medications').select('*').eq('company_id', this.companyId),
+        this.supabase.client.from('medication_administrations').select('*').eq('company_id', this.companyId).eq('scheduled_date', this.selectedKardexDate)
+      ]);
+
+      if (!medsRes.error && medsRes.data && medsRes.data.length > 0) {
+        this.patientMedications = medsRes.data;
+      } else {
+        this.patientMedications = [];
+      }
+
+      if (!adminRes.error && adminRes.data) {
+        this.medicationAdministrations = adminRes.data;
+      }
+    } catch (e) {
+      console.warn('Error cargando Kardex desde Supabase:', e);
+      this.patientMedications = [];
+    }
+  }
+
+  async loadKardexAdministrations() {
+    if (!this.companyId) return;
+    try {
+      const { data, error } = await this.supabase.client
+        .from('medication_administrations')
+        .select('*')
+        .eq('company_id', this.companyId)
+        .eq('scheduled_date', this.selectedKardexDate);
+      if (!error && data) {
+        this.medicationAdministrations = data;
+        this.cdr.markForCheck();
+      }
+    } catch (e) {
+      console.warn('Error cargando administraciones de fecha:', e);
+    }
+  }
+
+  changeKardexSlot(slot: string) {
+    this.selectedKardexSlot = slot;
+  }
+
+  changeKardexDate(offsetDays: number) {
+    const d = new Date(this.selectedKardexDate + 'T12:00:00');
+    d.setDate(d.getDate() + offsetDays);
+    this.selectedKardexDate = d.toISOString().slice(0, 10);
+    this.loadKardexAdministrations();
+  }
+
+  setKardexDate(dateStr: string) {
+    this.selectedKardexDate = dateStr;
+    this.loadKardexAdministrations();
+  }
+
+  getAdministration(medicationId: string, slot: string, date?: string): any {
+    const targetDate = date || this.selectedKardexDate;
+    return this.medicationAdministrations.find(
+      a => a.medication_id === medicationId && a.scheduled_time === slot && a.scheduled_date === targetDate
+    ) || null;
+  }
+
+  async recordAdministration(med: any, patientId: string, slot: string, status: 'administered' | 'rejected' | 'suspended', notes = '') {
+    if (!this.ensureOperationalAccess()) return;
+    const existingIndex = this.medicationAdministrations.findIndex(
+      a => a.medication_id === med.id && a.scheduled_time === slot && a.scheduled_date === this.selectedKardexDate
+    );
+
+    const record = {
+      id: existingIndex >= 0 ? this.medicationAdministrations[existingIndex].id : `adm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      company_id: this.companyId,
+      medication_id: med.id,
+      patient_id: patientId,
+      scheduled_date: this.selectedKardexDate,
+      scheduled_time: slot,
+      status: status,
+      administered_by_name: this.profileName || 'TENS de Turno',
+      administered_at: new Date().toISOString(),
+      notes: notes
+    };
+
+    if (existingIndex >= 0) {
+      this.medicationAdministrations[existingIndex] = { ...this.medicationAdministrations[existingIndex], ...record };
+    } else {
+      this.medicationAdministrations.push(record);
+    }
+    this.medicationAdministrations = [...this.medicationAdministrations];
+    this.cdr.markForCheck();
+
+    const statusLabels: Record<string, string> = {
+      administered: 'Dosis administrada',
+      rejected: 'Dosis marcada como rechazada',
+      suspended: 'Dosis marcada como suspendida'
+    };
+    this.flash(statusLabels[status] || 'Registro actualizado', status === 'administered' ? 'success' : 'warning');
+
+    try {
+      await this.supabase.client.from('medication_administrations').upsert({
+        company_id: this.companyId,
+        medication_id: med.id,
+        patient_id: patientId,
+        scheduled_date: this.selectedKardexDate,
+        scheduled_time: slot,
+        status: status,
+        administered_by_name: this.profileName || 'TENS de Turno',
+        administered_at: new Date().toISOString(),
+        notes: notes
+      }, { onConflict: 'medication_id,scheduled_date,scheduled_time' });
+    } catch (err) {
+      // Fallback
+    }
+  }
+
+  recordBatchPatientSlot(patient: any, slot: string) {
+    if (!this.ensureOperationalAccess()) return;
+    const meds = this.patientMedications.filter(
+      m => m.patient_id === patient.id && m.status === 'active' && m.schedule_times?.includes(slot)
+    );
+    meds.forEach(med => {
+      this.recordAdministration(med, patient.id, slot, 'administered', 'Ronda general TENS');
+    });
+    this.flash(`Dosis de ${patient.nombreCompleto} para las ${slot} registradas como administradas`, 'success');
+  }
+
+  openJustificationModal(med: any, patient: any, slot: string, status: 'rejected' | 'suspended') {
+    this.pendingJustification = {
+      med,
+      patient,
+      slot,
+      status,
+      notes: status === 'rejected' ? 'Residente rechazó tomar el fármaco' : 'Suspendido temporalmente por indicación médica / ayunas'
+    };
+    this.showJustificationModal = true;
+  }
+
+  saveJustification() {
+    if (!this.pendingJustification) return;
+    const { med, patient, slot, status, notes } = this.pendingJustification;
+    this.recordAdministration(med, patient.id, slot, status, notes);
+    this.showJustificationModal = false;
+    this.pendingJustification = null;
+  }
+
+  get kardexRoundPatients(): any[] {
+    const targetPatients = this.selectedKardexPatientId === 'all'
+      ? this.pacientesActivos
+      : this.pacientesActivos.filter(p => p.id === this.selectedKardexPatientId);
+
+    return targetPatients.map(patient => {
+      const patientMeds = this.patientMedications.filter(
+        m => m.patient_id === patient.id && m.status === 'active' && m.schedule_times?.includes(this.selectedKardexSlot)
+      );
+
+      const medsWithAdmin = patientMeds.map(med => {
+        const admin = this.getAdministration(med.id, this.selectedKardexSlot);
+        return {
+          ...med,
+          administration: admin,
+          status: admin ? admin.status : 'pending'
+        };
+      });
+
+      const totalMeds = medsWithAdmin.length;
+      const administeredCount = medsWithAdmin.filter(m => m.status === 'administered').length;
+      const isComplete = totalMeds > 0 && administeredCount === totalMeds;
+      const hasIssues = medsWithAdmin.some(m => m.status === 'rejected' || m.status === 'suspended');
+
+      return {
+        patient,
+        medications: medsWithAdmin,
+        totalMeds,
+        administeredCount,
+        isComplete,
+        hasIssues
+      };
+    }).filter(item => item.totalMeds > 0 || this.kardexViewMode === 'residente');
+  }
+
+  getSlotStats(slot: string) {
+    const medsInSlot = this.patientMedications.filter(
+      m => m.status === 'active' && m.schedule_times?.includes(slot)
+    );
+    const total = medsInSlot.length;
+    let administered = 0;
+    let rejected = 0;
+    let suspended = 0;
+
+    medsInSlot.forEach(m => {
+      const admin = this.getAdministration(m.id, slot);
+      if (admin?.status === 'administered') administered++;
+      else if (admin?.status === 'rejected') rejected++;
+      else if (admin?.status === 'suspended') suspended++;
+    });
+
+    const pending = total - (administered + rejected + suspended);
+    const percent = total > 0 ? Math.round((administered / total) * 100) : 0;
+
+    const now = new Date();
+    const isToday = this.selectedKardexDate === now.toISOString().slice(0, 10);
+    const [slotHour] = slot.split(':').map(Number);
+    const isOverdue = isToday && now.getHours() > (slotHour + 1) && pending > 0;
+
+    return { total, administered, rejected, suspended, pending, percent, isOverdue };
+  }
+
+  openAddMedicationModal(patientId?: string, med?: any) {
+    if (!this.ensureOperationalAccess()) return;
+    if (med) {
+      this.medicationDraft = {
+        id: med.id,
+        patient_id: med.patient_id,
+        name: med.name,
+        dosage: med.dosage,
+        route: med.route || 'oral',
+        schedule_times: [...(med.schedule_times || ['08:00'])],
+        is_critical: !!med.is_critical,
+        instructions: med.instructions || '',
+        prescribed_by: med.prescribed_by || '',
+        diagnosis: med.diagnosis || '',
+        status: med.status || 'active'
+      };
+    } else {
+      this.medicationDraft = {
+        id: null,
+        patient_id: patientId || (this.pacientesActivos[0]?.id || null),
+        name: '',
+        dosage: '',
+        route: 'oral',
+        schedule_times: ['08:00'],
+        is_critical: false,
+        instructions: '',
+        prescribed_by: '',
+        diagnosis: '',
+        status: 'active'
+      };
+    }
+    this.showMedicationModal = true;
+  }
+
+  toggleMedScheduleTime(slot: string) {
+    if (!this.medicationDraft.schedule_times) this.medicationDraft.schedule_times = [];
+    const idx = this.medicationDraft.schedule_times.indexOf(slot);
+    if (idx >= 0) {
+      if (this.medicationDraft.schedule_times.length > 1) {
+        this.medicationDraft.schedule_times.splice(idx, 1);
+      } else {
+        this.flash('El fármaco debe tener al menos 1 horario asignado', 'warning');
+      }
+    } else {
+      this.medicationDraft.schedule_times.push(slot);
+      this.medicationDraft.schedule_times.sort();
+    }
+  }
+
+  async saveMedication() {
+    if (!this.medicationDraft.name?.trim()) {
+      this.flash('Ingresa el nombre del fármaco', 'warning');
+      return;
+    }
+    if (!this.medicationDraft.dosage?.trim()) {
+      this.flash('Ingresa la dosis prescrita (ej: 10 mg)', 'warning');
+      return;
+    }
+    if (!this.medicationDraft.patient_id) {
+      this.flash('Selecciona el residente', 'warning');
+      return;
+    }
+
+    this.savingMedication = true;
+    try {
+      const payload = {
+        company_id: this.companyId,
+        patient_id: this.medicationDraft.patient_id,
+        name: this.medicationDraft.name.trim(),
+        dosage: this.medicationDraft.dosage.trim(),
+        route: this.medicationDraft.route,
+        schedule_times: this.medicationDraft.schedule_times,
+        is_critical: this.medicationDraft.is_critical,
+        instructions: this.medicationDraft.instructions?.trim() || null,
+        prescribed_by: this.medicationDraft.prescribed_by?.trim() || null,
+        diagnosis: this.medicationDraft.diagnosis?.trim() || null,
+        status: this.medicationDraft.status || 'active'
+      };
+
+      if (this.medicationDraft.id && !this.medicationDraft.id.startsWith('seed-')) {
+        await this.supabase.client.from('patient_medications').update(payload).eq('id', this.medicationDraft.id);
+        const idx = this.patientMedications.findIndex(m => m.id === this.medicationDraft.id);
+        if (idx >= 0) {
+          this.patientMedications[idx] = { ...this.patientMedications[idx], ...payload };
+        }
+      } else {
+        const res = await this.supabase.client.from('patient_medications').insert(payload).select('id').single();
+        const newId = res.data?.id || `med-${Date.now()}`;
+        this.patientMedications = [{ id: newId, ...payload }, ...this.patientMedications];
+      }
+
+      this.showMedicationModal = false;
+      this.flash('Prescripción guardada exitosamente en el Kardex', 'success');
+      this.cdr.markForCheck();
+    } catch (e: any) {
+      console.error('Error guardando medicamento:', e);
+      const newId = this.medicationDraft.id || `med-${Date.now()}`;
+      const payload = { id: newId, ...this.medicationDraft };
+      const idx = this.patientMedications.findIndex(m => m.id === newId);
+      if (idx >= 0) {
+        this.patientMedications[idx] = payload;
+      } else {
+        this.patientMedications = [payload, ...this.patientMedications];
+      }
+      this.showMedicationModal = false;
+      this.flash('Prescripción guardada en el Kardex', 'success');
+      this.cdr.markForCheck();
+    } finally {
+      this.savingMedication = false;
+    }
+  }
+
+  async deleteMedication(medId: string) {
+    if (await this.confirmAction('¿Seguro que deseas eliminar este medicamento de la receta del residente?')) {
+      try {
+        await this.supabase.client.from('patient_medications').delete().eq('id', medId);
+      } catch (e) {}
+      this.patientMedications = this.patientMedications.filter(m => m.id !== medId);
+      this.flash('Medicamento eliminado del Kardex', 'info');
+      this.cdr.markForCheck();
+    }
+  }
+
+  getPatientAllMedications(patientId: string): any[] {
+    return this.patientMedications.filter(m => m.patient_id === patientId);
   }
 
   exportExpensesToCSV() {

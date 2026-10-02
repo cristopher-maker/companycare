@@ -527,15 +527,16 @@
           (click)="selectRequest(item)"
         >
           <div class="ce-expert-app__case-main">
-            <h3 class="ce-expert-app__case-title">{{ item.topic }}</h3>
+            <h3 class="ce-expert-app__case-title" [title]="item.topic">{{ item.topic }}</h3>
             <p class="ce-expert-app__case-user">
               <mat-icon>person</mat-icon>
-              {{ item.employee_name || 'Anónimo' }}
+              <span>{{ item.employee_name || 'Anónimo' }}</span>
             </p>
             <p class="ce-expert-app__case-date">{{ item.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
-            <p *ngIf="requestNeedsAttention(item)" class="ce-expert-app__case-alert">
-              {{ requestAttentionLabel(item) }}
-            </p>
+            <div *ngIf="requestNeedsAttention(item)" class="ce-expert-app__case-alert">
+              <mat-icon>schedule</mat-icon>
+              <span>{{ requestAttentionLabel(item) }}</span>
+            </div>
           </div>
 
           <div class="ce-expert-app__case-side">
@@ -547,9 +548,9 @@
               {{ statusLabel(item.status) }}
             </span>
             <span *ngIf="requestNeedsAttention(item)" class="ce-expert-app__badge ce-expert-app__badge--attention">
-              Atrasado
+              Atención
             </span>
-            <mat-icon class="ce-expert-app__channel-icon">
+            <mat-icon class="ce-expert-app__channel-icon" [title]="item.channel">
               {{ item.channel === 'Videollamada' ? 'videocam' : item.channel === 'Llamada' ? 'call' : 'chat' }}
             </mat-icon>
           </div>
@@ -599,11 +600,6 @@
             </select>
           </div>
 
-          <!-- Botón de Ficha Completa -->
-          <button type="button" class="ce-btn-header ce-btn-header--outline" (click)="openContextSheet()" title="Ver ficha completa">
-            <mat-icon>assignment</mat-icon>
-            <span>Ficha completa</span>
-          </button>
 
           <!-- Botón Toggle Chat (Oculto por defecto) -->
           <button type="button" class="ce-btn-header" [class.ce-btn-header--active]="showChat" (click)="toggleChat()" title="Ver u ocultar conversación">
@@ -923,6 +919,15 @@
                 />
               </div>
 
+              <!-- Notification Toggle -->
+              <label class="followup-notify-toggle" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1e293b; cursor: pointer; margin-top: 14px; margin-bottom: 8px; padding: 8px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
+                <input type="checkbox" [(ngModel)]="notifyByEmail" style="width: 16px; height: 16px; accent-color: #0284c7; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #0284c7;">mail</mat-icon>
+                  <strong>Enviar alerta automática por correo (Gmail)</strong> al familiar o colaborador
+                </span>
+              </label>
+
               <div class="followup-form__actions">
                 <button type="button" class="ce-btn-save" [disabled]="savingFollowup || !followupDraft.note.trim()" (click)="saveFollowup()">
                   <mat-icon>{{ savingFollowup ? 'sync' : 'check' }}</mat-icon>
@@ -966,125 +971,180 @@
           <section class="ce-card ce-card--patient-file">
             <div class="ce-card__head">
               <div class="ce-card__title-group">
-                <mat-icon class="ce-card__icon ce-card__icon--indigo">elderly</mat-icon>
+                <div class="ce-card__icon ce-card__icon--indigo">
+                  <mat-icon>folder_shared</mat-icon>
+                </div>
                 <div>
-                  <h3 class="ce-card__title">Ficha del colaborador y paciente</h3>
-                  <p class="ce-card__subtitle">Datos clínicos, previsión y presupuesto</p>
+                  <h3 class="ce-card__title">Expediente Clínico y Familiar</h3>
+                  <p class="ce-card__subtitle">
+                    {{ collaboratorIntakes.length > 1 ? (collaboratorIntakes.length + ' evaluaciones registradas') : 'Evaluación geriátrica y contexto' }}
+                  </p>
                 </div>
               </div>
-              <button type="button" class="ce-card-action-btn" (click)="openContextSheet()" title="Ver ficha en modal completo">
-                <mat-icon>open_in_new</mat-icon>
-                <span>Ficha completa</span>
-              </button>
-            </div>
+              <div class="ce-card__actions">
+                <!-- Selector de familiar si hay más de 1 ficha -->
+                <div class="ce-intake-switcher" *ngIf="collaboratorIntakes.length > 1">
+                  <label class="ce-intake-switcher__label" for="intakeSelector">
+                    <mat-icon>family_restroom</mat-icon>
+                    <span>Familiar:</span>
+                  </label>
+                  <select id="intakeSelector" class="ce-intake-switcher__select" [ngModel]="selectedIntakeId" (ngModelChange)="selectIntake($event)">
+                    <option *ngFor="let itk of collaboratorIntakes" [value]="itk.id">
+                      {{ itk.name }} ({{ itk.relation }})
+                    </option>
+                  </select>
+                </div>
 
-            <!-- GRUPO 1: PERSONA CUIDADA Y SALUD -->
-            <div class="ce-patient-group">
-              <span class="ce-group-title">
-                <mat-icon>person</mat-icon> Persona cuidada
-              </span>
-              <div class="ce-info-grid">
-                <div class="ce-info-cell">
-                  <span>Nombre completo</span>
-                  <strong>{{ selectedCollaborator.careReceiverName || 'No informado' }}</strong>
-                </div>
-                <div class="ce-info-cell">
-                  <span>RUT</span>
-                  <strong>{{ selectedCollaborator.careReceiverRut || 'No informado' }}</strong>
-                </div>
-                <div class="ce-info-cell">
-                  <span>Edad / Nacimiento</span>
-                  <strong>
-                    {{ selectedCollaborator.familyAge ? (selectedCollaborator.familyAge + ' años') : '' }}
-                    {{ selectedCollaborator.careReceiverBirthDate ? '(' + selectedCollaborator.careReceiverBirthDate + ')' : '' }}
-                    {{ !selectedCollaborator.familyAge && !selectedCollaborator.careReceiverBirthDate ? 'No informada' : '' }}
-                  </strong>
-                </div>
-                <div class="ce-info-cell">
-                  <span>Teléfono</span>
-                  <strong>{{ selectedCollaborator.careReceiverPhone || 'No informado' }}</strong>
-                </div>
-                <div class="ce-info-cell ce-info-cell--highlight-blue">
-                  <span>Previsión de Salud</span>
-                  <strong>{{ selectedCollaborator.healthCoverage || 'No informada' }}</strong>
-                </div>
-                <div class="ce-info-cell">
-                  <span>Condición médica</span>
-                  <strong>{{ selectedCollaborator.condition || 'No informada' }}</strong>
-                </div>
-                <div class="ce-info-cell">
-                  <span>Nivel dependencia</span>
-                  <strong>{{ dependencyLevelLabel(selectedCollaborator.dependencyLevel) }}</strong>
-                </div>
-                <div class="ce-info-cell">
-                  <span>Tipo de apoyo</span>
-                  <strong>{{ careTypeLabel(selectedCollaborator.careType) }}</strong>
-                </div>
-                <div class="ce-info-cell">
-                  <span>Urgencia</span>
-                  <strong>{{ urgencyLabel(selectedCollaborator.urgency) }}</strong>
-                </div>
+                <button type="button" class="ce-card-action-btn ce-card-action-btn--primary" (click)="openNewIntakeModal()" title="Registrar nuevo familiar u otra evaluación clínica">
+                  <mat-icon>person_add</mat-icon>
+                  <span>+ Nueva Ficha</span>
+                </button>
+
+                <button type="button" class="ce-card-action-btn" (click)="openContextSheet()" title="Abrir ficha en ventana completa">
+                  <mat-icon>open_in_new</mat-icon>
+                  <span>Ficha completa</span>
+                </button>
               </div>
             </div>
 
-            <!-- GRUPO 2: PRESUPUESTO Y ENTORNO -->
-            <div class="ce-patient-group">
-              <span class="ce-group-title">
-                <mat-icon>payments</mat-icon> Presupuesto y vivienda
-              </span>
-              <div class="ce-info-grid">
-                <div class="ce-info-cell ce-info-cell--highlight-green">
-                  <span>Presupuesto mensual est.</span>
-                  <strong>{{ formatBudgetValue(selectedCollaborator.budgetMonthlyMax) }}</strong>
+            <!-- HERO DEL PACIENTE (BANNER CLÍNICO ELEGANTE) -->
+            <div class="ce-patient-hero">
+              <div class="ce-patient-hero__avatar">
+                <mat-icon>elderly</mat-icon>
+              </div>
+              <div class="ce-patient-hero__details">
+                <div class="ce-patient-hero__name-row">
+                  <h4 class="ce-patient-hero__name">{{ selectedCollaborator.careReceiverName || 'Persona Cuidada' }}</h4>
+                  <span class="ce-patient-hero__age" *ngIf="selectedCollaborator.familyAge">
+                    {{ selectedCollaborator.familyAge }} años
+                  </span>
                 </div>
-                <div class="ce-info-cell">
-                  <span>Financiamiento</span>
-                  <strong>{{ fundingLabel(selectedCollaborator.funding) }}</strong>
+                <div class="ce-patient-hero__relation">
+                  <mat-icon>diversity_1</mat-icon>
+                  <span>{{ relationLabel(selectedCollaborator.relation, selectedCollaborator.fullName) }}</span>
                 </div>
-                <div class="ce-info-cell">
-                  <span>Ciudad o Comuna</span>
-                  <strong>{{ selectedCollaborator.location || 'No informada' }}</strong>
-                </div>
-                <div class="ce-info-cell">
-                  <span>Vivienda / Accesibilidad</span>
-                  <strong>{{ housingTypeLabel(selectedCollaborator.hasTwoFloors) }}</strong>
-                </div>
-                <div class="ce-info-cell ce-info-cell--wide">
-                  <span>Red de apoyo</span>
-                  <strong>{{ selectedCollaborator.supportNetwork || 'No informada' }}</strong>
+                <div class="ce-patient-hero__badges">
+                  <span class="ce-hero-pill ce-hero-pill--condition" *ngIf="selectedCollaborator.condition">
+                    <mat-icon>health_and_safety</mat-icon>
+                    <span>{{ selectedCollaborator.condition }}</span>
+                  </span>
+                  <span class="ce-hero-pill" [ngClass]="getDependencyBadgeClass(selectedCollaborator.dependencyLevel)" *ngIf="selectedCollaborator.dependencyLevel">
+                    <mat-icon>bolt</mat-icon>
+                    <span>Dependencia {{ dependencyLevelLabel(selectedCollaborator.dependencyLevel) }}</span>
+                  </span>
+                  <span class="ce-hero-pill ce-hero-pill--coverage" *ngIf="selectedCollaborator.healthCoverage">
+                    <mat-icon>local_hospital</mat-icon>
+                    <span>{{ selectedCollaborator.healthCoverage }}</span>
+                  </span>
                 </div>
               </div>
             </div>
 
-            <!-- GRUPO 3: DATOS DEL COLABORADOR -->
-            <div class="ce-patient-group">
-              <span class="ce-group-title">
-                <mat-icon>badge</mat-icon> Colaborador y contacto
-              </span>
-              <div class="ce-info-grid">
-                <div class="ce-info-cell">
-                  <span>Nombre colaborador</span>
-                  <strong>{{ selectedCollaborator.fullName || 'No informado' }}</strong>
+            <!-- SECCIONES ORGANIZADAS DEL EXPEDIENTE -->
+            <div class="ce-dossier-body">
+              <!-- SECCIÓN 1: SALUD Y CUIDADOS -->
+              <div class="ce-dossier-section">
+                <div class="ce-dossier-section__header">
+                  <mat-icon>medical_services</mat-icon>
+                  <span>Salud & Cuidados requeridos</span>
                 </div>
-                <div class="ce-info-cell">
-                  <span>Email</span>
-                  <strong>{{ selectedCollaborator.email || 'No informado' }}</strong>
+                <div class="ce-dossier-row">
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">RUT del paciente</span>
+                    <strong class="ce-dossier-value">{{ selectedCollaborator.careReceiverRut || 'No informado' }}</strong>
+                  </div>
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Fecha de nacimiento</span>
+                    <strong class="ce-dossier-value">{{ selectedCollaborator.careReceiverBirthDate || 'No informada' }}</strong>
+                  </div>
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Tipo de apoyo</span>
+                    <strong class="ce-dossier-value">{{ careTypeLabel(selectedCollaborator.careType) }}</strong>
+                  </div>
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Nivel de urgencia</span>
+                    <strong class="ce-dossier-value">{{ urgencyLabel(selectedCollaborator.urgency) }}</strong>
+                  </div>
+                  <div class="ce-dossier-item" *ngIf="selectedCollaborator.careReceiverPhone">
+                    <span class="ce-dossier-label">Teléfono directo</span>
+                    <strong class="ce-dossier-value">
+                      <a [href]="'tel:' + selectedCollaborator.careReceiverPhone" class="ce-contact-link">
+                        <mat-icon>call</mat-icon> {{ selectedCollaborator.careReceiverPhone }}
+                      </a>
+                    </strong>
+                  </div>
                 </div>
-                <div class="ce-info-cell">
-                  <span>Empresa</span>
-                  <strong>{{ selectedCollaborator.company || 'No informada' }}</strong>
+              </div>
+
+              <!-- SECCIÓN 2: ENTORNO, VIVIENDA Y FINANZAS -->
+              <div class="ce-dossier-section">
+                <div class="ce-dossier-section__header">
+                  <mat-icon>home_work</mat-icon>
+                  <span>Entorno, Vivienda y Recursos</span>
                 </div>
-                <div class="ce-info-cell">
-                  <span>Relación</span>
-                  <strong>{{ selectedCollaborator.relation || 'No informada' }}</strong>
+                <div class="ce-dossier-row">
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Comuna o Ciudad</span>
+                    <strong class="ce-dossier-value ce-dossier-value--location">
+                      <mat-icon>place</mat-icon> {{ selectedCollaborator.location || 'No informada' }}
+                    </strong>
+                  </div>
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Tipo de vivienda</span>
+                    <strong class="ce-dossier-value">{{ housingTypeLabel(selectedCollaborator.hasTwoFloors) }}</strong>
+                  </div>
+                  <div class="ce-dossier-item ce-dossier-item--budget">
+                    <span class="ce-dossier-label">Presupuesto mensual est.</span>
+                    <strong class="ce-dossier-value ce-budget-tag">
+                      <mat-icon>payments</mat-icon> {{ formatBudgetValue(selectedCollaborator.budgetMonthlyMax) }}
+                    </strong>
+                  </div>
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Modalidad de financiamiento</span>
+                    <strong class="ce-dossier-value">{{ fundingLabel(selectedCollaborator.funding) }}</strong>
+                  </div>
+                  <div class="ce-dossier-item ce-dossier-item--full">
+                    <span class="ce-dossier-label">Red de apoyo</span>
+                    <strong class="ce-dossier-value">{{ selectedCollaborator.supportNetwork || 'No informada' }}</strong>
+                  </div>
                 </div>
-                <div class="ce-info-cell">
-                  <span>Contacto preferido</span>
-                  <strong>{{ preferredContactLabel(selectedCollaborator.preferredContact) }}</strong>
+              </div>
+
+              <!-- SECCIÓN 3: DATOS DEL COLABORADOR -->
+              <div class="ce-dossier-section">
+                <div class="ce-dossier-section__header">
+                  <mat-icon>contact_page</mat-icon>
+                  <span>Colaborador y Contacto</span>
                 </div>
-                <div class="ce-info-cell ce-info-cell--wide" *ngIf="selectedCollaborator.notes">
-                  <span>Notas del colaborador</span>
-                  <p class="ce-notes-text">{{ selectedCollaborator.notes }}</p>
+                <div class="ce-dossier-row">
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Colaborador</span>
+                    <strong class="ce-dossier-value">{{ selectedCollaborator.fullName || 'No informado' }}</strong>
+                  </div>
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Empresa</span>
+                    <strong class="ce-dossier-value">{{ selectedCollaborator.company || 'Empresa afiliada' }}</strong>
+                  </div>
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Correo electrónico</span>
+                    <strong class="ce-dossier-value">
+                      <a *ngIf="selectedCollaborator.email" [href]="'mailto:' + selectedCollaborator.email" class="ce-contact-link">
+                        <mat-icon>mail</mat-icon> {{ selectedCollaborator.email }}
+                      </a>
+                      <span *ngIf="!selectedCollaborator.email">No informado</span>
+                    </strong>
+                  </div>
+                  <div class="ce-dossier-item">
+                    <span class="ce-dossier-label">Canal preferido</span>
+                    <strong class="ce-dossier-value">{{ preferredContactLabel(selectedCollaborator.preferredContact) }}</strong>
+                  </div>
+                  <div class="ce-dossier-item ce-dossier-item--full" *ngIf="selectedCollaborator.notes">
+                    <span class="ce-dossier-label">Observaciones del colaborador</span>
+                    <div class="ce-dossier-note-callout">
+                      <mat-icon>format_quote</mat-icon>
+                      <p>{{ selectedCollaborator.notes }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1187,12 +1247,32 @@
       <section class="ce-context-sheet__panel">
         <header class="ce-context-sheet__head">
           <div>
-            <p>Ficha completa del colaborador</p>
+            <p>Ficha clínica del colaborador y familiares</p>
             <h3>{{ selectedCollaborator.fullName || selectedCollaborator.email || 'Colaborador' }}</h3>
           </div>
-          <button type="button" class="ce-context-sheet__close" (click)="closeContextSheet()" aria-label="Cerrar ficha">
-            <mat-icon>close</mat-icon>
-          </button>
+          <div class="ce-context-sheet__head-actions">
+            <!-- Selector de familiar si hay más de 1 ficha -->
+            <div class="ce-intake-switcher" *ngIf="collaboratorIntakes.length > 1">
+              <label class="ce-intake-switcher__label">
+                <mat-icon>family_restroom</mat-icon>
+                <span>Familiar:</span>
+              </label>
+              <select class="ce-intake-switcher__select" [ngModel]="selectedIntakeId" (ngModelChange)="selectIntake($event)">
+                <option *ngFor="let itk of collaboratorIntakes" [value]="itk.id">
+                  {{ itk.name }} ({{ itk.relation }})
+                </option>
+              </select>
+            </div>
+
+            <button type="button" class="ce-card-action-btn ce-card-action-btn--primary" (click)="openNewIntakeModal()" title="Registrar nuevo familiar u otra evaluación clínica">
+              <mat-icon>person_add</mat-icon>
+              <span>+ Nueva Ficha</span>
+            </button>
+
+            <button type="button" class="ce-context-sheet__close" (click)="closeContextSheet()" aria-label="Cerrar ficha">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
         </header>
 
         <div class="ce-context-sheet__grid">
@@ -1314,6 +1394,209 @@
             <strong>{{ selectedRequest?.details }}</strong>
           </div>
         </div>
+      </section>
+    </div>
+
+    <!-- MODAL: NUEVA FICHA / FAMILIAR -->
+    <div *ngIf="showNewIntakeModal" class="ce-intake-modal" role="dialog" aria-modal="true" aria-label="Registrar nueva ficha clínica">
+      <div class="ce-intake-modal__backdrop" (click)="closeNewIntakeModal()"></div>
+      <section class="ce-intake-modal__panel">
+        <header class="ce-intake-modal__head">
+          <div class="ce-intake-modal__title-group">
+            <div class="ce-intake-modal__icon">
+              <mat-icon>person_add</mat-icon>
+            </div>
+            <div>
+              <h3>Registrar Nueva Ficha Clínica</h3>
+              <p>Asociada al colaborador: <strong>{{ selectedRequest?.employee_name || selectedCollaborator?.fullName || 'Colaborador' }}</strong></p>
+            </div>
+          </div>
+          <button type="button" class="ce-intake-modal__close" (click)="closeNewIntakeModal()" [disabled]="savingIntake" aria-label="Cerrar modal">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <form class="ce-intake-modal__body" (ngSubmit)="saveNewIntake()">
+          <!-- BLOQUE 1: PERSONA CUIDADA -->
+          <div class="ce-intake-modal__section">
+            <div class="ce-intake-modal__sec-title">
+              <mat-icon>elderly</mat-icon>
+              <span>Datos de la Persona Cuidada (Paciente)</span>
+            </div>
+            <div class="ce-form-row ce-form-row--2">
+              <div class="ce-form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" [(ngModel)]="newIntakeDraft.careReceiverFullName" name="careReceiverFullName" placeholder="Ej: Manuel González" required />
+              </div>
+              <div class="ce-form-group">
+                <label>RUT</label>
+                <input type="text" [(ngModel)]="newIntakeDraft.careReceiverRut" name="careReceiverRut" placeholder="Ej: 12.345.678-9" />
+              </div>
+            </div>
+
+            <div class="ce-form-row ce-form-row--3">
+              <div class="ce-form-group">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" [(ngModel)]="newIntakeDraft.careReceiverBirthDate" name="careReceiverBirthDate" />
+              </div>
+              <div class="ce-form-group">
+                <label>Edad (años)</label>
+                <input type="number" [(ngModel)]="newIntakeDraft.careReceiverAge" name="careReceiverAge" placeholder="Ej: 78" />
+              </div>
+              <div class="ce-form-group">
+                <label>Teléfono de Contacto</label>
+                <input type="tel" [(ngModel)]="newIntakeDraft.careReceiverPhone" name="careReceiverPhone" placeholder="+56 9 1234 5678" />
+              </div>
+            </div>
+
+            <div class="ce-form-row ce-form-row--2">
+              <div class="ce-form-group">
+                <label>Previsión de Salud</label>
+                <select [(ngModel)]="newIntakeDraft.careReceiverHealthCoverage" name="careReceiverHealthCoverage">
+                  <option value="FONASA">FONASA</option>
+                  <option value="Isapre Banmédica">Isapre Banmédica</option>
+                  <option value="Isapre Colmena">Isapre Colmena</option>
+                  <option value="Isapre Consalud">Isapre Consalud</option>
+                  <option value="Isapre CruzBlanca">Isapre CruzBlanca</option>
+                  <option value="Isapre Nueva Masvida">Isapre Nueva Masvida</option>
+                  <option value="Isapre Vida Tres">Isapre Vida Tres</option>
+                  <option value="Particular / Sin previsión">Particular / Sin previsión</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="ce-form-group">
+                <label>Relación con Colaborador</label>
+                <select [(ngModel)]="newIntakeDraft.caregiverRelation" name="caregiverRelation">
+                  <option value="Madre">Madre</option>
+                  <option value="Padre">Padre</option>
+                  <option value="Cónyuge / Pareja">Cónyuge / Pareja</option>
+                  <option value="Hijo / Hija">Hijo / Hija</option>
+                  <option value="Abuelo / Abuela">Abuelo / Abuela</option>
+                  <option value="Hermano / Hermana">Hermano / Hermana</option>
+                  <option value="Suegro / Suegra">Suegro / Suegra</option>
+                  <option value="Tío / Tía">Tío / Tía</option>
+                  <option value="Otro familiar">Otro familiar</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE 2: CONDICIÓN CLÍNICA Y APOYO -->
+          <div class="ce-intake-modal__section">
+            <div class="ce-intake-modal__sec-title">
+              <mat-icon>healing</mat-icon>
+              <span>Condición Clínica y Necesidades de Apoyo</span>
+            </div>
+
+            <div class="ce-form-row ce-form-row--2">
+              <div class="ce-form-group">
+                <label>Condición Médica Principal / Diagnóstico</label>
+                <input type="text" [(ngModel)]="newIntakeDraft.primaryCondition" name="primaryCondition" placeholder="Ej: Alzheimer moderado, Postrado, ACV, Artrosis..." />
+              </div>
+              <div class="ce-form-group">
+                <label>Nivel de Dependencia</label>
+                <select [(ngModel)]="newIntakeDraft.dependencyLevel" name="dependencyLevel">
+                  <option value="low">Baja / Autovalente</option>
+                  <option value="medium">Media / Dependencia moderada</option>
+                  <option value="high">Alta / Requiere asistencia diaria</option>
+                  <option value="full">Dependencia Total / Postrado</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="ce-form-row ce-form-row--2">
+              <div class="ce-form-group">
+                <label>Tipo de Apoyo Requerido</label>
+                <select [(ngModel)]="newIntakeDraft.careType" name="careType">
+                  <option value="home_care">Cuidados a domicilio</option>
+                  <option value="nursing">Enfermería / Procedimientos</option>
+                  <option value="residential">Residencia / ELEAM</option>
+                  <option value="dementia">Demencia / Alzheimer</option>
+                  <option value="respite">Apoyo temporal al cuidador</option>
+                  <option value="guidance">Orientación general / Social</option>
+                </select>
+              </div>
+              <div class="ce-form-group">
+                <label>Nivel de Urgencia</label>
+                <select [(ngModel)]="newIntakeDraft.urgency" name="urgency">
+                  <option value="immediate">Inmediata (Esta semana)</option>
+                  <option value="3m">En 3 meses</option>
+                  <option value="6m">En 6 meses</option>
+                  <option value="exploring">Explorando opciones preventivas</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE 3: UBICACIÓN Y VIVIENDA -->
+          <div class="ce-intake-modal__section">
+            <div class="ce-intake-modal__sec-title">
+              <mat-icon>home</mat-icon>
+              <span>Ubicación y Entorno Habitacional</span>
+            </div>
+
+            <div class="ce-form-row ce-form-row--2">
+              <div class="ce-form-group">
+                <label>Comuna / Ciudad</label>
+                <input type="text" [(ngModel)]="newIntakeDraft.city" name="city" placeholder="Ej: Providencia, Santiago" />
+              </div>
+              <div class="ce-form-group">
+                <label>Características Vivienda / Escaleras</label>
+                <select [(ngModel)]="newIntakeDraft.hasTwoFloors" name="hasTwoFloors">
+                  <option value="house_1f">Casa de 1 piso (Sin escaleras)</option>
+                  <option value="house_2f">Casa de 2 o más pisos (Con escaleras)</option>
+                  <option value="dept_elevator">Departamento con ascensor</option>
+                  <option value="dept_stairs">Departamento sin ascensor (Piso por escalera)</option>
+                  <option value="adapted">Vivienda adaptada (Con rampa / Salvaescaleras)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="ce-form-group">
+              <label>Red de Apoyo Familiar</label>
+              <input type="text" [(ngModel)]="newIntakeDraft.supportNetwork" name="supportNetwork" placeholder="Ej: Dos hijas se turnan los fines de semana, vive con cónyuge" />
+            </div>
+          </div>
+
+          <!-- BLOQUE 4: PRESUPUESTO Y NOTAS -->
+          <div class="ce-intake-modal__section">
+            <div class="ce-intake-modal__sec-title">
+              <mat-icon>payments</mat-icon>
+              <span>Presupuesto y Observaciones Clínicas</span>
+            </div>
+
+            <div class="ce-form-row ce-form-row--2">
+              <div class="ce-form-group">
+                <label>Presupuesto Mensual Estimado (CLP)</label>
+                <input type="number" [(ngModel)]="newIntakeDraft.budgetMonthlyMax" name="budgetMonthlyMax" placeholder="Ej: 650000" />
+              </div>
+              <div class="ce-form-group">
+                <label>Financiamiento</label>
+                <select [(ngModel)]="newIntakeDraft.funding" name="funding">
+                  <option value="self_funder">Pago privado / Familiar</option>
+                  <option value="local_authority">Apoyo público / Subsidio</option>
+                  <option value="company_benefit">Beneficio / Convenio Empresa</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="ce-form-group">
+              <label>Notas Iniciales y Observaciones del Care Expert</label>
+              <textarea [(ngModel)]="newIntakeDraft.notes" name="notes" rows="3" placeholder="Añade observaciones clínicas, requerimientos especiales o antecedentes relevantes..."></textarea>
+            </div>
+          </div>
+
+          <footer class="ce-intake-modal__footer">
+            <button type="button" class="ce-modal-btn ce-modal-btn--secondary" (click)="closeNewIntakeModal()" [disabled]="savingIntake">
+              Cancelar
+            </button>
+            <button type="submit" class="ce-modal-btn ce-modal-btn--primary" [disabled]="savingIntake || !newIntakeDraft.careReceiverFullName.trim()">
+              <mat-icon *ngIf="!savingIntake">save</mat-icon>
+              <mat-icon *ngIf="savingIntake" class="ce-spin">sync</mat-icon>
+              <span>{{ savingIntake ? 'Guardando...' : 'Guardar Nueva Ficha' }}</span>
+            </button>
+          </footer>
+        </form>
       </section>
     </div>
   </section>

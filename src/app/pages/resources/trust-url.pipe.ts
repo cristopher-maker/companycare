@@ -17,28 +17,60 @@ const TRUSTED_ORIGINS = [
 export class TrustUrlPipe implements PipeTransform {
   constructor(private sanitizer: DomSanitizer) {}
 
-  transform(value: string): SafeResourceUrl {
+  transform(value: string | null | undefined): SafeResourceUrl {
     if (!value) return '';
 
-    // Validate protocol — only HTTPS is allowed
-    if (!value.startsWith('https://')) {
-      console.warn('[TrustUrlPipe] Blocked non-HTTPS URL:', value);
+    const trimmed = String(value).trim();
+    if (!trimmed) return '';
+
+    // 1. Allow local app assets (e.g. assets/pdf/..., /assets/..., ./assets/...)
+    if (
+      trimmed.startsWith('assets/') ||
+      trimmed.startsWith('/assets/') ||
+      trimmed.startsWith('./assets/') ||
+      trimmed.includes('/assets/pdf/') ||
+      trimmed.endsWith('.pdf')
+    ) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(trimmed);
+    }
+
+    // 2. Allow same-origin / relative URLs
+    try {
+      if (typeof window !== 'undefined' && window.location) {
+        if (trimmed.startsWith(window.location.origin)) {
+          return this.sanitizer.bypassSecurityTrustResourceUrl(trimmed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 3. Absolute URLs require HTTPS
+    if (!trimmed.startsWith('https://')) {
+      console.warn('[TrustUrlPipe] Blocked non-HTTPS URL:', trimmed);
       return '';
     }
 
-    // Validate domain against whitelist
+    // 4. Validate domain against trusted whitelist or recognized domains
     try {
-      const url = new URL(value);
-      const isTrusted = TRUSTED_ORIGINS.some(origin => url.origin === origin);
+      const url = new URL(trimmed);
+      const isTrusted =
+        TRUSTED_ORIGINS.some(origin => url.origin === origin) ||
+        url.hostname.endsWith('.supabase.co') ||
+        url.hostname.endsWith('.github.io') ||
+        url.hostname === 'localhost' ||
+        url.hostname === '127.0.0.1';
+
       if (!isTrusted) {
         console.warn('[TrustUrlPipe] Blocked untrusted origin:', url.origin);
         return '';
       }
     } catch {
-      console.warn('[TrustUrlPipe] Blocked invalid URL:', value);
+      console.warn('[TrustUrlPipe] Blocked invalid URL:', trimmed);
       return '';
     }
 
-    return this.sanitizer.bypassSecurityTrustResourceUrl(value);
+    return this.sanitizer.bypassSecurityTrustResourceUrl(trimmed);
   }
 }
+

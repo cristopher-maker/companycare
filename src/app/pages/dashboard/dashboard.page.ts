@@ -95,9 +95,19 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   public employeeCareIntakeOpen = false;
   public employeeCareIntakeId: string | null = null;
+  public employeeEditingIntakeId: string | null = null;
   public employeeCompanyId: string | null = null;
   public employeeCareIntakeUpdatedAt: string | null = null;
   public employeeCareIntakeDraft: EmployeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
+  public modalCareIntakeDraft: EmployeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
+  public employeeCareIntakes: Array<{
+    id: string;
+    name: string;
+    relation: string;
+    careType: string;
+    updatedAt: string | null;
+    draft: EmployeeCareIntakeDraft;
+  }> = [];
 
   // Followup tracking
   public latestFollowup: PatientFollowup | null = null;
@@ -187,12 +197,47 @@ export class DashboardPage implements OnInit, OnDestroy {
     return { id: company.id as string, name: company.name as string };
   }
 
+  public selectCareIntake(intakeId: string): void {
+    const found = this.employeeCareIntakes.find((i) => i.id === intakeId);
+    if (found) {
+      this.employeeCareIntakeId = found.id;
+      this.employeeCareIntakeUpdatedAt = found.updatedAt;
+      this.employeeCareIntakeDraft = { ...found.draft };
+    }
+  }
+
+  public openNewCareIntake(): void {
+    this.employeeEditingIntakeId = null;
+    this.modalCareIntakeDraft = this.createDefaultCareIntakeDraft();
+    this.employeeCareIntakeOpen = true;
+  }
+
   public openEmployeeCareIntake(): void {
+    if (this.employeeCareIntakeId) {
+      this.employeeEditingIntakeId = this.employeeCareIntakeId;
+      const found = this.employeeCareIntakes.find((i) => i.id === this.employeeCareIntakeId);
+      if (found) {
+        this.modalCareIntakeDraft = { ...found.draft };
+      } else {
+        this.modalCareIntakeDraft = { ...this.employeeCareIntakeDraft };
+      }
+    } else if (this.employeeCareIntakes.length > 0) {
+      const first = this.employeeCareIntakes[0];
+      this.employeeEditingIntakeId = first.id;
+      this.modalCareIntakeDraft = { ...first.draft };
+    } else {
+      this.employeeEditingIntakeId = null;
+      this.modalCareIntakeDraft = this.createDefaultCareIntakeDraft();
+    }
     this.employeeCareIntakeOpen = true;
   }
 
   public closeEmployeeCareIntake(): void {
     this.employeeCareIntakeOpen = false;
+    this.employeeEditingIntakeId = null;
+    if (!this.employeeCareIntakeId && this.employeeCareIntakes.length > 0) {
+      this.selectCareIntake(this.employeeCareIntakes[0].id);
+    }
   }
 
   public careTypeLabel(value: string | null | undefined): string {
@@ -254,73 +299,80 @@ export class DashboardPage implements OnInit, OnDestroy {
     const userId = (await this.supabase.client.auth.getSession()).data.session?.user?.id ?? null;
     if (!userId) return;
 
-    if (!this.employeeCompanyId) {
-      alert('No encontramos una empresa asociada a tu usuario.');
+    if (!this.modalCareIntakeDraft.careReceiverFullName.trim()) {
+      alert('Por favor ingresa el nombre de la persona cuidada.');
       return;
     }
 
     this.loading = true;
     try {
       const payload = {
-        care_type: this.employeeCareIntakeDraft.careType,
+        care_type: this.modalCareIntakeDraft.careType,
         care_receiver: {
-          full_name: this.employeeCareIntakeDraft.careReceiverFullName.trim() || null,
-          rut: this.employeeCareIntakeDraft.careReceiverRut.trim() || null,
-          birth_date: this.employeeCareIntakeDraft.careReceiverBirthDate || null,
-          age: this.employeeCareIntakeDraft.careReceiverAge,
-          phone: this.employeeCareIntakeDraft.careReceiverPhone.trim() || null,
-          health_coverage: this.employeeCareIntakeDraft.careReceiverHealthCoverage.trim() || null,
-          primary_condition: this.employeeCareIntakeDraft.primaryCondition.trim() || null,
-          dependency_level: this.employeeCareIntakeDraft.dependencyLevel,
+          full_name: this.modalCareIntakeDraft.careReceiverFullName.trim() || null,
+          rut: this.modalCareIntakeDraft.careReceiverRut.trim() || null,
+          birth_date: this.modalCareIntakeDraft.careReceiverBirthDate || null,
+          age: this.modalCareIntakeDraft.careReceiverAge,
+          phone: this.modalCareIntakeDraft.careReceiverPhone.trim() || null,
+          health_coverage: this.modalCareIntakeDraft.careReceiverHealthCoverage.trim() || null,
+          primary_condition: this.modalCareIntakeDraft.primaryCondition.trim() || null,
+          dependency_level: this.modalCareIntakeDraft.dependencyLevel,
         },
         location: {
-          city: this.employeeCareIntakeDraft.city.trim() || null,
-          postal_code: this.employeeCareIntakeDraft.postalCode.trim() || null,
-          has_two_floors: this.employeeCareIntakeDraft.hasTwoFloors || 'house_1f',
+          city: this.modalCareIntakeDraft.city.trim() || null,
+          postal_code: this.modalCareIntakeDraft.postalCode.trim() || null,
+          has_two_floors: this.modalCareIntakeDraft.hasTwoFloors || 'house_1f',
         },
         family_context: {
-          support_network: this.employeeCareIntakeDraft.supportNetwork.trim() || null,
+          support_network: this.modalCareIntakeDraft.supportNetwork.trim() || null,
         },
         budget: {
-          monthly_max: this.employeeCareIntakeDraft.budgetMonthlyMax,
-          funding: this.employeeCareIntakeDraft.funding,
+          monthly_max: this.modalCareIntakeDraft.budgetMonthlyMax,
+          funding: this.modalCareIntakeDraft.funding,
         },
         preferences: {
-          preferred_contact: this.employeeCareIntakeDraft.preferredContact,
+          preferred_contact: this.modalCareIntakeDraft.preferredContact,
         },
-        urgency: this.employeeCareIntakeDraft.urgency,
+        urgency: this.modalCareIntakeDraft.urgency,
         caregiver: {
-          name: this.employeeCareIntakeDraft.caregiverName.trim() || null,
-          relation: this.employeeCareIntakeDraft.caregiverRelation.trim() || null,
+          name: this.modalCareIntakeDraft.caregiverName.trim() || null,
+          relation: this.modalCareIntakeDraft.caregiverRelation.trim() || null,
           company: this.companyName || null,
         },
-        notes: this.employeeCareIntakeDraft.notes.trim() || null,
+        notes: this.modalCareIntakeDraft.notes.trim() || null,
       };
       const receiverColumns = {
-        care_receiver_full_name: this.employeeCareIntakeDraft.careReceiverFullName.trim() || null,
-        care_receiver_rut: this.employeeCareIntakeDraft.careReceiverRut.trim() || null,
-        care_receiver_birth_date: this.employeeCareIntakeDraft.careReceiverBirthDate || null,
-        care_receiver_phone: this.employeeCareIntakeDraft.careReceiverPhone.trim() || null,
-        care_receiver_health_coverage: this.employeeCareIntakeDraft.careReceiverHealthCoverage.trim() || null,
+        care_receiver_full_name: this.modalCareIntakeDraft.careReceiverFullName.trim() || null,
+        care_receiver_rut: this.modalCareIntakeDraft.careReceiverRut.trim() || null,
+        care_receiver_birth_date: this.modalCareIntakeDraft.careReceiverBirthDate || null,
+        care_receiver_phone: this.modalCareIntakeDraft.careReceiverPhone.trim() || null,
+        care_receiver_health_coverage: this.modalCareIntakeDraft.careReceiverHealthCoverage.trim() || null,
       };
 
-      const query = this.employeeCareIntakeId
-        ? this.supabase.client
-            .from('care_intakes')
-            .update({ payload, ...receiverColumns })
-            .eq('id', this.employeeCareIntakeId)
-        : this.supabase.client.from('care_intakes').insert({
-            company_id: this.employeeCompanyId,
+      let savedId = this.employeeEditingIntakeId;
+      if (this.employeeEditingIntakeId) {
+        const { error } = await this.supabase.client
+          .from('care_intakes')
+          .update({ payload, ...receiverColumns, updated_at: new Date().toISOString() })
+          .eq('id', this.employeeEditingIntakeId);
+        if (error) throw error;
+      } else {
+        const { data: inserted, error } = await this.supabase.client
+          .from('care_intakes')
+          .insert({
+            company_id: this.employeeCompanyId || null,
             employee_id: userId,
             created_by: userId,
             payload,
             ...receiverColumns,
-          } as any);
+          } as any)
+          .select()
+          .single();
+        if (error) throw error;
+        savedId = inserted?.id ?? null;
+      }
 
-      const { error } = await query;
-      if (error) throw error;
-
-      if (!this.employeeCareIntakeId && this.employeeCompanyId) {
+      if (!this.employeeEditingIntakeId && this.employeeCompanyId) {
         try {
           const profileRes = await this.supabase.client
             .from('profiles')
@@ -329,7 +381,7 @@ export class DashboardPage implements OnInit, OnDestroy {
             .maybeSingle();
 
           const userName = profileRes.data?.full_name || 'Empleado';
-          const careType = this.careTypeLabel(this.employeeCareIntakeDraft.careType);
+          const careType = this.careTypeLabel(this.modalCareIntakeDraft.careType);
 
           await this.supabase.client.functions.invoke('hubspot-integration', {
             body: {
@@ -337,8 +389,8 @@ export class DashboardPage implements OnInit, OnDestroy {
               companyId: this.employeeCompanyId,
               dealname: `Solicitud: ${userName} (${careType})`,
               employee_id: userId,
-              comuna: this.employeeCareIntakeDraft.city,
-              dependency: this.employeeCareIntakeDraft.dependencyLevel,
+              comuna: this.modalCareIntakeDraft.city,
+              dependency: this.modalCareIntakeDraft.dependencyLevel,
             },
           });
         } catch (hubspotErr) {
@@ -346,8 +398,12 @@ export class DashboardPage implements OnInit, OnDestroy {
         }
       }
 
-      await this.loadEmployeeCareIntake(userId);
       this.employeeCareIntakeOpen = false;
+      this.employeeEditingIntakeId = null;
+      await this.loadEmployeeCareIntake(userId);
+      if (savedId) {
+        this.selectCareIntake(savedId);
+      }
     } catch (err: any) {
       alert(`No se pudo guardar tu ficha: ${err?.message ?? String(err)}`);
     } finally {
@@ -409,7 +465,7 @@ export class DashboardPage implements OnInit, OnDestroy {
       { label: 'Solicitudes abiertas',  value: openRequests.count ?? 0,   icon: 'forum' },
       { label: 'Proveedores activos',   value: provCountVal,              icon: 'verified_user' },
       { label: 'Recursos',              value: resCountVal,               icon: 'library_books' },
-      { label: 'Vouchers disponibles',  value: vouchCountVal,             icon: 'local_activity' },
+      { label: 'Cupones de descuento',  value: vouchCountVal,             icon: 'local_activity' },
     ];
 
     this.recentRequests = (recentRequests.data ?? []) as RecentRequest[];
@@ -419,9 +475,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     
     this.upcomingEvents = (upcomingEvents.data ?? []) as UpcomingEvent[];
 
-    if (companyId) {
-      await this.loadEmployeeCareIntake(userId, this.employeeCareIntakeOpen);
-    }
+    await this.loadEmployeeCareIntake(userId, this.employeeCareIntakeOpen);
 
     // Load followup data
     await this.loadFollowupData(userId);
@@ -464,7 +518,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
     this.stats = [
       { label: 'Empleados (empresa)',  value: employeesCount.count ?? 0,  icon: 'group' },
-      { label: 'Vouchers activos',     value: vouchVal,                   icon: 'local_activity' },
+      { label: 'Cupones activos',      value: vouchVal,                   icon: 'local_activity' },
       { label: 'Onboarding listo',     value: onboardingDone.count ?? 0,  icon: 'task_alt' },
       { label: 'Eventos (7 días)',      value: analytics7d.count ?? 0,    icon: 'analytics' },
     ];
@@ -499,34 +553,21 @@ export class DashboardPage implements OnInit, OnDestroy {
       .from('care_intakes')
       .select('id, payload, updated_at, created_at, care_receiver_full_name, care_receiver_rut, care_receiver_birth_date, care_receiver_phone, care_receiver_health_coverage')
       .eq('employee_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
-    if (!data?.id) {
-      this.employeeCareIntakeId = null;
-      this.employeeCareIntakeUpdatedAt = null;
-      if (!preserveDraft) {
-        this.employeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
-      }
-      return;
-    }
+    const list = (data || []) as any[];
 
-    const p = (data.payload as any) ?? {};
-    this.employeeCareIntakeId = data.id as string;
-    this.employeeCareIntakeUpdatedAt =
-      (data.updated_at as string | undefined) ?? (data.created_at as string | undefined) ?? null;
-
-    if (!preserveDraft) {
-      this.employeeCareIntakeDraft = {
+    this.employeeCareIntakes = list.map((item) => {
+      const p = (item.payload as any) ?? {};
+      const draft: EmployeeCareIntakeDraft = {
         careType:         p?.care_type ?? p?.clinical_profile ?? 'guidance',
-        careReceiverFullName: (data as any).care_receiver_full_name ?? p?.care_receiver?.full_name ?? p?.care_receiver?.name ?? '',
-        careReceiverRut:  (data as any).care_receiver_rut ?? p?.care_receiver?.rut ?? p?.care_receiver?.national_id ?? '',
-        careReceiverBirthDate: (data as any).care_receiver_birth_date ?? p?.care_receiver?.birth_date ?? '',
+        careReceiverFullName: item.care_receiver_full_name ?? p?.care_receiver?.full_name ?? p?.care_receiver?.name ?? '',
+        careReceiverRut:  item.care_receiver_rut ?? p?.care_receiver?.rut ?? p?.care_receiver?.national_id ?? '',
+        careReceiverBirthDate: item.care_receiver_birth_date ?? p?.care_receiver?.birth_date ?? '',
         careReceiverAge:  p?.care_receiver?.age ?? p?.family?.age ?? null,
-        careReceiverPhone:(data as any).care_receiver_phone ?? p?.care_receiver?.phone ?? '',
-        careReceiverHealthCoverage: (data as any).care_receiver_health_coverage ?? p?.care_receiver?.health_coverage ?? '',
+        careReceiverPhone: item.care_receiver_phone ?? p?.care_receiver?.phone ?? '',
+        careReceiverHealthCoverage: item.care_receiver_health_coverage ?? p?.care_receiver?.health_coverage ?? '',
         primaryCondition: p?.care_receiver?.primary_condition ?? '',
         dependencyLevel:  p?.care_receiver?.dependency_level ?? 'medium',
         city:             p?.location?.city ?? p?.location?.comuna ?? '',
@@ -542,6 +583,32 @@ export class DashboardPage implements OnInit, OnDestroy {
         notes:            p?.notes ?? '',
         amenities:        { ensuite: false, garden: false, library: false, pets: false },
       };
+      return {
+        id: item.id,
+        name: draft.careReceiverFullName || 'Familiar',
+        relation: draft.caregiverRelation || 'Familiar',
+        careType: draft.careType,
+        updatedAt: item.updated_at ?? item.created_at ?? null,
+        draft,
+      };
+    });
+
+    if (this.employeeCareIntakes.length === 0) {
+      this.employeeCareIntakeId = null;
+      this.employeeCareIntakeUpdatedAt = null;
+      if (!preserveDraft) {
+        this.employeeCareIntakeDraft = this.createDefaultCareIntakeDraft();
+      }
+      return;
+    }
+
+    const current =
+      this.employeeCareIntakes.find((i) => i.id === this.employeeCareIntakeId) ||
+      this.employeeCareIntakes[0];
+    this.employeeCareIntakeId = current.id;
+    this.employeeCareIntakeUpdatedAt = current.updatedAt;
+    if (!preserveDraft) {
+      this.employeeCareIntakeDraft = { ...current.draft };
     }
   }
 

@@ -134,13 +134,44 @@
       <div class="dash-grid" *ngIf="mode !== 'public'">
         <section class="dash-card dash-card--wide" *ngIf="mode === 'employee'">
           <div class="dash-card__head">
-            <h2 class="dash-card__title">Mi ficha de cuidado</h2>
-            <button type="button" class="dash-card__action" (click)="openEmployeeCareIntake()" *ngIf="employeeCareIntakeId">
-              Editar ficha
+            <div class="dash-card__title-group">
+              <h2 class="dash-card__title">Mi ficha de cuidado</h2>
+              <span class="dash-card__badge" *ngIf="employeeCareIntakes.length > 0">
+                {{ employeeCareIntakes.length === 1 ? '1 familiar registrado' : employeeCareIntakes.length + ' familiares registrados' }}
+              </span>
+            </div>
+            <div class="dash-card__actions">
+              <button type="button" class="dash-card__btn-new" (click)="openNewCareIntake()" title="Registrar a otro familiar">
+                <mat-icon>person_add</mat-icon>
+                <span>+ Agregar otro familiar</span>
+              </button>
+              <button type="button" class="dash-card__action" (click)="openEmployeeCareIntake()" *ngIf="employeeCareIntakes.length > 0" title="Editar datos del familiar seleccionado">
+                <mat-icon>edit</mat-icon>
+                <span>Editar ficha</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Selector de familiar si hay fichas registradas -->
+          <div class="intake-family-tabs" *ngIf="employeeCareIntakes.length > 0">
+            <button
+              type="button"
+              class="intake-family-tab"
+              *ngFor="let itk of employeeCareIntakes"
+              [class.intake-family-tab--active]="itk.id === employeeCareIntakeId"
+              (click)="selectCareIntake(itk.id)"
+            >
+              <mat-icon>elderly</mat-icon>
+              <span class="intake-family-tab__name">{{ itk.name }}</span>
+              <span class="intake-family-tab__rel">({{ itk.relation }})</span>
+            </button>
+            <button type="button" class="intake-family-tab intake-family-tab--add" (click)="openNewCareIntake()" title="Registrar a otro familiar">
+              <mat-icon>add</mat-icon>
+              <span>+ Nuevo familiar</span>
             </button>
           </div>
 
-          <div class="intake-summary" *ngIf="employeeCareIntakeId; else noIntake">
+          <div class="intake-summary" *ngIf="employeeCareIntakes.length > 0; else noIntake">
             <div class="intake-summary__grid">
               <div class="intake-summary__item">
                 <span class="intake-summary__key">Persona cuidada</span>
@@ -280,10 +311,11 @@
 <div
   class="care-intake-backdrop"
   *ngIf="employeeCareIntakeOpen"
+  (click)="closeEmployeeCareIntake()"
 >
   <div class="care-intake-modal" (click)="$event.stopPropagation()">
     <header class="care-intake-modal__head">
-      <h2 class="care-intake-modal__title">Mi ficha de cuidado</h2>
+      <h2 class="care-intake-modal__title">{{ employeeEditingIntakeId ? 'Editar ficha de cuidado' : 'Registrar nuevo familiar' }}</h2>
       <button class="care-intake-modal__close" (click)="closeEmployeeCareIntake()" aria-label="Cerrar">
         <mat-icon>close</mat-icon>
       </button>
@@ -291,8 +323,8 @@
 
     <div class="care-intake-modal__body">
       <div class="care-intake-modal__intro">
-        <h3>Completa tu contexto una sola vez</h3>
-        <p>Esto ayuda a que la asesoria, el chat y las citas partan con informacion util sobre tu situacion.</p>
+        <h3>{{ employeeEditingIntakeId ? 'Actualiza los datos del familiar' : 'Registra un nuevo familiar' }}</h3>
+        <p>Esto ayuda a que la asesoría, el chat y las citas partan con información útil sobre tu situación.</p>
       </div>
 
       <form class="intake-form" (ngSubmit)="saveEmployeeCareIntake()">
@@ -300,55 +332,55 @@
           <span class="intake-form__section-label">Sobre la persona cuidada</span>
           <div class="intake-form__row">
             <div class="form-field">
-              <label for="careReceiverFullName">Nombre de la persona cuidada</label>
-              <input id="careReceiverFullName" type="text" [(ngModel)]="employeeCareIntakeDraft.careReceiverFullName" name="careReceiverFullName" placeholder="Nombre y apellido" />
+              <label for="careReceiverFullName">Nombre de la persona cuidada *</label>
+              <input id="careReceiverFullName" type="text" [(ngModel)]="modalCareIntakeDraft.careReceiverFullName" name="careReceiverFullName" placeholder="Nombre y apellido" required />
             </div>
             <div class="form-field">
-              <label for="careReceiverRut">RUT o identificacion</label>
-              <input id="careReceiverRut" type="text" [(ngModel)]="employeeCareIntakeDraft.careReceiverRut" name="careReceiverRut" placeholder="Ej. 12.345.678-9" />
+              <label for="careReceiverRut">RUT o identificación</label>
+              <input id="careReceiverRut" type="text" [(ngModel)]="modalCareIntakeDraft.careReceiverRut" name="careReceiverRut" placeholder="Ej. 12.345.678-9" />
             </div>
           </div>
           <div class="intake-form__row">
             <div class="form-field">
               <label for="careReceiverBirthDate">Fecha de nacimiento</label>
-              <input id="careReceiverBirthDate" type="date" [(ngModel)]="employeeCareIntakeDraft.careReceiverBirthDate" name="careReceiverBirthDate" />
+              <input id="careReceiverBirthDate" type="date" [(ngModel)]="modalCareIntakeDraft.careReceiverBirthDate" name="careReceiverBirthDate" />
             </div>
             <div class="form-field">
-              <label for="careReceiverPhone">Telefono de contacto</label>
-              <input id="careReceiverPhone" type="tel" [(ngModel)]="employeeCareIntakeDraft.careReceiverPhone" name="careReceiverPhone" placeholder="+56 9 1234 5678" />
+              <label for="careReceiverPhone">Teléfono de contacto</label>
+              <input id="careReceiverPhone" type="tel" [(ngModel)]="modalCareIntakeDraft.careReceiverPhone" name="careReceiverPhone" placeholder="+56 9 1234 5678" />
             </div>
           </div>
           <div class="intake-form__row">
             <div class="form-field">
               <label for="careType">Tipo de apoyo</label>
-              <select id="careType" [(ngModel)]="employeeCareIntakeDraft.careType" name="careType">
-                <option value="guidance">Orientacion general</option>
+              <select id="careType" [(ngModel)]="modalCareIntakeDraft.careType" name="careType">
+                <option value="guidance">Orientación general</option>
                 <option value="home_care">Cuidados a domicilio</option>
                 <option value="residential">Residencia</option>
-                <option value="nursing">Enfermeria</option>
+                <option value="nursing">Enfermería</option>
                 <option value="dementia">Demencia / Alzheimer</option>
                 <option value="respite">Apoyo temporal al cuidador</option>
               </select>
             </div>
             <div class="form-field">
               <label for="careReceiverAge">Edad de la persona cuidada</label>
-              <input id="careReceiverAge" type="number" [(ngModel)]="employeeCareIntakeDraft.careReceiverAge" name="careReceiverAge" placeholder="Ej. 78" />
+              <input id="careReceiverAge" type="number" [(ngModel)]="modalCareIntakeDraft.careReceiverAge" name="careReceiverAge" placeholder="Ej. 78" />
             </div>
           </div>
           <div class="intake-form__row">
             <div class="form-field">
-              <label for="careReceiverHealthCoverage">Prevision o cobertura</label>
-              <input id="careReceiverHealthCoverage" type="text" [(ngModel)]="employeeCareIntakeDraft.careReceiverHealthCoverage" name="careReceiverHealthCoverage" placeholder="Ej. Fonasa, Isapre, seguro privado" />
+              <label for="careReceiverHealthCoverage">Previsión o cobertura</label>
+              <input id="careReceiverHealthCoverage" type="text" [(ngModel)]="modalCareIntakeDraft.careReceiverHealthCoverage" name="careReceiverHealthCoverage" placeholder="Ej. Fonasa, Isapre, seguro privado" />
             </div>
           </div>
           <div class="intake-form__row">
             <div class="form-field">
-              <label for="primaryCondition">Condicion principal</label>
-              <input id="primaryCondition" type="text" [(ngModel)]="employeeCareIntakeDraft.primaryCondition" name="primaryCondition" placeholder="Ej. Parkinson, Alzheimer..." />
+              <label for="primaryCondition">Condición principal</label>
+              <input id="primaryCondition" type="text" [(ngModel)]="modalCareIntakeDraft.primaryCondition" name="primaryCondition" placeholder="Ej. Parkinson, Alzheimer..." />
             </div>
             <div class="form-field">
               <label for="dependencyLevel">Nivel de dependencia</label>
-              <select id="dependencyLevel" [(ngModel)]="employeeCareIntakeDraft.dependencyLevel" name="dependencyLevel">
+              <select id="dependencyLevel" [(ngModel)]="modalCareIntakeDraft.dependencyLevel" name="dependencyLevel">
                 <option value="low">Baja</option>
                 <option value="medium">Media</option>
                 <option value="high">Alta</option>
@@ -359,20 +391,20 @@
         </div>
 
         <div class="intake-form__section">
-          <span class="intake-form__section-label">Ubicacion y contexto</span>
+          <span class="intake-form__section-label">Ubicación y contexto</span>
           <div class="intake-form__row">
             <div class="form-field">
               <label for="city">Ciudad o comuna</label>
-              <input id="city" type="text" [(ngModel)]="employeeCareIntakeDraft.city" name="city" placeholder="Ej. Santiago, Providencia..." />
+              <input id="city" type="text" [(ngModel)]="modalCareIntakeDraft.city" name="city" placeholder="Ej. Santiago, Providencia, Curacaví..." />
             </div>
             <div class="form-field">
-              <label for="postalCode">Codigo postal</label>
-              <input id="postalCode" type="text" [(ngModel)]="employeeCareIntakeDraft.postalCode" name="postalCode" />
+              <label for="postalCode">Código postal</label>
+              <input id="postalCode" type="text" [(ngModel)]="modalCareIntakeDraft.postalCode" name="postalCode" />
             </div>
           </div>
           <div class="form-field form-field--full">
             <label for="hasTwoFloors">Características de la vivienda y accesibilidad</label>
-            <select id="hasTwoFloors" [(ngModel)]="employeeCareIntakeDraft.hasTwoFloors" name="hasTwoFloors">
+            <select id="hasTwoFloors" [(ngModel)]="modalCareIntakeDraft.hasTwoFloors" name="hasTwoFloors">
               <option value="house_1f">Casa de 1 piso (Sin escaleras)</option>
               <option value="house_2f">Casa de 2 o más pisos (Con escaleras)</option>
               <option value="dept_elevator">Departamento con ascensor</option>
@@ -382,7 +414,7 @@
           </div>
           <div class="form-field">
             <label for="supportNetwork">Red de apoyo actual</label>
-            <input id="supportNetwork" type="text" [(ngModel)]="employeeCareIntakeDraft.supportNetwork" name="supportNetwork" placeholder="Ej. Pareja, hijos, cuidadora contratada..." />
+            <input id="supportNetwork" type="text" [(ngModel)]="modalCareIntakeDraft.supportNetwork" name="supportNetwork" placeholder="Ej. Pareja, hijos, cuidadora contratada..." />
           </div>
         </div>
 
@@ -390,14 +422,14 @@
           <span class="intake-form__section-label">Presupuesto y financiamiento</span>
           <div class="intake-form__row">
             <div class="form-field">
-              <label for="budgetMonthlyMax">Presupuesto mensual maximo</label>
-              <input id="budgetMonthlyMax" type="number" [(ngModel)]="employeeCareIntakeDraft.budgetMonthlyMax" name="budgetMonthlyMax" placeholder="CLP" />
+              <label for="budgetMonthlyMax">Presupuesto mensual máximo</label>
+              <input id="budgetMonthlyMax" type="number" [(ngModel)]="modalCareIntakeDraft.budgetMonthlyMax" name="budgetMonthlyMax" placeholder="CLP" />
             </div>
             <div class="form-field">
               <label for="funding">Financiamiento</label>
-              <select id="funding" [(ngModel)]="employeeCareIntakeDraft.funding" name="funding">
+              <select id="funding" [(ngModel)]="modalCareIntakeDraft.funding" name="funding">
                 <option value="self_funder">Pago privado</option>
-                <option value="local_authority">Ayuda publica</option>
+                <option value="local_authority">Ayuda pública</option>
               </select>
             </div>
           </div>
@@ -408,7 +440,7 @@
           <div class="intake-form__row">
             <div class="form-field">
               <label for="preferredContact">Contacto preferido</label>
-              <select id="preferredContact" [(ngModel)]="employeeCareIntakeDraft.preferredContact" name="preferredContact">
+              <select id="preferredContact" [(ngModel)]="modalCareIntakeDraft.preferredContact" name="preferredContact">
                 <option value="chat">Chat</option>
                 <option value="phone">Llamada</option>
                 <option value="video">Videollamada</option>
@@ -416,7 +448,7 @@
             </div>
             <div class="form-field">
               <label for="urgency">Urgencia</label>
-              <select id="urgency" [(ngModel)]="employeeCareIntakeDraft.urgency" name="urgency">
+              <select id="urgency" [(ngModel)]="modalCareIntakeDraft.urgency" name="urgency">
                 <option value="immediate">Inmediata</option>
                 <option value="3m">En 3 meses</option>
                 <option value="6m">En 6 meses</option>
@@ -431,22 +463,28 @@
           <div class="intake-form__row">
             <div class="form-field">
               <label for="caregiverName">Tu nombre</label>
-              <input id="caregiverName" type="text" [(ngModel)]="employeeCareIntakeDraft.caregiverName" name="caregiverName" />
+              <input id="caregiverName" type="text" [(ngModel)]="modalCareIntakeDraft.caregiverName" name="caregiverName" />
             </div>
             <div class="form-field">
-              <label for="caregiverRelation">Relacion con la persona cuidada</label>
-              <input id="caregiverRelation" type="text" [(ngModel)]="employeeCareIntakeDraft.caregiverRelation" name="caregiverRelation" placeholder="Ej. Hijo/a, conyuge..." />
+              <label for="caregiverRelation">Relación con la persona cuidada</label>
+              <input id="caregiverRelation" type="text" [(ngModel)]="modalCareIntakeDraft.caregiverRelation" name="caregiverRelation" placeholder="Ej. Hijo/a, cónyuge, nieto/a..." />
             </div>
           </div>
           <div class="form-field">
             <label for="notes">Notas relevantes</label>
-            <textarea id="notes" rows="3" [(ngModel)]="employeeCareIntakeDraft.notes" name="notes" placeholder="Cualquier detalle que ayude al experto..."></textarea>
+            <textarea id="notes" rows="3" [(ngModel)]="modalCareIntakeDraft.notes" name="notes" placeholder="Cualquier detalle que ayude al experto..."></textarea>
           </div>
         </div>
 
-        <button type="button" class="btn-primary btn--full" (click)="saveEmployeeCareIntake()" [disabled]="loading">
-          {{ loading ? 'Guardando...' : 'Guardar mi ficha' }}
-        </button>
+        <div class="intake-form__actions">
+          <button type="button" class="btn-primary" (click)="saveEmployeeCareIntake()" [disabled]="loading">
+            <mat-icon>{{ loading ? 'sync' : 'check' }}</mat-icon>
+            <span>{{ loading ? 'Guardando...' : (employeeEditingIntakeId ? 'Actualizar ficha' : 'Guardar familiar') }}</span>
+          </button>
+          <button type="button" class="btn-secondary" (click)="closeEmployeeCareIntake()" [disabled]="loading">
+            Cancelar
+          </button>
+        </div>
       </form>
     </div>
   </div>

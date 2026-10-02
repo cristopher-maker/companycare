@@ -9,11 +9,11 @@
 
       <div class="vouchers-hero__copy">
         <p class="vouchers-hero__eyebrow">Beneficios activos</p>
-        <h1>Vouchers disponibles</h1>
+        <h1>Cupones de descuento</h1>
         <p>Revisa descuentos habilitados, códigos de uso y beneficios activos para ti y tu grupo familiar.</p>
       </div>
 
-      <button type="button" class="vouchers-hero__refresh" (click)="refresh()" [disabled]="loading" aria-label="Actualizar vouchers">
+      <button type="button" class="vouchers-hero__refresh" (click)="refresh()" [disabled]="loading" aria-label="Actualizar cupones">
         <mat-icon [class.is-spinning]="loading" aria-hidden="true">refresh</mat-icon>
         <span>Actualizar</span>
       </button>
@@ -23,7 +23,7 @@
       <article class="vouchers-overview__card vouchers-overview__card--primary">
         <span>Total activos</span>
         <strong>{{ items.length }}</strong>
-        <p>Vouchers listos para aplicar en servicios de cuidado.</p>
+        <p>Cupones listos para aplicar en servicios de cuidado.</p>
       </article>
 
       <article class="vouchers-overview__card">
@@ -41,24 +41,24 @@
 
     <div *ngIf="loading" class="vouchers-state vouchers-state--loading">
       <div class="vouchers-spinner" aria-hidden="true"></div>
-      <p>Cargando vouchers...</p>
+      <p>Cargando cupones...</p>
     </div>
 
     <div *ngIf="error" class="vouchers-state vouchers-state--error" role="alert">
       <mat-icon aria-hidden="true">error</mat-icon>
       <div>
-        <strong>No se pudieron cargar los vouchers</strong>
+        <strong>No se pudieron cargar los cupones</strong>
         <p>{{ error }}</p>
       </div>
     </div>
 
     <div *ngIf="!loading && !error && !items.length" class="vouchers-state">
       <mat-icon class="vouchers-state__icon" aria-hidden="true">confirmation_number</mat-icon>
-      <h2>No hay vouchers disponibles</h2>
+      <h2>No hay cupones de descuento disponibles</h2>
       <p>Cuando existan beneficios activos para tu cuenta, aparecerán aquí con su código y descuento.</p>
     </div>
 
-    <section *ngIf="!loading && items.length" class="vouchers-grid" aria-label="Listado de vouchers">
+    <section *ngIf="!loading && items.length" class="vouchers-grid" aria-label="Listado de cupones de descuento">
       <article *ngFor="let item of items" class="voucher-card">
         <div class="voucher-card__head">
           <div>

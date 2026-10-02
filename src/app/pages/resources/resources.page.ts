@@ -718,6 +718,18 @@ export class ResourcesPage implements OnInit {
     document.body.style.overflow = '';
   }
 
+  public getSafePdfUrl(fileUrl: string | null | undefined): string {
+    if (!fileUrl) return '';
+    const trimmed = fileUrl.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    const base = document.querySelector('base')?.getAttribute('href') || '/';
+    const cleanBase = base.endsWith('/') ? base : base + '/';
+    const cleanFile = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
+    return cleanBase + cleanFile;
+  }
+
   public getEmbedUrl(videoUrl: string): string {
     const ytMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&?/]+)/);
     if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
