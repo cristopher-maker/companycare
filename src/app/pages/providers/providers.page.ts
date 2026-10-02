@@ -198,20 +198,22 @@ export class ProvidersPage implements OnInit, OnDestroy {
           if (Array.isArray(item.gallery)) {
             for (const g of item.gallery) {
               let u = g.url || g.thumbnail_url;
-              if (u && typeof u === 'string' && u.trim().length > 0) {
+              if (u && typeof u === 'string' && u.trim().length > 0 && !u.includes('vmplo.cl')) {
                 if (u.startsWith('/')) u = 'https://senioradvisor.cl' + u;
                 galleryUrls.push(u);
               }
             }
           }
           let mainPhoto = item.profile_photo;
-          if (mainPhoto && typeof mainPhoto === 'string' && mainPhoto.trim().length > 0) {
+          if (mainPhoto && typeof mainPhoto === 'string' && mainPhoto.trim().length > 0 && !mainPhoto.includes('vmplo.cl')) {
             if (mainPhoto.startsWith('/')) mainPhoto = 'https://senioradvisor.cl' + mainPhoto;
           } else if (galleryUrls.length > 0) {
             mainPhoto = galleryUrls[0];
+          } else {
+            mainPhoto = null;
           }
 
-          if (mainPhoto) {
+          if (mainPhoto && !mainPhoto.includes('vmplo.cl')) {
             const dataObj = { profile: mainPhoto, gallery: galleryUrls };
             if (item.provider_id) photoMap.set(item.provider_id, dataObj);
             if (item.business_name) photoMap.set(normalize(item.business_name), dataObj);
@@ -220,9 +222,8 @@ export class ProvidersPage implements OnInit, OnDestroy {
       }
 
       const mapped = ((sbRes.data ?? []) as ProviderRow[]).map((row) => this.toProviderCard(row, photoMap));
-      // Filtrar para mostrar exclusivamente los prestadores con imagen real en SeniorAdvisor
-      const withPhotos = mapped.filter((p) => p.hasRealImage);
-      this.allProviders = withPhotos.length > 0 ? withPhotos : mapped;
+      // Filtrar para mostrar estrictamente los prestadores que tienen imagen real y funcional
+      this.allProviders = mapped.filter((p) => p.hasRealImage && !!p.imageUrl && !p.imageUrl.includes('vmplo.cl') && !p.imageUrl.startsWith('assets/'));
 
       const maxDetected = this.allProviders
         .map((provider) => provider.priceFrom ?? 0)
@@ -261,6 +262,7 @@ export class ProvidersPage implements OnInit, OnDestroy {
     const query = this.q.trim().toLowerCase();
 
     const filtered = this.allProviders
+      .filter((provider) => provider.hasRealImage && !provider.imgFailed && !!provider.imageUrl && !provider.imageUrl.includes('vmplo.cl') && !provider.imageUrl.startsWith('assets/'))
       .filter((provider) => (this.type === 'Todos' ? true : provider.type === this.type))
       .filter((provider) => (this.verifiedOnly ? provider.verified : true))
       .filter((provider) => (provider.priceFrom == null ? true : provider.priceFrom <= this.maxPrice))
@@ -450,22 +452,18 @@ export class ProvidersPage implements OnInit, OnDestroy {
       }
     }
 
-    return Array.from(new Set(list));
+    const cleanList = list.filter((u) => !u.includes('vmplo.cl') && !u.startsWith('assets/'));
+    return Array.from(new Set(cleanList));
   }
 
   public onImgError(event: Event, provider: ProviderCard): void {
-    const localDefaults: Record<ProviderType, string> = {
-      'Residencia': 'assets/img/home-1.jpg',
-      'Cuidador a domicilio': 'assets/img/carousel-2.webp',
-      'Servicio médico': 'assets/img/about-us.webp',
-    };
-    const defaultLocal = localDefaults[provider.type] || 'assets/img/carousel-1.webp';
-    if (provider.imageUrl !== defaultLocal) {
-      provider.imageUrl = defaultLocal;
-      provider.imgFailed = false;
-    } else {
-      provider.imgFailed = true;
-    }
+    // Si una imagen falla al cargar en el navegador, quitar inmediatamente la residencia
+    provider.imgFailed = true;
+    provider.hasRealImage = false;
+    this.allProviders = this.allProviders.filter((p) => p.id !== provider.id);
+    this.filteredProviders = this.filteredProviders.filter((p) => p.id !== provider.id);
+    this.calculateStats();
+    this.updateVisibleProviders();
   }
 
   public getProviderIcon(type: ProviderType): string {

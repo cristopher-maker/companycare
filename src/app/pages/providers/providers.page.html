@@ -182,9 +182,6 @@
                 referrerpolicy="no-referrer"
                 (error)="onImgError($event, p)"
               />
-              <div *ngIf="!p.imageUrl || p.imgFailed" class="sa-card__img-fallback">
-                <mat-icon>{{ getProviderIcon(p.type) }}</mat-icon>
-              </div>
             </div>
 
             <div class="sa-card__content">
