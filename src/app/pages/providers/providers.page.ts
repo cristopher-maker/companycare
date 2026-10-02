@@ -42,6 +42,7 @@ type ProviderCard = {
   placeId: string | null;
   whatsapp: string | null;
   imgFailed?: boolean;
+  hasRealImage?: boolean;
 };
 
 @Component({
@@ -218,7 +219,10 @@ export class ProvidersPage implements OnInit, OnDestroy {
         }
       }
 
-      this.allProviders = ((sbRes.data ?? []) as ProviderRow[]).map((row) => this.toProviderCard(row, photoMap));
+      const mapped = ((sbRes.data ?? []) as ProviderRow[]).map((row) => this.toProviderCard(row, photoMap));
+      // Filtrar para mostrar exclusivamente los prestadores con imagen real en SeniorAdvisor
+      const withPhotos = mapped.filter((p) => p.hasRealImage);
+      this.allProviders = withPhotos.length > 0 ? withPhotos : mapped;
 
       const maxDetected = this.allProviders
         .map((provider) => provider.priceFrom ?? 0)
@@ -499,6 +503,7 @@ export class ProvidersPage implements OnInit, OnDestroy {
       }
     }
 
+    const hasRealImage = cleanImages.length > 0;
     const fallbackImg = this.getFallbackImage(row.id || row.name, row.type);
     const images = cleanImages.length > 0 ? cleanImages : [fallbackImg];
     const imageUrl = images[0];
@@ -537,6 +542,7 @@ export class ProvidersPage implements OnInit, OnDestroy {
       placeId,
       whatsapp,
       imgFailed: false,
+      hasRealImage,
     };
   }
 }
