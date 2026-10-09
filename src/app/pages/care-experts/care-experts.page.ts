@@ -436,11 +436,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
 
   public readonly topics = [
     'Orientación general',
-    'Evaluación de necesidades',
     'Residencias y opciones',
-    'Cuidados a domicilio',
-    'Apoyo emocional y estrés',
-    'Beneficios y financiación',
+    'Apoyo emocional',
   ] as const;
 
   public readonly expertFilterOptions: { value: ExpertFilter; label: string }[] = [
