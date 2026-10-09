@@ -465,7 +465,7 @@ export class DashboardPage implements OnInit, OnDestroy {
       { label: 'Solicitudes abiertas',  value: openRequests.count ?? 0,   icon: 'forum' },
       { label: 'Proveedores activos',   value: provCountVal,              icon: 'verified_user' },
       { label: 'Recursos',              value: resCountVal,               icon: 'library_books' },
-      { label: 'Cupones de descuento',  value: vouchCountVal,             icon: 'local_activity' },
+      { label: 'Beneficios y cupones',  value: vouchCountVal,             icon: 'card_giftcard' },
     ];
 
     this.recentRequests = (recentRequests.data ?? []) as RecentRequest[];
@@ -518,7 +518,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
     this.stats = [
       { label: 'Empleados (empresa)',  value: employeesCount.count ?? 0,  icon: 'group' },
-      { label: 'Cupones activos',      value: vouchVal,                   icon: 'local_activity' },
+      { label: 'Beneficios y cupones',  value: vouchVal,                   icon: 'card_giftcard' },
       { label: 'Onboarding listo',     value: onboardingDone.count ?? 0,  icon: 'task_alt' },
       { label: 'Eventos (7 días)',      value: analytics7d.count ?? 0,    icon: 'analytics' },
     ];

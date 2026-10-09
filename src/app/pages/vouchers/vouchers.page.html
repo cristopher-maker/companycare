@@ -2,48 +2,59 @@
 
 <main class="vouchers-page">
   <div class="vouchers-shell">
-    <section class="vouchers-hero">
-      <div class="vouchers-hero__icon" aria-hidden="true">
-        <mat-icon>confirmation_number</mat-icon>
-      </div>
 
-      <div class="vouchers-hero__copy">
-        <p class="vouchers-hero__eyebrow">Beneficios activos</p>
-        <h1>Cupones de descuento</h1>
-        <p>Revisa descuentos habilitados, códigos de uso y beneficios activos para ti y tu grupo familiar.</p>
+    <!-- SENIORCLUB SPOTLIGHT BANNER -->
+    <section class="seniorclub-banner">
+      <div class="seniorclub-banner__content">
+        <img
+          src="assets/svg/seniorclub-logo.svg"
+          alt="SeniorClub."
+          class="seniorclub-banner__logo"
+        />
+        <p class="seniorclub-banner__desc">
+          Convenios exclusivos para el bienestar de nuestros mayores. Accede a descuentos y servicios preferenciales con nuestros aliados.
+        </p>
       </div>
+    </section>
 
-      <button type="button" class="vouchers-hero__refresh" (click)="refresh()" [disabled]="loading" aria-label="Actualizar cupones">
-        <mat-icon [class.is-spinning]="loading" aria-hidden="true">refresh</mat-icon>
-        <span>Actualizar</span>
+    <!-- FILTER TABS -->
+    <div class="vouchers-filters" *ngIf="!loading && items.length">
+      <button
+        type="button"
+        class="vouchers-filter-btn"
+        [class.is-active]="selectedFilter === 'all'"
+        (click)="selectedFilter = 'all'"
+      >
+        <span>Todos los beneficios ({{ items.length }})</span>
       </button>
-    </section>
-
-    <section class="vouchers-overview" *ngIf="!loading && items.length">
-      <article class="vouchers-overview__card vouchers-overview__card--primary">
-        <span>Total activos</span>
-        <strong>{{ items.length }}</strong>
-        <p>Cupones listos para aplicar en servicios de cuidado.</p>
-      </article>
-
-      <article class="vouchers-overview__card">
-        <span>Por porcentaje</span>
-        <strong>{{ percentageCount }}</strong>
-        <p>Descuentos proporcionales directos.</p>
-      </article>
-
-      <article class="vouchers-overview__card">
-        <span>Monto fijo</span>
-        <strong>{{ fixedAmountCount }}</strong>
-        <p>Rebajas en dinero y sesiones gratuitas.</p>
-      </article>
-    </section>
-
-    <div *ngIf="loading" class="vouchers-state vouchers-state--loading">
-      <div class="vouchers-spinner" aria-hidden="true"></div>
-      <p>Cargando cupones...</p>
+      <button
+        type="button"
+        class="vouchers-filter-btn"
+        [class.is-active]="selectedFilter === 'seniorclub'"
+        (click)="selectedFilter = 'seniorclub'"
+      >
+        <mat-icon>star</mat-icon>
+        <span>SeniorClub ({{ seniorClubCount }})</span>
+      </button>
+      <button
+        type="button"
+        class="vouchers-filter-btn"
+        [class.is-active]="selectedFilter === 'company'"
+        (click)="selectedFilter = 'company'"
+        *ngIf="items.length > seniorClubCount"
+      >
+        <mat-icon>business</mat-icon>
+        <span>Convenios internos</span>
+      </button>
     </div>
 
+    <!-- LOADING STATE -->
+    <div *ngIf="loading" class="vouchers-state vouchers-state--loading">
+      <div class="vouchers-spinner" aria-hidden="true"></div>
+      <p>Cargando convenios y cupones SeniorClub...</p>
+    </div>
+
+    <!-- ERROR STATE -->
     <div *ngIf="error" class="vouchers-state vouchers-state--error" role="alert">
       <mat-icon aria-hidden="true">error</mat-icon>
       <div>
@@ -52,51 +63,167 @@
       </div>
     </div>
 
-    <div *ngIf="!loading && !error && !items.length" class="vouchers-state">
-      <mat-icon class="vouchers-state__icon" aria-hidden="true">confirmation_number</mat-icon>
-      <h2>No hay cupones de descuento disponibles</h2>
-      <p>Cuando existan beneficios activos para tu cuenta, aparecerán aquí con su código y descuento.</p>
+    <!-- EMPTY STATE -->
+    <div *ngIf="!loading && !error && !filteredItems.length" class="vouchers-state">
+      <mat-icon class="vouchers-state__icon" aria-hidden="true">card_giftcard</mat-icon>
+      <h2>No hay beneficios en esta categoría</h2>
+      <p>Selecciona otra categoría o actualiza la lista para ver todos los convenios disponibles.</p>
     </div>
 
-    <section *ngIf="!loading && items.length" class="vouchers-grid" aria-label="Listado de cupones de descuento">
-      <article *ngFor="let item of items" class="voucher-card">
-        <div class="voucher-card__head">
-          <div>
-            <div class="voucher-card__category">{{ item.category || 'Beneficio exclusivo' }}</div>
-            <h3>{{ item.title }}</h3>
-          </div>
-          <span class="voucher-card__badge">{{ discountLabel(item) }}</span>
-        </div>
+    <!-- SECTION TITLE -->
+    <div class="vouchers-section-title" *ngIf="!loading && filteredItems.length">
+      <h2>Nuestros Convenios</h2>
+    </div>
 
-        <p class="voucher-card__description">
-          {{ item.description || 'Beneficio disponible para uso según condiciones definidas por Company Care.' }}
-        </p>
-
-        <div class="voucher-card__footer">
-          <div class="voucher-card__code-box">
-            <span class="code-label">Código de descuento</span>
-            <div class="code-value-wrap">
-              <code class="code-value">{{ item.code }}</code>
-              <button
-                type="button"
-                class="copy-btn"
-                [class.is-copied]="copiedCode === item.code"
-                (click)="copyCode(item.code)"
-                aria-label="Copiar código"
-              >
-                <mat-icon>{{ copiedCode === item.code ? 'check' : 'content_copy' }}</mat-icon>
-                <span>{{ copiedCode === item.code ? 'Copiado' : 'Copiar' }}</span>
-              </button>
+    <!-- VOUCHERS LIST / GRID -->
+    <section *ngIf="!loading && filteredItems.length" class="vouchers-list" aria-label="Listado de convenios y beneficios SeniorClub">
+      <article *ngFor="let item of filteredItems" class="convenio-card">
+        <div class="convenio-card__layout">
+          <!-- Left Logo Column -->
+          <div class="convenio-card__brand">
+            <div class="convenio-card__logo-wrap" *ngIf="item.logo">
+              <img [src]="item.logo" [alt]="item.title" (error)="onLogoError($event)" />
+            </div>
+            <div class="convenio-card__logo-placeholder" *ngIf="!item.logo">
+              <mat-icon>verified</mat-icon>
             </div>
           </div>
 
-          <div class="voucher-card__expiry" *ngIf="item.expires_at">
-            <mat-icon>event</mat-icon>
-            <span>Válido hasta {{ item.expires_at }}</span>
+          <!-- Right Content Column -->
+          <div class="convenio-card__main">
+            <!-- Header: Title and Location -->
+            <div class="convenio-card__header">
+              <h3 class="convenio-card__title">{{ item.title }}</h3>
+              <div class="convenio-card__location" *ngIf="item.location">
+                <mat-icon>location_on</mat-icon>
+                <span>{{ item.location }}</span>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <p class="convenio-card__desc">
+              {{ item.description || 'Convenio preferencial disponible para colaboradores de CompanyCare y sus familias.' }}
+            </p>
+
+            <!-- Plans grid if the partner has structured plans (Help Rescate / Beatriz Alvarado) -->
+            <div class="convenio-card__plans-grid" *ngIf="item.plans && item.plans.length">
+              <div
+                *ngFor="let plan of item.plans"
+                class="plan-pill-card"
+                [class.is-selected]="selectedHelpPlan === plan.name && plan.name"
+                (click)="plan.name ? selectPlan(plan.name) : null"
+              >
+                <div class="plan-pill-card__head" *ngIf="plan.name || plan.category">
+                  <span class="plan-pill-card__name" *ngIf="plan.name">{{ plan.name }}</span>
+                  <span class="plan-pill-card__cat" *ngIf="plan.category">{{ plan.category }}</span>
+                </div>
+                <div class="plan-pill-card__pricing">
+                  <span class="plan-pill-card__price"><strong>{{ plan.price }}</strong> <small>{{ plan.uf || '/mes' }}</small></span>
+                  <span class="plan-pill-card__uf" *ngIf="plan.uf && plan.name">Cobro en UF, {{ plan.uf }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action buttons row -->
+            <div class="convenio-card__actions">
+              <!-- If partner has multiple plans: Ver Detalle button -->
+              <button
+                *ngIf="item.plans && item.plans.length"
+                type="button"
+                class="ver-detalle-btn"
+                (click)="openPlanModal(item)"
+              >
+                <span>Ver Detalle</span>
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+
+              <!-- External Website button -->
+              <a
+                *ngIf="item.website"
+                [href]="item.website"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="visitar-sitio-btn"
+              >
+                <span>Visitar Sitio Web</span>
+                <mat-icon>arrow_forward</mat-icon>
+              </a>
+
+              <!-- Discount Code button: Obtener Código / Copiar Código -->
+              <button
+                *ngIf="item.code"
+                type="button"
+                class="obtener-codigo-btn"
+                [class.is-revealed]="isCodeRevealed(item.id)"
+                [class.is-copied]="copiedCode === item.code"
+                (click)="revealCode(item.id, item.code)"
+                [attr.aria-label]="copiedCode === item.code ? 'Código copiado' : 'Obtener código'"
+              >
+                <mat-icon>{{ copiedCode === item.code ? 'check' : 'local_offer' }}</mat-icon>
+                <span *ngIf="!isCodeRevealed(item.id)">Obtener Código</span>
+                <span *ngIf="isCodeRevealed(item.id) && copiedCode !== item.code">{{ item.code }}</span>
+                <span *ngIf="copiedCode === item.code">¡Copiado!</span>
+              </button>
+            </div>
           </div>
         </div>
       </article>
     </section>
+
+    <!-- MODAL DETALLE DE PLANES HELP RESCATE -->
+    <div class="plan-detail-modal-backdrop" *ngIf="activeModalItem" (click)="closePlanModal()">
+      <div class="plan-detail-modal" (click)="$event.stopPropagation()">
+        <header class="plan-detail-modal__head">
+          <div class="head-info">
+            <span class="head-tag">Convenio SeniorClub</span>
+            <h2>{{ activeModalItem.title }}</h2>
+          </div>
+          <button type="button" class="close-btn" (click)="closePlanModal()" aria-label="Cerrar modal">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <div class="plan-detail-modal__body">
+          <p class="modal-lead">{{ activeModalItem.description }}</p>
+
+          <div class="modal-plans-list" *ngIf="activeModalItem.plans">
+            <div
+              *ngFor="let p of activeModalItem.plans"
+              class="modal-plan-row"
+              [class.is-highlighted]="selectedHelpPlan === p.name"
+            >
+              <div class="row-main">
+                <div class="row-header">
+                  <strong>{{ p.name }}</strong>
+                  <span class="row-cat" *ngIf="p.category">{{ p.category }}</span>
+                </div>
+                <p class="row-desc" *ngIf="p.description">{{ p.description }}</p>
+              </div>
+              <div class="row-pricing">
+                <span class="row-price">{{ p.price }} <small>/mes</small></span>
+                <span class="row-uf" *ngIf="p.uf">Cobro en UF: {{ p.uf }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="plan-detail-modal__foot">
+          <div class="foot-coupon" *ngIf="activeModalItem.code">
+            <span>Código de activación:</span>
+            <code>{{ activeModalItem.code }}</code>
+          </div>
+          <a
+            [href]="activeModalItem.website || 'https://www.help.cl'"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="foot-cta-btn"
+          >
+            <span>Ir al sitio oficial Help Rescate</span>
+            <mat-icon>open_in_new</mat-icon>
+          </a>
+        </footer>
+      </div>
+    </div>
   </div>
 </main>
 

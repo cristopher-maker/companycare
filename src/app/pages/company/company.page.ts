@@ -186,7 +186,7 @@ export class CompanyPage implements OnInit, OnDestroy {
   public readonly tabs: { id: CompanyTab; label: string }[] = [
     { id: 'admin', label: 'Resumen' },
     { id: 'employees', label: 'Empleados' },
-    { id: 'vouchers', label: 'Cupones de descuento' },
+    { id: 'vouchers', label: 'Beneficios y cupones' },
     { id: 'general', label: 'Configuración' },
   ];
 

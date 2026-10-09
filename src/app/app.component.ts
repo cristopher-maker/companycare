@@ -40,7 +40,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { title: 'Proveedores verificados', url: '/providers', icon: 'search' },
     { title: 'Recursos digitales', url: '/resources', icon: 'library_books' },
     { title: 'Mis solicitudes', url: '/requests', icon: 'content_paste' },
-    { title: 'Cupones de descuento', url: '/vouchers', icon: 'local_activity' },
+    { title: 'Beneficios y cupones', url: '/vouchers', icon: 'card_giftcard' },
     { title: 'Administrar empresa', url: '/company', icon: 'business' },
     { title: 'Monitoreo de casos', url: '/company-requests', icon: 'health_and_safety' },
     { title: 'Perfil', url: '/profile', icon: 'account_circle' },
