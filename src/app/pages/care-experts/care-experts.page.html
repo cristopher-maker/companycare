@@ -164,6 +164,10 @@
                     </div>
 
                     <div class="ce-appointment-time">
+                      <div class="ce-appointment-conflict-banner" *ngIf="appointmentConflictNotice">
+                        <mat-icon>warning_amber</mat-icon>
+                        <span>{{ appointmentConflictNotice }}</span>
+                      </div>
                       <div class="ce-appointment-time__label">Horario disponible</div>
                       <div class="ce-appointment-time__grid" *ngIf="visibleAppointmentTimeSlots.length; else noVisibleSlots">
                         <button

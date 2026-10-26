@@ -12,7 +12,7 @@ type RegisterRole = 'employee' | 'company_admin';
   styleUrls: ['./register.page.scss'],
 })
 export class RegisterPage implements OnDestroy {
-  public role: RegisterRole = 'employee';
+  public role: RegisterRole = 'company_admin';
 
   public fullName = '';
   public companyName = '';
@@ -47,8 +47,7 @@ export class RegisterPage implements OnDestroy {
   }
 
   private setRoleFromQuery(): void {
-    const q = (this.route.snapshot.queryParamMap.get('role') ?? 'employee').toLowerCase();
-    this.role = q === 'company' || q === 'company_admin' ? 'company_admin' : 'employee';
+    this.role = 'company_admin';
   }
 
   public async submit(): Promise<void> {

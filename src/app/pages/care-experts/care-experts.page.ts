@@ -589,6 +589,8 @@ export class CareExpertsPage implements OnInit, OnDestroy {
   }
 
   private realtimeChannel: any | null = null;
+  private appointmentsRealtimeChannel: any | null = null;
+  public appointmentConflictNotice: string | null = null;
   public notifyByEmail: boolean = true;
   private typingTimeout: ReturnType<typeof setTimeout> | null = null;
   private stopTypingTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -614,6 +616,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     if (this.typingTimeout) clearTimeout(this.typingTimeout);
     if (this.stopTypingTimeout) clearTimeout(this.stopTypingTimeout);
     void this.teardownRealtime();
+    void this.teardownAppointmentsRealtime();
   }
 
   public async startRequest(): Promise<void> {
@@ -953,39 +956,44 @@ export class CareExpertsPage implements OnInit, OnDestroy {
     try {
       const notes = this.buildAppointmentNotes(phone);
       const requestSummary = this.details.trim() || this.appointmentNotes.trim() || `Solicitud para ${this.appointmentKind.toLowerCase()}`;
-      const { data: requestRow, error: requestError } = await this.supabase.client
-        .from('care_requests')
-        .insert({
-          employee_id: user.id,
-          channel: this.appointmentKind,
-          topic: this.topic,
-          details: requestSummary,
-        })
-        .select('id')
-        .single();
 
-      if (requestError) throw requestError;
-      const requestId = requestRow.id as string;
+      let requestId: string;
+      let appointmentId: string;
+
+      // 1. Intentar la reserva atómica con RPC en PostgreSQL
+      const { data: rpcData, error: rpcError } = await this.supabase.client.rpc('book_appointment', {
+        p_employee_id: user.id,
+        p_channel: this.appointmentKind,
+        p_topic: this.topic,
+        p_details: requestSummary,
+        p_scheduled_for: scheduledFor.toISOString(),
+        p_notes: notes,
+      });
+
+      if (rpcError) {
+        // Si la función RPC aún no está creada en Supabase (código 42883 o función no encontrada), usamos el fallback seguro
+        const rpcNotFound = rpcError.code === '42883' ||
+                            rpcError.code === 'PGRST202' ||
+                            (typeof rpcError.message === 'string' && rpcError.message.toLowerCase().includes('book_appointment'));
+
+        if (rpcNotFound) {
+          const fallback = await this.bookAppointmentFallback(user.id, requestSummary, scheduledFor, notes);
+          requestId = fallback.requestId;
+          appointmentId = fallback.appointmentId;
+        } else {
+          throw rpcError;
+        }
+      } else {
+        const res = rpcData as { request_id: string; appointment_id: string };
+        requestId = res.request_id;
+        appointmentId = res.appointment_id;
+      }
+
       this.activeRequestId = requestId;
       this.activeRequestChannel = this.appointmentKind;
 
-      const { data: appointmentRow, error } = await this.supabase.client
-        .from('appointments')
-        .insert({
-          request_id: requestId,
-          employee_id: user.id,
-          expert_id: null,
-          kind: this.appointmentKind,
-          scheduled_for: scheduledFor.toISOString(),
-          notes,
-          created_by: user.id,
-        })
-        .select('id')
-        .single<{ id: string }>();
-      if (error) throw error;
-
-      if (this.appointmentKind === 'Videollamada' && appointmentRow?.id) {
-        const { error: meetingError } = await this.createGoogleMeetForAppointment(appointmentRow.id);
+      if (this.appointmentKind === 'Videollamada' && appointmentId) {
+        const { error: meetingError } = await this.createGoogleMeetForAppointment(appointmentId);
         if (meetingError) {
           alert(`La cita se creó, pero no se pudo generar el enlace de Google Meet. ${meetingError}`);
         }
@@ -1008,17 +1016,71 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       await this.loadEmployeeAppointments();
     } catch (err: any) {
       const message = typeof err?.message === 'string' ? err.message : '';
-      if (message.includes('uq_appointments_active_kind_slot') || message.includes('duplicate key')) {
-        alert('Ese horario acaba de ser reservado. Elige otra hora.');
+      const details = typeof err?.details === 'string' ? err.details : '';
+      const isConflict = message.includes('SLOT_ALREADY_BOOKED') ||
+                         message.includes('uq_appointments_active_kind_slot') ||
+                         message.includes('duplicate key') ||
+                         details.includes('SLOT_ALREADY_BOOKED');
+
+      if (isConflict) {
+        alert('⚠️ ¡Ups! Este horario acaba de ser reservado por otro usuario hace un instante.\n\nHemos actualizado la disponibilidad en pantalla. Por favor, selecciona otro horario disponible.');
         await this.loadBookedAppointmentSlots();
         this.appointmentTime = '';
         this.appointmentDetailsStep = false;
+        this.cdr.detectChanges();
       } else {
         alert(err?.message ?? 'No se pudo agendar la hora.');
       }
     } finally {
       this.loading = false;
     }
+  }
+
+  private async bookAppointmentFallback(
+    userId: string,
+    requestSummary: string,
+    scheduledFor: Date,
+    notes: string | null
+  ): Promise<{ requestId: string; appointmentId: string }> {
+    const { data: requestRow, error: requestError } = await this.supabase.client
+      .from('care_requests')
+      .insert({
+        employee_id: userId,
+        channel: this.appointmentKind,
+        topic: this.topic,
+        details: requestSummary,
+      })
+      .select('id')
+      .single();
+
+    if (requestError) throw requestError;
+    const requestId = requestRow.id as string;
+
+    const { data: appointmentRow, error: appointmentError } = await this.supabase.client
+      .from('appointments')
+      .insert({
+        request_id: requestId,
+        employee_id: userId,
+        expert_id: null,
+        kind: this.appointmentKind,
+        scheduled_for: scheduledFor.toISOString(),
+        notes,
+        created_by: userId,
+      })
+      .select('id')
+      .single<{ id: string }>();
+
+    if (appointmentError) {
+      // Revertimos la solicitud huérfana para no dejar registros inconsistentes en la BD
+      try {
+        await this.supabase.client.from('care_requests').delete().eq('id', requestId);
+      } catch {
+        // ignore rollback error
+      }
+      throw appointmentError;
+    }
+
+    return { requestId, appointmentId: appointmentRow.id };
   }
 
   public selectAppointmentTime(slot: string): void {
@@ -1515,6 +1577,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
           this.expertRequests = this.getDemoRequests();
         }
 
+        this.setupAppointmentsRealtime();
         this.loading = false;
         return;
       }
@@ -1531,6 +1594,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
         this.expertMode = true;
         this.hasBenefitAccess = true;
         this.expertRequests = this.getDemoRequests();
+        this.setupAppointmentsRealtime();
         this.loading = false;
         return;
       }
@@ -1538,6 +1602,7 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       return;
     }
 
+    this.setupAppointmentsRealtime();
     await this.loadEmployeeAppointments();
     await this.loadEmployeeTasks();
 
@@ -2112,6 +2177,58 @@ export class CareExpertsPage implements OnInit, OnDestroy {
       // ignore
     } finally {
       this.realtimeChannel = null;
+    }
+  }
+
+  private setupAppointmentsRealtime(): void {
+    if (this.appointmentsRealtimeChannel) return;
+
+    this.appointmentsRealtimeChannel = this.supabase.client
+      .channel('public:appointments:realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+        },
+        () => {
+          this.zone.run(async () => {
+            // Si el usuario tiene una fecha seleccionada para agendar cita
+            if (this.appointmentDate && this.canScheduleAppointment) {
+              const previousTime = this.appointmentTime;
+              await this.loadBookedAppointmentSlots();
+
+              // Si la hora que tenía elegida fue ocupada por otro usuario en este segundo
+              if (previousTime && !this.appointmentTime && this.bookedAppointmentSlots.has(previousTime)) {
+                this.appointmentConflictNotice = `El horario de las ${previousTime} acaba de ser reservado por otro usuario. Se actualizó la disponibilidad.`;
+                setTimeout(() => {
+                  this.appointmentConflictNotice = null;
+                  this.cdr.detectChanges();
+                }, 7000);
+              }
+              this.cdr.detectChanges();
+            }
+
+            if (this.expertMode) {
+              void this.loadSelectedAppointments();
+            } else {
+              void this.loadEmployeeAppointments();
+            }
+          });
+        }
+      )
+      .subscribe();
+  }
+
+  private async teardownAppointmentsRealtime(): Promise<void> {
+    if (!this.appointmentsRealtimeChannel) return;
+    try {
+      await this.supabase.client.removeChannel(this.appointmentsRealtimeChannel);
+    } catch {
+      // ignore
+    } finally {
+      this.appointmentsRealtimeChannel = null;
     }
   }
 

@@ -22,31 +22,7 @@
     <div class="register-card" role="region" aria-label="Crear cuenta">
       <div class="card-header">
         <h2>Crear Cuenta</h2>
-        <p>Selecciona tu rol e ingresa tus datos para registrarte.</p>
-      </div>
-
-      <!-- Role Selector -->
-      <div class="role-selector" role="tablist" aria-label="Tipo de cuenta">
-        <button
-          type="button"
-          class="role-btn"
-          [class.active]="role === 'employee'"
-          (click)="role = 'employee'"
-          role="tab"
-          [attr.aria-selected]="role === 'employee'"
-        >
-          Colaborador / Empleado
-        </button>
-        <button
-          type="button"
-          class="role-btn"
-          [class.active]="role === 'company_admin'"
-          (click)="role = 'company_admin'"
-          role="tab"
-          [attr.aria-selected]="role === 'company_admin'"
-        >
-          Administrador Empresa
-        </button>
+        <p>Registro exclusivo para Administradores de Empresa.</p>
       </div>
 
       <form class="register-form" (ngSubmit)="submit()">

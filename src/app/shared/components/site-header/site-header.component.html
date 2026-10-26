@@ -23,7 +23,7 @@
 
   <div class="cc-nav-actions">
     <button *ngIf="!auth.user" class="btn-ghost" routerLink="/login">Ingresar</button>
-    <button *ngIf="!auth.user" class="btn-glow" routerLink="/register">Solicitar demo</button>
+    <button *ngIf="!auth.user" class="btn-glow" routerLink="/contact">Solicitar demo</button>
     <button *ngIf="auth.user" class="btn-ghost" (click)="auth.signOut()">Cerrar sesión</button>
   </div>
 </header>

@@ -70,24 +70,24 @@ const CATEGORY_ICON: Record<ResourceCategory, string> = {
 
 const FALLBACK_RESOURCES: ResourceItem[] = [
   {
-    id: 'res-guia-v4',
-    title: 'Guía Oficial CompanyCare',
-    summary: 'Manual completo de acompañamiento, orientación y recursos para colaboradores y cuidadores de adultos mayores.',
+    id: 'res-v3',
+    title: 'Tutorial: Cómo Agendar Horas en Company Care',
+    summary: 'Video tutorial explicativo paso a paso para agendar citas de orientación y acompañamiento (llamada o videollamada) con los Care Experts.',
     category: 'Guías prácticas',
-    resource_type: 'pdf',
-    read_time_min: 15,
+    resource_type: 'video',
+    read_time_min: 3,
     is_priority: true,
-    file_url: 'assets/pdf/Guia_CompanyCare_v4.pdf',
-    video_url: null,
+    file_url: null,
+    video_url: 'https://youtu.be/duqNFcJtkBk',
     content: [
       {
-        heading: 'Guía Integral del Cuidador CompanyCare',
-        body: 'Documento completo con recomendaciones gerontológicas, evaluación de necesidades, red de apoyo y orientación para familias.',
+        heading: 'Paso a Paso para Agendar tu Cita',
+        body: 'En este video te mostramos cómo utilizar la plataforma Company Care para seleccionar tu modalidad de atención, elegir la fecha y horario disponible, e ingresar la información de contacto.',
         bullets: [
-          'Estrategias de cuidado diario y prevención de sobrecarga',
-          'Evaluación de autonomía y niveles de dependencia',
-          'Red de convenios SeniorClub y proveedores verificados',
-          'Protocolos de asesoría personalizada con Care Experts'
+          'Selecciona tu modalidad: Videollamada (Google Meet) o llamada telefónica directa',
+          'Elige la fecha y el bloque horario disponible en tiempo real',
+          'Ingresa tus datos de contacto y el contexto o motivo de la consulta',
+          'Recibe la confirmación inmediata y los enlaces de conexión a la sesión'
         ]
       }
     ]
@@ -125,6 +125,29 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
         heading: 'Modelo de Asesoría Profesional',
         body: 'Explicación del proceso de acompañamiento continuo desde la primera consulta por chat o videollamada.',
         bullets: ['Evaluación gerontológica inicial', 'Elaboración de plan de cuidados a la medida', 'Coordinación con la red de proveedores verificados']
+      }
+    ]
+  },
+  {
+    id: 'res-guia-v4',
+    title: 'Guía Oficial CompanyCare',
+    summary: 'Manual completo de acompañamiento, orientación y recursos para colaboradores y cuidadores de adultos mayores.',
+    category: 'Guías prácticas',
+    resource_type: 'pdf',
+    read_time_min: 15,
+    is_priority: true,
+    file_url: 'assets/pdf/Guia_CompanyCare_v4.pdf',
+    video_url: null,
+    content: [
+      {
+        heading: 'Guía Integral del Cuidador CompanyCare',
+        body: 'Documento completo con recomendaciones gerontológicas, evaluación de necesidades, red de apoyo y orientación para familias.',
+        bullets: [
+          'Estrategias de cuidado diario y prevención de sobrecarga',
+          'Evaluación de autonomía y niveles de dependencia',
+          'Red de convenios SeniorClub y proveedores verificados',
+          'Protocolos de asesoría personalizada con Care Experts'
+        ]
       }
     ]
   },
@@ -424,22 +447,35 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
     summary: 'Lista de verificación práctica para adaptar baños, pasillos y dormitorios evitando caídas y accidentes.',
     category: 'Checklist',
     resource_type: 'article',
-    read_time_min: 5,
+    read_time_min: 6,
     is_priority: false,
     file_url: null,
     video_url: null,
     content: [
       {
-        heading: 'Prevención de Caídas en el Hogar',
-        body: 'La mayoría de los accidentes domésticos ocurren en el baño y en zonas con mala iluminación.',
-        bullets: ['Instalación de barras de sujeción en ducha y WC', 'Eliminación de alfombras sueltas y cables expuestos', 'Iluminación nocturna con sensores en pasillos']
+        heading: '1. Prevención en Baño y Zonas Húmedas',
+        body: 'El 70% de las caídas domésticas graves se producen durante la higiene personal.',
+        bullets: [
+          'Instalación de barras de sujeción fijadas a muro sólido en ducha y junto al inodoro.',
+          'Uso de piso de goma antideslizante o silla de ducha con topes de succión.',
+          'Grifería monomando con termostato para prevenir quemaduras por agua caliente.'
+        ]
+      },
+      {
+        heading: '2. Circulación, Pasillos e Iluminación Nocturna',
+        body: 'Facilitar un tránsito libre de tropiezos reduce drásticamente el riesgo de fracturas de cadera.',
+        bullets: [
+          'Retirar alfombras sueltas, cables en el piso y desniveles sin demarcación contrastante.',
+          'Luz guía o sensores de movimiento automáticos desde la cama hasta el baño.',
+          'Calzado con suela de goma antideslizante y talón cerrado, evitando pantuflas sueltas.'
+        ]
       }
     ]
   },
   {
     id: 'res-4',
     title: 'Guía de Manejo del Desgaste Emocional en el Cuidador',
-    summary: 'Herramientas psicológicas para prevenir el síndrome de Burnout del cuidador y gestionar el estrés familiar.',
+    summary: 'Herramientas psicoeducativas para prevenir el síndrome de Burnout del cuidador y gestionar el estrés familiar.',
     category: 'Guías prácticas',
     resource_type: 'article',
     read_time_min: 10,
@@ -448,9 +484,31 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
     video_url: null,
     content: [
       {
-        heading: 'Reconociendo el Agotamiento',
-        body: 'El cuidado prolongado puede generar fatiga crónica, insomnio y sobrecarga emocional.',
-        bullets: ['Establecer pausas de descanso semanales', 'Delegar tareas entre familiares o servicios profesionales', 'Mantener espacios personales de desconexión']
+        heading: '1. Reconociendo las Señales de Sobrecarga (Burnout)',
+        body: 'Cuidar a un familiar dependiente de forma sostenida genera un desgaste invisible. Reconocer a tiempo los síntomas previene el colapso físico y mental.',
+        bullets: [
+          'Agotamiento crónico que no mejora tras dormir o descansar.',
+          'Sentimientos frecuentes de irritabilidad, culpa, aislamiento o tristeza involuntaria.',
+          'Dificultad para concentrarse en el trabajo y abandono paulatino de pasatiempos propios.'
+        ]
+      },
+      {
+        heading: '2. Estrategias Prácticas de Autocuidado',
+        body: 'Para cuidar bien a otra persona, el propio bienestar debe ser la primera prioridad innegociable.',
+        bullets: [
+          'Regla de las micro-pausas: destinar al menos 20 a 30 minutos al día para una actividad personal no vinculada al cuidado.',
+          'Compartir la carga: definir un cronograma familiar donde otros integrantes asuman tareas administrativas, compras o turnos de relevo.',
+          'Poner límites saludables: aprender a decir "no" a demandas no esenciales sin sentir culpa.'
+        ]
+      },
+      {
+        heading: '3. Cuándo Buscar Apoyo Profesional',
+        body: 'Si notas:',
+        bullets: [
+          'Insomnio persistente',
+          'Cambios bruscos de peso',
+          'Crisis de ansiedad'
+        ]
       }
     ]
   },
@@ -466,9 +524,30 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
     video_url: null,
     content: [
       {
-        heading: 'Requisitos de Acreditación',
-        body: 'Verifica la autorización sanitaria de SEREMI de Salud y los protocolos de emergencia médica.',
-        bullets: ['Ratio adecuado de personal técnico por residente', 'Menú nutricional supervisado por profesional', 'Transparencia en reportes y visitas a familiares']
+        heading: '1. Requisitos Sanitarios y Legales Básicos',
+        body: 'Antes de visitar o contratar, verifica que el establecimiento cuente con las autorizaciones formales vigentes.',
+        bullets: [
+          'Resolución Sanitaria otorgada por la SEREMI de Salud correspondiente.',
+          'Director técnico o médico responsable con registro en la Superintendencia de Salud.',
+          'Protocolos escritos de derivación inmediata ante urgencias médicas o descompensaciones.'
+        ]
+      },
+      {
+        heading: '2. Infraestructura y Proporción de Personal (Ratios)',
+        body: 'La calidad del cuidado depende directamente del personal capacitado disponible las 24 horas.',
+        bullets: [
+          'Ratio diurno y nocturno: verificar cuántos TENS/cuidadores atienden por cada adulto mayor dependiente.',
+          'Espacios seguros: puertas amplias, pasamanos dobles, baños adaptados y ausencia de barreras arquitectónicas.',
+          'Plan nutricional validado por nutricionista y adaptado a dietas especiales (diabéticos, papillas, hidratación).'
+        ]
+      },
+      {
+        heading: '3. Clima y Transparencia Familiar',
+        body: 'Un buen centro promueve el vínculo activo con la familia.',
+        bullets: [
+          'Política de visitas abierta y flexible, sin restricciones injustificadas.',
+          'Canal expedito de comunicación diaria o semanal sobre el estado de salud del residente.'
+        ]
       }
     ]
   },
@@ -484,8 +563,16 @@ const FALLBACK_RESOURCES: ResourceItem[] = [
     video_url: null,
     content: [
       {
-        heading: 'Poderes de Representación',
-        body: 'Recomendaciones notariales para formalizar la administración de salud y patrimonio de manera transparente y coordinada.'
+        heading: '1. Anticipación en Lucidez Plena',
+        body: 'Formalizar acuerdos legales mientras el adulto mayor conserva plena capacidad cognitiva previene conflictos familiares complejos.',
+        bullets: [
+          'Poder notarial amplio o especial para trámites bancarios, cobro de pensiones y representación ante instituciones de salud.',
+          'Designación formal de apoderado o persona de confianza para decisiones médicas en caso de pérdida progresiva de autonomía.'
+        ]
+      },
+      {
+        heading: '2. Transparencia y Rendición de Cuentas',
+        body: 'Mantener un registro claro de gastos e ingresos evita roces entre hermanos u otros familiares involucrados en el financiamiento del cuidado.'
       }
     ]
   }
@@ -596,7 +683,18 @@ export class ResourcesPage implements OnInit {
           combined.push(fallback);
         }
       }
-      this.resources = combined;
+
+      // Asegurar que todos los videos queden en las primeras posiciones, con el tutorial al inicio
+      const videos = combined.filter((r) => r.resource_type === 'video');
+      const nonVideos = combined.filter((r) => r.resource_type !== 'video');
+
+      const tutorialIndex = videos.findIndex((r) => r.id === 'res-v3' || r.video_url?.includes('duqNFcJtkBk'));
+      if (tutorialIndex > 0) {
+        const [tutorial] = videos.splice(tutorialIndex, 1);
+        videos.unshift(tutorial);
+      }
+
+      this.resources = [...videos, ...nonVideos];
     } catch (e: any) {
       this.resources = FALLBACK_RESOURCES;
     } finally {
@@ -751,7 +849,28 @@ export class ResourcesPage implements OnInit {
   public getDurationText(res: ResourceItem): string {
     if (res.id === 'res-v1') return '2:39 min';
     if (res.id === 'res-v2') return '1:53 min';
+    if (res.id === 'res-v3') return '3 min';
     return `${res.read_time_min} min`;
+  }
+
+  public getVideoBadge(res: ResourceItem): string {
+    if (res.id === 'res-v3' || res.video_url?.includes('duqNFcJtkBk')) {
+      return 'Video tutorial';
+    }
+    return `${this.getDurationText(res)} video`;
+  }
+
+  public getFooterMeta(res: ResourceItem): string {
+    if (res.id === 'res-v3' || res.video_url?.includes('duqNFcJtkBk')) {
+      return 'Video tutorial';
+    }
+    if (res.resource_type === 'video') {
+      return `${this.getDurationText(res)} video`;
+    }
+    if (this.isCourse(res)) {
+      return `${this.getDurationText(res)} curso`;
+    }
+    return `${this.getDurationText(res)} lectura`;
   }
 
   public isDirectVideo(videoUrl: string | null): boolean {
@@ -774,6 +893,76 @@ export class ResourcesPage implements OnInit {
 
   public categoryIconPath(category: ResourceCategory): string {
     return CATEGORY_ICON[category] ?? '';
+  }
+
+  public getSectionCleanTitle(heading: string): string {
+    if (!heading) return '';
+    return heading.replace(/^\d+[\.\)]\s*/, '').trim();
+  }
+
+  public getSectionPillTitle(heading: string): string {
+    const clean = this.getSectionCleanTitle(heading);
+    return clean.replace(/\s*\(.*?\)/, '').trim();
+  }
+
+  public getBulletIcon(bullet: string, secIndex: number, bulletIndex: number): string {
+    const text = (bullet || '').toLowerCase();
+    if (text.includes('agotamiento') || text.includes('batería') || text.includes('fatiga') || text.includes('dormir')) {
+      return 'battery_alert';
+    }
+    if (text.includes('irritabilidad') || text.includes('culpa') || text.includes('tristeza') || text.includes('emocional')) {
+      return 'remove_circle_outline';
+    }
+    if (text.includes('concentrarse') || text.includes('trabajo') || text.includes('pasatiempo') || text.includes('aislamiento')) {
+      return 'psychology';
+    }
+    if (text.includes('micro-pausa') || text.includes('pausa') || text.includes('descanso') || text.includes('minutos')) {
+      return 'schedule';
+    }
+    if (text.includes('compartir') || text.includes('carga') || text.includes('cronograma') || text.includes('familiar') || text.includes('turnos')) {
+      return 'group';
+    }
+    if (text.includes('límite') || text.includes('decir "no"') || text.includes('saludable') || text.includes('prioridad')) {
+      return 'verified_user';
+    }
+    if (text.includes('barras') || text.includes('sujeción') || text.includes('ducha') || text.includes('baño')) {
+      return 'bathtub';
+    }
+    if (text.includes('alfombra') || text.includes('cables') || text.includes('piso') || text.includes('desnivel')) {
+      return 'do_not_step';
+    }
+    if (text.includes('luz') || text.includes('sensor') || text.includes('iluminación')) {
+      return 'lightbulb';
+    }
+    if (text.includes('sanitaria') || text.includes('seremi') || text.includes('legal') || text.includes('resolución')) {
+      return 'gavel';
+    }
+    if (text.includes('ratio') || text.includes('personal') || text.includes('tens') || text.includes('cuidador')) {
+      return 'badge';
+    }
+    if (text.includes('visitas') || text.includes('comunicación') || text.includes('reportes')) {
+      return 'family_restroom';
+    }
+    // Fallback circular icons by index
+    const fallbacks = ['radio_button_checked', 'star_outline', 'check_circle_outline'];
+    return fallbacks[bulletIndex % fallbacks.length];
+  }
+
+  public isDarkCalloutSection(sec: ResourceSection, secIndex: number, totalSections: number): boolean {
+    const heading = (sec.heading || '').toLowerCase();
+    return heading.includes('cuándo buscar') || heading.includes('apoyo profesional') || (secIndex === totalSections - 1 && (!sec.bullets || sec.bullets.length === 0));
+  }
+
+  public isWarningTag(bullet: string): boolean {
+    const text = (bullet || '').toLowerCase();
+    return text.includes('insomnio') || text.includes('peso') || text.includes('ansiedad') || text.includes('alerta') || text.includes('urgencia');
+  }
+
+  public scrollToSection(index: number): void {
+    const el = document.getElementById('drawer-sec-' + index);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   public trackById(_: number, r: ResourceItem): string { return r.id; }

@@ -660,6 +660,49 @@ export class DashboardPage implements OnInit, OnDestroy {
     return FOLLOWUP_TYPE_CONFIG[type as FollowupType]?.label ?? type;
   }
 
+  public getFollowupHeadline(): string {
+    if (!this.latestFollowup) return 'Estado del seguimiento';
+    const note = this.latestFollowup.note || '';
+    if (note.includes('[Estado:')) {
+      const match = note.match(/\[Estado:\s*([^\]]+)\]/);
+      if (match && match[1]) {
+        const raw = match[1].trim();
+        if (raw.toLowerCase().includes('se cancelo la sesión o no asiste')) {
+          return 'Sesión no realizada';
+        }
+        return raw;
+      }
+    }
+    if (this.latestFollowup.patient_status === 'requiere_atencion') {
+      return 'Sesión no realizada';
+    }
+    return this.getFollowupStatusLabel(this.latestFollowup.patient_status);
+  }
+
+  public getFollowupSubtitle(): string {
+    if (!this.latestFollowup) return '';
+    if (this.latestFollowup.patient_status === 'requiere_atencion') {
+      return 'El familiar o cuidador no asistió a la sesión programada.';
+    }
+    return 'Seguimiento actualizado por tu Care Expert.';
+  }
+
+  public getFollowupNoteContent(): string {
+    if (!this.latestFollowup) return '';
+    return this.latestFollowup.note ? this.latestFollowup.note.trim() : '';
+  }
+
+  public getFollowupNextStep(): string {
+    if (!this.latestFollowup) return 'Revisar estado';
+    if (this.latestFollowup.patient_status === 'requiere_atencion') {
+      return 'Coordinar nuevo horario';
+    }
+    if (this.latestFollowup.next_followup_date) {
+      return 'Próxima sesión agendada';
+    }
+    return 'Mantener seguimiento activo';
+  }
+
   private async loadFollowupData(userId: string): Promise<void> {
     try {
       this.latestFollowup = await this.followupService.getLatestFollowup(userId);

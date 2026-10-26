@@ -414,6 +414,7 @@
                 <button
                   *ngIf="selectedProvider.email"
                   (click)="openEmail(selectedProvider.email)"
+                  [attr.title]="selectedProvider.email"
                   class="contact-link-row"
                 >
                   <div class="contact-link-row__icon contact-link-row__icon--email">
@@ -421,7 +422,7 @@
                   </div>
                   <div class="contact-link-row__text">
                     <span class="contact-link-row__lbl">Correo electrónico</span>
-                    <strong class="contact-link-row__val">{{ selectedProvider.email }}</strong>
+                    <strong class="contact-link-row__val">{{ formatEmailDisplay(selectedProvider.email) }}</strong>
                   </div>
                 </button>
 

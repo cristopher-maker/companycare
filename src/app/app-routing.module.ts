@@ -17,8 +17,8 @@ const routes: Routes = [
   },
   {
     path: 'register',
-    loadChildren: () =>
-      import('./pages/auth/register/register.module').then((m) => m.RegisterPageModule),
+    redirectTo: 'login',
+    pathMatch: 'full',
   },
   {
     path: 'reset-password',

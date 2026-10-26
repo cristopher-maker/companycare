@@ -347,6 +347,15 @@ export class ProvidersPage implements OnInit, OnDestroy {
     window.location.href = `mailto:${email}`;
   }
 
+  public formatEmailDisplay(email: string | null): string {
+    if (!email) return 'Enviar correo';
+    // Si es un alias largo generado automáticamente (@senioradvisor.cl), mostrar llamada limpia a la acción
+    if (email.includes('@senioradvisor.cl')) {
+      return 'Enviar correo a la residencia';
+    }
+    return email;
+  }
+
   public openPhone(phone: string | null): void {
     if (!phone) return;
     const digits = phone.replace(/[^\d+]/g, '');

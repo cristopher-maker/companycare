@@ -98,7 +98,7 @@
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
               </div>
             </div>
-            <span class="thumb-duration">{{ getDurationText(res) }} video</span>
+            <span class="thumb-duration">{{ getVideoBadge(res) }}</span>
           </div>
 
           <div class="resource-card__body">
@@ -126,7 +126,7 @@
             <div class="resource-card__footer">
               <span class="read-time">
                 <mat-icon>schedule</mat-icon>
-                {{ getDurationText(res) }} {{ res.resource_type === 'video' ? 'video' : (isCourse(res) ? 'curso' : 'lectura') }}
+                {{ getFooterMeta(res) }}
               </span>
               <span class="read-more">
                 {{ res.resource_type === 'video' ? 'Ver video' : (isCourse(res) ? (getCourseProgress(res.id) >= 100 ? 'Repasar curso' : (getCourseProgress(res.id) > 0 ? 'Continuar curso' : 'Iniciar curso')) : 'Ver recurso') }}
@@ -269,15 +269,12 @@
   <div class="resource-drawer">
     <header class="resource-drawer__header">
       <div class="drawer-header-meta">
-        <span class="resource-badge resource-badge--{{ categoryKey(activeResource.category) }}">
-          {{ activeResource.category }}
-        </span>
-        <span class="read-time">
-          <mat-icon>schedule</mat-icon>
-          {{ activeResource.read_time_min }} min
+        <span class="guide-top-pill">
+          <mat-icon>favorite_border</mat-icon>
+          <span>{{ activeResource.category ? activeResource.category.toUpperCase() : 'GUÍA PARA CUIDADORES' }}</span>
         </span>
       </div>
-      <button type="button" class="close-btn" (click)="closeDrawer()" aria-label="Cerrar">
+      <button type="button" class="drawer-circle-close" (click)="closeDrawer()" aria-label="Cerrar">
         <mat-icon>close</mat-icon>
       </button>
     </header>
@@ -285,6 +282,19 @@
     <div class="resource-drawer__content">
       <h2 class="drawer-title">{{ activeResource.title }}</h2>
       <p class="drawer-lead">{{ activeResource.summary }}</p>
+
+      <!-- Section Navigation Index Pills -->
+      <div class="drawer-index-pills" *ngIf="activeResource.content && activeResource.content.length > 1">
+        <button
+          *ngFor="let sec of activeResource.content; let i = index"
+          type="button"
+          class="index-pill-btn"
+          (click)="scrollToSection(i)"
+        >
+          <span class="index-pill-num">{{ i + 1 }}</span>
+          <span class="index-pill-text">{{ getSectionPillTitle(sec.heading) }}</span>
+        </button>
+      </div>
 
       <div class="drawer-media" *ngIf="activeResource.video_url">
         <ng-container *ngIf="isDirectVideo(activeResource.video_url); else iframeEmbed">
@@ -307,14 +317,54 @@
 
       <div class="drawer-sections">
         <div
-          class="drawer-section"
-          *ngFor="let sec of activeResource.content; trackBy: trackByHeading"
+          *ngFor="let sec of activeResource.content; let i = index; trackBy: trackByHeading"
+          [id]="'drawer-sec-' + i"
+          class="guide-card"
+          [class.guide-card--dark]="isDarkCalloutSection(sec, i, activeResource.content.length)"
         >
-          <h3>{{ sec.heading }}</h3>
-          <p>{{ sec.body }}</p>
-          <ul *ngIf="sec.bullets && sec.bullets.length > 0">
-            <li *ngFor="let b of sec.bullets">{{ b }}</li>
-          </ul>
+          <!-- Card Header with Number Circle -->
+          <div class="guide-card__header">
+            <span class="guide-card__number">{{ i + 1 }}</span>
+            <h3 class="guide-card__title">{{ getSectionCleanTitle(sec.heading) }}</h3>
+          </div>
+
+          <!-- Lead Paragraph -->
+          <p class="guide-card__lead">{{ sec.body }}</p>
+
+          <!-- Standard Section: Individual Item Cards with Icons -->
+          <div class="guide-card__items" *ngIf="!isDarkCalloutSection(sec, i, activeResource.content.length) && sec.bullets && sec.bullets.length > 0">
+            <div class="guide-item" *ngFor="let b of sec.bullets; let bi = index">
+              <div class="guide-item__icon-wrap">
+                <mat-icon>{{ getBulletIcon(b, i, bi) }}</mat-icon>
+              </div>
+              <div class="guide-item__text">{{ b }}</div>
+            </div>
+          </div>
+
+          <!-- Dark Section: Warning Sign Pills -->
+          <div class="guide-card__tags" *ngIf="isDarkCalloutSection(sec, i, activeResource.content.length) && sec.bullets && sec.bullets.length > 0">
+            <span class="guide-tag-pill" *ngFor="let b of sec.bullets">
+              {{ b }}
+            </span>
+          </div>
+
+          <!-- Dark Section Footer Note -->
+          <p class="guide-card__footer-note" *ngIf="isDarkCalloutSection(sec, i, activeResource.content.length)">
+            Es momento de solicitar evaluación médica o psicológica de apoyo.
+          </p>
+        </div>
+      </div>
+
+      <!-- Sello y Descargo de Responsabilidad Médico y Legal -->
+      <div class="drawer-disclaimer">
+        <div class="drawer-disclaimer__icon">
+          <mat-icon>verified_user</mat-icon>
+        </div>
+        <div class="drawer-disclaimer__text">
+          <strong>Aviso Informativo y Autocuidado Preventivo</strong>
+          <p>
+            Contenido supervisado por el equipo de profesionales y especialistas gerontológicos de CompanyCare. Este material tiene fines formativos y de orientación familiar; no constituye diagnóstico clínico ni reemplaza una consulta médica presencial.
+          </p>
         </div>
       </div>
 

@@ -65,45 +65,124 @@
         </div>
 
         <div class="dash-followup__card">
-          <div class="dash-followup__status-row">
-            <span class="dash-followup__badge" [style.background]="getFollowupStatusColor(latestFollowup.patient_status)">
-              <mat-icon>{{ getFollowupStatusIcon(latestFollowup.patient_status) }}</mat-icon>
-              {{ getFollowupStatusLabel(latestFollowup.patient_status) }}
-            </span>
-            <span class="dash-followup__priority" *ngIf="latestFollowup.priority === 'alta' || latestFollowup.priority === 'urgente'">
-              <mat-icon>priority_high</mat-icon> {{ latestFollowup.priority === 'urgente' ? 'Urgente' : 'Alta prioridad' }}
-            </span>
+          <!-- Top Row: Badges & Next Step Box -->
+          <div class="dash-followup__top">
+            <div class="dash-followup__left-meta">
+              <!-- Alert & Category Pills -->
+              <div class="dash-followup__badges">
+                <span class="dash-followup__alert-pill">
+                  <mat-icon>warning</mat-icon>
+                  <span>Requiere atención</span>
+                </span>
+                <span class="dash-followup__cat-pill">Sesión</span>
+              </div>
+
+              <!-- Main Headline & Subtitle -->
+              <h3 class="dash-followup__headline">{{ getFollowupHeadline() }}</h3>
+              <p class="dash-followup__desc">{{ getFollowupSubtitle() }}</p>
+
+              <!-- Última Nota del Care Expert -->
+              <div class="dash-followup__latest-note" *ngIf="getFollowupNoteContent()">
+                <div class="latest-note-header">
+                  <mat-icon>note_alt</mat-icon>
+                  <span>Última nota del Care Expert:</span>
+                </div>
+                <p class="latest-note-text">{{ getFollowupNoteContent() }}</p>
+              </div>
+            </div>
+
+            <!-- Next Step Card Box (Right) -->
+            <div class="dash-followup__next-step">
+              <div class="next-step-icon">
+                <mat-icon>event_available</mat-icon>
+              </div>
+              <div class="next-step-content">
+                <span class="next-step-label">Próximo paso</span>
+                <strong class="next-step-val">{{ getFollowupNextStep() }}</strong>
+              </div>
+            </div>
           </div>
 
-          <p class="dash-followup__note">{{ latestFollowup.note }}</p>
+          <!-- Progress Stepper (Sesión programada -> Inasistencia registrada -> Seguimiento pendiente) -->
+          <div class="dash-followup__stepper">
+            <div class="step-item step-item--completed">
+              <div class="step-circle"><mat-icon>check</mat-icon></div>
+              <div class="step-labels">
+                <strong class="step-name">Sesión programada</strong>
+                <span class="step-date">{{ latestFollowup.created_at | date:'dd MMM yyyy' }}</span>
+              </div>
+            </div>
 
-          <div class="dash-followup__meta">
-            <div class="dash-followup__meta-item" *ngIf="latestFollowup.followup_type">
-              <mat-icon>{{ getFollowupTypeIcon(latestFollowup.followup_type) }}</mat-icon>
-              <span>Último contacto: {{ getFollowupTypeLabel(latestFollowup.followup_type) }}</span>
+            <div class="step-line step-line--done"></div>
+
+            <div class="step-item step-item--alert">
+              <div class="step-circle"><span>!</span></div>
+              <div class="step-labels">
+                <strong class="step-name">Inasistencia registrada</strong>
+                <span class="step-date">{{ latestFollowup.created_at | date:'dd MMM yyyy' }}</span>
+              </div>
             </div>
-            <div class="dash-followup__meta-item" *ngIf="latestFollowup.expert_name">
-              <mat-icon>person</mat-icon>
-              <span>Atendido por: {{ latestFollowup.expert_name }}</span>
+
+            <div class="step-line step-line--active"></div>
+
+            <div class="step-item step-item--current">
+              <div class="step-circle"><span class="step-dot"></span></div>
+              <div class="step-labels">
+                <strong class="step-name">Seguimiento pendiente</strong>
+                <span class="step-status">En curso</span>
+              </div>
             </div>
-            <div class="dash-followup__meta-item" *ngIf="latestFollowup.next_followup_date">
-              <mat-icon>event</mat-icon>
-              <span>Próximo seguimiento: {{ latestFollowup.next_followup_date | date:'dd MMM yyyy' }}</span>
+          </div>
+
+          <!-- Divider -->
+          <div class="dash-followup__divider"></div>
+
+          <!-- Metadata Footer Row -->
+          <div class="dash-followup__meta-grid">
+            <div class="meta-cell">
+              <mat-icon>chat_bubble_outline</mat-icon>
+              <div>
+                <span class="meta-label">Último contacto · {{ getFollowupTypeLabel(latestFollowup.followup_type) }}</span>
+                <span class="meta-val">{{ latestFollowup.created_at | date:'dd MMM yyyy, HH:mm' }}</span>
+              </div>
             </div>
-            <div class="dash-followup__meta-item">
+
+            <div class="meta-cell" *ngIf="latestFollowup.next_followup_date">
+              <mat-icon>calendar_today</mat-icon>
+              <div>
+                <span class="meta-label">Próximo seguimiento</span>
+                <span class="meta-val">{{ latestFollowup.next_followup_date | date:'dd MMM yyyy' }}</span>
+              </div>
+            </div>
+
+            <div class="meta-cell">
               <mat-icon>schedule</mat-icon>
-              <span>Actualizado: {{ latestFollowup.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+              <div>
+                <span class="meta-label">Actualizado</span>
+                <span class="meta-val">{{ latestFollowup.updated_at || latestFollowup.created_at | date:'dd MMM yyyy, HH:mm' }}</span>
+              </div>
             </div>
           </div>
 
+          <!-- Bottom Actions -->
           <div class="dash-followup__actions">
-            <button type="button" class="dash-followup__btn dash-followup__btn--history" (click)="showFollowupHistory = !showFollowupHistory">
-              <mat-icon>{{ showFollowupHistory ? 'expand_less' : 'history' }}</mat-icon>
-              {{ showFollowupHistory ? 'Ocultar historial' : 'Ver historial completo' }}
-            </button>
-            <a class="dash-followup__btn dash-followup__btn--contact" routerLink="/care-experts">
+            <a class="dash-followup__btn dash-followup__btn--primary" routerLink="/care-experts">
               <mat-icon>chat</mat-icon>
-              Contactar Expert
+              <span>Contactar Expert</span>
+            </a>
+
+            <button
+              type="button"
+              class="dash-followup__btn dash-followup__btn--secondary"
+              (click)="showFollowupHistory = !showFollowupHistory"
+            >
+              <mat-icon>{{ showFollowupHistory ? 'expand_less' : 'history' }}</mat-icon>
+              <span>{{ showFollowupHistory ? 'Ocultar historial' : 'Ver historial completo' }}</span>
+            </button>
+
+            <a class="dash-followup__btn dash-followup__btn--ghost" routerLink="/requests">
+              <mat-icon>assignment</mat-icon>
+              <span>Ver mis solicitudes</span>
             </a>
           </div>
         </div>
